@@ -4,12 +4,22 @@ from __future__ import annotations
 
 import contextlib
 import importlib.util
+import json
 import sys
 from pathlib import Path
 
 import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
+
+#: Deterministic UTC fixture so world-time smoke/MCP tests need no network.
+_WORLD_TIME_FIXTURE = {
+    "dateTime": "2026-08-08T12:00:00",
+    "date": "08/08/2026",
+    "time": "12:00",
+    "timeZone": "UTC",
+    "dayOfWeek": "Saturday",
+}
 
 
 @pytest.fixture
@@ -19,6 +29,7 @@ def example_app(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("CHIRP_ENV", "development")
     monkeypatch.setenv("CHIRP_DEBUG", "1")
     monkeypatch.setenv("CHIRP_SECRET_KEY", "test-secret-not-for-production")
+    monkeypatch.setenv("ORRERY_WORLD_TIME_JSON", json.dumps(_WORLD_TIME_FIXTURE))
 
     module_name = "orrery_app_under_test"
     app_path = ROOT / "app.py"

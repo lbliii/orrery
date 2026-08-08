@@ -20,7 +20,13 @@ The product surfaces are implemented as Chirp filesystem-routed pages in [`pages
 | `/namespaces` | Private tenancy pitch |
 | `/api/resolve?name=` | JSON resolve record (Skill DNS) |
 
-The same process is also a dogfood MCP host ([#964](https://github.com/lbliii/chirp/issues/964) / [#985](https://github.com/lbliii/chirp/issues/985)): aggregated `/mcp`, discovery at `/skills`, a reliability `/console`, three temporary stub skills, and publish-oracle smoke. Resolve records are seeded from the design mocks in [`catalog/`](./catalog/) until the live registry feeds them.
+The same process is also a dogfood MCP host ([#964](https://github.com/lbliii/chirp/issues/964) / [#985](https://github.com/lbliii/chirp/issues/985)): aggregated `/mcp`, discovery at `/skills`, a reliability `/console`, four dogfood skills (gaze, resolve, html-to-pdf plumbing stub, world-time reactive spike), and publish-oracle smoke. Resolve records are seeded from the design mocks in [`catalog/`](./catalog/) until the live registry feeds them.
+
+### Reactive star (`orrery/world-time`)
+
+Wave 1 spike ([#37](https://github.com/lbliii/orrery/issues/37)): tools `fetch` / `get` / `answer` pull a **live UTC** reading from a public clock API at call time and seal it in a signed Chirp Envelope. Gaze/resolve show price + blurb only — never the live payload.
+
+**Why cloning fails the value test:** an offline copy of the tool code cannot mint a fresh UTC instant from the upstream clock. Any baked-in datetime is stale by definition; the product is live truth at call time, not a distributable package. (html-to-pdf remains alongside as the Envelope plumbing demo.)
 
 Remaining product work (live MCP wiring, provisioning, commerce) is tracked in **[Saga #1](https://github.com/lbliii/orrery/issues/1)**.
 

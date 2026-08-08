@@ -20,7 +20,12 @@ class TestResolveSchema:
 
     def test_seed_catalog_has_expected_records(self) -> None:
         names = {r.name for r in CATALOG.all()}
-        assert {"orrery/html-to-pdf", "orrery/md-linkcheck", "acme/release-gate"} <= names
+        assert {
+            "orrery/html-to-pdf",
+            "orrery/world-time",
+            "orrery/md-linkcheck",
+            "acme/release-gate",
+        } <= names
 
     def test_resolve_by_full_name(self) -> None:
         rec = CATALOG.resolve("orrery/html-to-pdf")
@@ -170,6 +175,143 @@ class TestStarDetail:
             r = await client.get("/stars?name=acme/launch-gate")
             assert r.status == 404
 
+    async def test_world_time_star_shows_live_copy_and_receipt(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/stars?name=orrery/world-time")
+            assert r.status == 200
+            assert "orrery/world-time@0.1.0" in r.text
+            assert "Live at call time" in r.text
+            assert "Offline clones cannot mint" in r.text
+            assert "$0.03" in r.text
+            assert "fetch" in r.text
+            assert "Verified · not forged" in r.text
+            assert "orrery-world-time-1" in r.text
+            # Receipt panel omits payload (progressive disclosure on the page wire view).
+            assert '"payload"' not in r.text
+
+
+@pytest.mark.issue(37)
+class TestReactiveWorldTimeStar:
+    def test_signed_world_time_receipt_verifies(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv(
+            "ORRERY_WORLD_TIME_JSON",
+            json.dumps(
+                {
+                    "dateTime": "2026-08-08T12:00:00",
+                    "date": "08/08/2026",
+                    "time": "12:00",
+                    "timeZone": "UTC",
+                    "dayOfWeek": "Saturday",
+                }
+            ),
+        )
+        from dogfood import signed_world_time_receipt, verify_receipt
+
+        receipt, verified = signed_world_time_receipt()
+        assert verified is True
+        assert receipt["skill"] == "world-time"
+        assert receipt["tool"] == "answer"
+        assert receipt["key_id"] == "orrery-world-time-1"
+        assert receipt["payload"]["live_at_call"] is True
+        assert receipt["payload"]["datetime"] == "2026-08-08T12:00:00"
+        assert "clone_warning" in receipt["payload"]
+        assert verify_receipt(receipt) is True
+
+    def test_gaze_match_world_time_has_price_no_payload(self) -> None:
+        hits = CATALOG.match("live utc clock now", node="public")
+        names = [h.name for h in hits]
+        assert "orrery/world-time" in names
+        assert names[0] == "orrery/world-time"
+        hit = next(h for h in hits if h.name == "orrery/world-time")
+        wire = hit.as_dict()
+        assert hit.price == "$0.03"
+        assert "Live UTC" in hit.blurb or "call time" in hit.blurb.lower()
+        assert "payload" not in wire
+        assert "datetime" not in wire
+        assert "clone_warning" not in wire
+
+    def test_resolve_world_time_returns_price(self) -> None:
+        rec = CATALOG.resolve("orrery/world-time")
+        assert rec is not None
+        assert rec.price_per_call == "$0.03"
+        assert rec.tools == ("fetch", "get", "answer")
+        assert "payload" not in rec.as_dict()
+
+    async def test_api_resolve_world_time_price(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/api/resolve?name=orrery/world-time")
+            assert r.status == 200
+            body = json.loads(r.text)
+            assert body["name"] == "orrery/world-time"
+            assert body["price_per_call"] == "$0.03"
+            assert body["endpoint"] == "mcp://orrery.dev/s/world-time"
+            assert "payload" not in body
+
+    async def test_mcp_answer_returns_signed_envelope(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            called = await client.post(
+                "/mcp",
+                json={
+                    "jsonrpc": "2.0",
+                    "method": "tools/call",
+                    "id": 37,
+                    "params": {
+                        "_meta": {
+                            "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+                            "io.modelcontextprotocol/clientCapabilities": {},
+                        },
+                        "name": "answer",
+                        "arguments": {},
+                    },
+                },
+                headers={
+                    "content-type": "application/json",
+                    "mcp-protocol-version": "2026-07-28",
+                    "mcp-method": "tools/call",
+                    "mcp-name": "answer",
+                },
+            )
+            assert called.status == 200
+            text = json.loads(called.text)["result"]["content"][0]["text"]
+            assert "world-time" in text
+            assert "live_at_call" in text
+            assert "2026-08-08T12:00:00" in text
+            assert "signature" in text
+            assert "input_digest" in text or "sha256:" in text
+
+    async def test_mcp_gaze_describe_world_time_no_payload(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            described = await client.post(
+                "/mcp",
+                json={
+                    "jsonrpc": "2.0",
+                    "method": "tools/call",
+                    "id": 38,
+                    "params": {
+                        "_meta": {
+                            "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+                            "io.modelcontextprotocol/clientCapabilities": {},
+                        },
+                        "name": "gaze_describe",
+                        "arguments": {"name": "orrery/world-time"},
+                    },
+                },
+                headers={
+                    "content-type": "application/json",
+                    "mcp-protocol-version": "2026-07-28",
+                    "mcp-method": "tools/call",
+                    "mcp-name": "gaze_describe",
+                },
+            )
+            assert described.status == 200
+            text = json.loads(described.text)["result"]["content"][0]["text"]
+            assert "$0.03" in text
+            assert "fetch" in text
+            assert "live_at_call" not in text
+            assert "clone_warning" not in text
+
 
 @pytest.mark.issue(26)
 @pytest.mark.issue(27)
@@ -257,6 +399,7 @@ class TestResolveHttpAndMcp:
             assert r.status == 200
             assert "data-resolve-table" in r.text
             assert "orrery/html-to-pdf" in r.text
+            assert "orrery/world-time" in r.text
 
     async def test_mcp_resolve_name_returns_dns_record(self, example_app) -> None:
         async with TestClient(example_app) as client:
@@ -473,6 +616,7 @@ class TestGazeConsole:
             assert "gaze-nodes" in r.text
             assert "mcp://orrery.dev/gaze" in r.text
             assert "orrery/html-to-pdf" in r.text
+            assert "orrery/world-time" in r.text
             assert "orrery/md-linkcheck" in r.text
             assert "acme/launch-gate" in r.text
             assert "look_at" not in r.text

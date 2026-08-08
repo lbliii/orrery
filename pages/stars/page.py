@@ -2,9 +2,9 @@
 
 Resolves ``?name=`` against the catalog (defaults to the demo star). Unknown or
 non-star names 404 instead of silently falling back, so live resolve and the
-detail page share one contract. For the demo star, invokes the html-to-pdf
-``convert`` tool server-side so the receipt is a real signed Envelope
-(issues #25 / #26 / #27).
+detail page share one contract. Demo stars invoke tools server-side so the
+receipt is a real signed Envelope (html-to-pdf plumbing #25-#27; world-time
+reactive spike #37).
 """
 
 from __future__ import annotations
@@ -14,9 +14,16 @@ import json
 from chirp import NotFound, Page, Request
 
 from catalog import CATALOG
-from dogfood import SMOKE_HTML, signed_convert_receipt
+from dogfood import (
+    SMOKE_HTML,
+    WORLD_TIME_CLONE_WARNING,
+    signed_convert_receipt,
+    signed_world_time_receipt,
+)
 
 _DEFAULT = "orrery/html-to-pdf"
+_PDF_STAR = "orrery/html-to-pdf"
+_WORLD_TIME_STAR = "orrery/world-time"
 
 
 def get(request: Request) -> Page:
@@ -30,8 +37,10 @@ def get(request: Request) -> Page:
 
     envelope: dict | None = None
     verified = False
-    if rec.name == _DEFAULT:
+    if rec.name == _PDF_STAR:
         envelope, verified = signed_convert_receipt(SMOKE_HTML)
+    elif rec.name == _WORLD_TIME_STAR:
+        envelope, verified = signed_world_time_receipt()
 
     envelope_json = (
         json.dumps(
@@ -64,4 +73,6 @@ def get(request: Request) -> Page:
         envelope=envelope,
         envelope_json=envelope_json,
         verified=verified,
+        is_reactive=rec.name == _WORLD_TIME_STAR,
+        clone_warning=WORLD_TIME_CLONE_WARNING if rec.name == _WORLD_TIME_STAR else None,
     )

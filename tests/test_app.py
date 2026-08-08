@@ -15,7 +15,7 @@ from chirp.skill.publish import run_publish_gate
 from chirp.testing import TestClient
 
 _META_PROTOCOL_VERSION = "io.modelcontextprotocol/protocolVersion"
-N_DOGFOOD_SKILLS = 3
+N_DOGFOOD_SKILLS = 4
 
 
 def _modern_mcp_params(**extra: Any) -> dict[str, Any]:
@@ -44,7 +44,7 @@ def _modern_mcp_headers(method: str, name: str | None = None) -> dict[str, str]:
 @pytest.mark.issue(11)
 class TestOrreryHostFoundation:
     async def test_host_mounts_n_skills_and_surfaces(self, example_app) -> None:
-        assert N_DOGFOOD_SKILLS == 3
+        assert N_DOGFOOD_SKILLS == 4
         async with TestClient(example_app) as client:
             home = await client.get("/")
             assert home.status == 200
@@ -64,7 +64,7 @@ class TestOrreryHostFoundation:
             assert discovery.status == 200
             body = json.loads(discovery.text)
             names = {entry["name"] for entry in body["skills"]}
-            assert names == {"gaze", "resolve", "html-to-pdf"}
+            assert names == {"gaze", "resolve", "html-to-pdf", "world-time"}
 
             console = await client.get("/console")
             assert console.status == 200
@@ -96,6 +96,9 @@ class TestOrreryHostFoundation:
                 "resolve_name",
                 "convert",
                 "health",
+                "fetch",
+                "get",
+                "answer",
             }
 
             called = await client.post(
@@ -146,8 +149,26 @@ class TestOrreryHostFoundation:
             assert "convert" in event.data
             assert "Orion" in event.data
 
-    def test_dogfood_skills_pass_publish_oracle(self, example_app) -> None:
+    def test_dogfood_skills_pass_publish_oracle(
+        self, example_app, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import dogfood
         from dogfood import DOGFOOD_CORPUS
+
+        # Publish gate re-imports paths; keep world-time deterministic.
+        monkeypatch.setenv(
+            "ORRERY_WORLD_TIME_JSON",
+            json.dumps(
+                {
+                    "dateTime": "2026-08-08T12:00:00",
+                    "date": "08/08/2026",
+                    "time": "12:00",
+                    "timeZone": "UTC",
+                    "dayOfWeek": "Saturday",
+                }
+            ),
+        )
+        assert dogfood.fetch_live_utc()["datetime"] == "2026-08-08T12:00:00"
 
         receipt = run_publish_gate(example_app, DOGFOOD_CORPUS)
         assert receipt.passed, receipt.to_dict()

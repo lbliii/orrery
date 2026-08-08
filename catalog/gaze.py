@@ -23,6 +23,9 @@ _TOOL_BLURBS: dict[str, str] = {
     "check": "Run the star's primary check",
     "convert": "Convert input to the star's output format",
     "health": "Liveness probe for the star",
+    "fetch": "Pull live source-backed data at call time",
+    "get": "Get a live reading sealed in an Envelope",
+    "answer": "Answer with live truth (not a cached package)",
 }
 
 
@@ -132,6 +135,10 @@ def score_record(record: ResolveRecord, tokens: tuple[str, ...]) -> int:
             score += 2
         if token in {"link", "links", "docs", "markdown", "md"} and (
             "link" in name or "md" in name
+        ):
+            score += 2
+        if token in {"time", "utc", "clock", "now", "live", "world"} and (
+            "time" in name or "world" in name
         ):
             score += 2
         if token in {"gate", "ship", "release", "policy", "launch"} and (
