@@ -6,44 +6,75 @@ Gaze to discover, resolve to lock the record, call for a verified result — fro
 
 Catalogs hand you a repo. Orrery hands you an endpoint, a digest, and a receipt — so the agent can keep moving.
 
-## Flow
-
-1. **Gaze** — discover skills across the public sky or a private namespace
-2. **Resolve** — name → MCP URL, public key, content digest, price
-3. **Call** — invoke with a sealed envelope / receipt
-
-Addresses look like skill DNS:
-
-```
-mcp://orrery.dev/gaze              # public sky
-mcp://acme.orrery.dev/gaze         # private namespace
-mcp://acme.orrery.dev/constellations/docs-gate
-```
-
 ## Status
 
-Early product repo. Design direction is validated in [`design/`](./design/) (HTML/CSS mocks). Implementation is next.
+Host starting point is the Chirp dogfood example ([#964](https://github.com/lbliii/chirp/issues/964) / [#985](https://github.com/lbliii/chirp/issues/985)): aggregated `/mcp`, `/skills`, `/console`, live invocation feed, three temporary stub skills, publish-oracle smoke.
 
-**Frozen favorite:** [`design/v1-night-gold/`](./design/v1-night-gold/) — night observatory / brass on deep space.
+Product work (Skill DNS, Gaze UI, constellations, namespaces, brand parity) is tracked in **[Saga #1](https://github.com/lbliii/orrery/issues/1)**.
 
-## Preview the mocks
+Design mocks (validated direction): [`design/`](./design/). Frozen favorite: [`design/v1-night-gold/`](./design/v1-night-gold/).
+
+## Run locally
+
+```bash
+uv sync --group dev
+uv run python app.py
+```
+
+Open `/` for the live feed, `/console` to browse manifests, or point an MCP client at `/mcp`.
+
+```bash
+# List tools (modern Streamable HTTP headers)
+curl -s http://localhost:8000/mcp \
+  -H 'Content-Type: application/json' \
+  -H 'mcp-protocol-version: 2026-07-28' \
+  -H 'mcp-method: tools/list' \
+  -d '{"jsonrpc":"2.0","method":"tools/list","id":1,"params":{"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientCapabilities":{}}}}'
+
+# Invoke look_at — watch `/` show the call
+curl -s http://localhost:8000/mcp \
+  -H 'Content-Type: application/json' \
+  -H 'mcp-protocol-version: 2026-07-28' \
+  -H 'mcp-method: tools/call' \
+  -H 'mcp-name: look_at' \
+  -d '{"jsonrpc":"2.0","method":"tools/call","id":2,"params":{"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientCapabilities":{}},"name":"look_at","arguments":{"target":"Vega"}}}'
+```
+
+Boot runs freeze + smoke against the dogfood corpus so `/console` shows reliability scores. Set `ORRERY_SKIP_PUBLISH=1` to skip that during local iteration.
+
+Copy `.env.example` → `.env` if you want stable signing keys across restarts.
+
+## Test
+
+```bash
+uv run pytest
+```
+
+## Deploy (Railway)
+
+`Dockerfile` + `railway.toml` live at the repo root. Connect the Railway service to `lbliii/orrery` or `railway up` from this directory.
+
+| Variable | Value |
+| --- | --- |
+| `CHIRP_ENV` | `production` |
+| `CHIRP_DEBUG` | `0` |
+| `CHIRP_SECRET_KEY` | generated secret |
+| `CHIRP_LOG_FORMAT` | `json` |
+| `GIT_REF` | `main` (Chirp git ref for the skill stack) |
+
+`AppConfig.from_env()` binds `0.0.0.0:$PORT` on Railway. Healthcheck targets `/health`.
+
+## Preview design mocks
 
 ```bash
 cd design
 python -m http.server 8765
-# open http://localhost:8765
+# → http://localhost:8765
 ```
 
-## Screens
+## Dependency note
 
-| File | Screen |
-|---|---|
-| [design/index.html](./design/index.html) | Landing |
-| [design/gaze.html](./design/gaze.html) | MCP gaze nodes |
-| [design/resolve.html](./design/resolve.html) | Skill DNS |
-| [design/star.html](./design/star.html) | Star + Envelope seal |
-| [design/constellation.html](./design/constellation.html) | Policy graph |
-| [design/namespace.html](./design/namespace.html) | Private namespace |
+`chirp.skill` is installed from **Chirp `main` via git** (not PyPI yet). The Dockerfile pins the same via `GIT_REF`.
 
 ## License
 

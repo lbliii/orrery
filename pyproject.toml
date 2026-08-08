@@ -1,0 +1,46 @@
+[project]
+name = "orrery"
+version = "0.1.0"
+description = "Skills you point at, not install — gaze, resolve, call."
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+  # chirp.skill (Envelope, mount_skills, publish oracle) is on Chirp main;
+  # PyPI wheels do not yet expose the skill extra.
+  "bengal-chirp[skill,sessions,testing] @ git+https://github.com/lbliii/chirp.git@main",
+  "itsdangerous>=2.2.0",
+]
+
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+# Application project — sync deps with uv; no library package to ship yet.
+only-include = ["dogfood.py"]
+
+[dependency-groups]
+dev = [
+  "pytest>=9.0",
+  "pytest-asyncio>=1.0",
+  "ruff>=0.15",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+pythonpath = ["."]
+testpaths = ["tests"]
+markers = [
+  "issue(n): traces coverage to GitHub issue #n",
+]
+
+[tool.ruff]
+target-version = "py314"
+line-length = 100
+extend-exclude = ["scripts"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
