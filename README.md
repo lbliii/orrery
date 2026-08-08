@@ -64,7 +64,15 @@ uv run pytest
 
 ## Deploy (Railway)
 
-`Dockerfile` + `railway.toml` live at the repo root. Connect the Railway service to `lbliii/orrery` or `railway up` from this directory.
+Live: [https://orrery-production-f7de.up.railway.app](https://orrery-production-f7de.up.railway.app)
+
+`Dockerfile` + `railway.toml` live at the repo root. Merges to `main` rebuild via [`.github/workflows/deploy-railway.yml`](./.github/workflows/deploy-railway.yml) (same pattern as Chirp's Lucky Cat demo): `railway up --ci --service orrery` with a project-scoped `RAILWAY_TOKEN` repo secret.
+
+Manual / first deploy from this directory:
+
+```bash
+railway up --ci --service orrery
+```
 
 | Variable | Value |
 | --- | --- |
@@ -74,7 +82,7 @@ uv run pytest
 | `CHIRP_LOG_FORMAT` | `json` |
 | `GIT_REF` | `main` (Chirp git ref for the skill stack) |
 
-`AppConfig.from_env()` binds `0.0.0.0:$PORT` on Railway. Healthcheck targets `/health`.
+`AppConfig.from_env()` binds `0.0.0.0:$PORT` on Railway. Healthcheck targets `/health`. Public domain target port must match `$PORT` (8080 on Railway).
 
 ## Preview design mocks
 
