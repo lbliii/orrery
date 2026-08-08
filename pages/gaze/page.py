@@ -8,11 +8,10 @@ Backs GitHub epic #3 / issues #22-#24.
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 
 from chirp import Page, Request
-from kida.template import Markup
+from chirp.server.alpine import alpine_json_config
 
 from catalog import CATALOG, GazeHit
 
@@ -64,5 +63,10 @@ def get(request: Request) -> Page:
         node_panels=node_panels,
         active_node=node,
         intent=display_intent,
-        intent_js=Markup(json.dumps(display_intent)),
+        # Chirp helper: JSON lives in a <script type="application/json"> tag,
+        # not inside the quoted x-data attribute (avoids attribute breakout).
+        gaze_cfg=alpine_json_config(
+            "gaze-cfg",
+            {"node": node, "q": display_intent},
+        ),
     )

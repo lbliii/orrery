@@ -696,6 +696,31 @@ class TestGazeConsole:
             assert r.status == 200
             assert "orrery/html-to-pdf" in r.text
 
+    async def test_gaze_alpine_config_avoids_x_data_breakout(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get(
+                "/gaze?intent=say+%22hi%22+%3Cscript%3Ealert(1)%3C/script%3E&node=public"
+            )
+            assert r.status == 200
+            assert 'id="gaze-cfg"' in r.text
+            assert "getElementById('gaze-cfg')" in r.text
+
+            # Server config is a JSON script body (Chirp alpine_json_config).
+            start = r.text.index('id="gaze-cfg"')
+            open_tag = r.text.index(">", start) + 1
+            close_tag = r.text.index("</script>", open_tag)
+            cfg = json.loads(r.text[open_tag:close_tag])
+            assert cfg["node"] == "public"
+            assert cfg["q"] == 'say "hi" <script>alert(1)</script>'
+
+            # x-data attribute stays intact (old Markup(json.dumps) closed it early).
+            attr_start = r.text.index('x-data="') + len('x-data="')
+            attr_end = r.text.index('"', attr_start)
+            attr = r.text[attr_start:attr_end]
+            assert "runMatch" in attr
+            assert "scrollIntoView" in attr
+            assert "const pill" in attr
+
     async def test_api_gaze_match(self, example_app) -> None:
         async with TestClient(example_app) as client:
             r = await client.get("/api/gaze/match?intent=link+docs&node=public")
