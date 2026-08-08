@@ -159,6 +159,25 @@ def api_resolve(request: Request) -> JSONResponse:
     return JSONResponse.from_value(record.as_dict())
 
 
+@app.route("/api/gaze/match", referenced=True)
+def api_gaze_match(request: Request) -> JSONResponse:
+    """Gaze match: ``?intent=`` (+ optional ``?node=``) → ranked hits JSON."""
+    intent = (request.query.get("intent") or request.query.get("q") or "").strip()
+    node = (request.query.get("node") or "public").strip() or "public"
+    if node == "docs":
+        hits = CATALOG.hits_for_node("docs")
+    else:
+        hits = CATALOG.match(intent, node=node) if intent else CATALOG.hits_for_node(node)
+    return JSONResponse.from_value(
+        {
+            "intent": intent,
+            "node": node,
+            "hits": [h.as_dict() for h in hits],
+            "status": "ok",
+        }
+    )
+
+
 # Publish-oracle dogfood: freeze + smoke after all routes are registered so the
 # console shows ReliabilityScore values. Skip with ORRERY_SKIP_PUBLISH=1.
 # Also skip ``run_smoke`` when an event loop is already running (async pytest

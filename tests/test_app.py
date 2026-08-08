@@ -72,7 +72,7 @@ class TestOrreryHostFoundation:
 
             detail = await client.get("/console/gaze")
             assert detail.status == 200
-            assert "look_at" in detail.text
+            assert "gaze_match" in detail.text
 
     async def test_aggregated_mcp_lists_and_invokes_dogfood_tools(self, example_app) -> None:
         async with TestClient(example_app) as client:
@@ -88,7 +88,14 @@ class TestOrreryHostFoundation:
             )
             assert listed.status == 200
             tool_names = {t["name"] for t in json.loads(listed.text)["result"]["tools"]}
-            assert tool_names == {"look_at", "resolve_name", "seal_label"}
+            assert tool_names == {
+                "gaze_match",
+                "gaze_search",
+                "gaze_describe",
+                "gaze_list_constellations",
+                "resolve_name",
+                "seal_label",
+            }
 
             called = await client.post(
                 "/mcp",
@@ -97,16 +104,15 @@ class TestOrreryHostFoundation:
                     "method": "tools/call",
                     "id": 2,
                     "params": _modern_mcp_params(
-                        name="look_at",
-                        arguments={"target": "Vega"},
+                        name="gaze_match",
+                        arguments={"intent": "html pdf convert", "node": "public"},
                     ),
                 },
-                headers=_modern_mcp_headers("tools/call", "look_at"),
+                headers=_modern_mcp_headers("tools/call", "gaze_match"),
             )
             assert called.status == 200
             text = json.loads(called.text)["result"]["content"][0]["text"]
-            assert "Vega" in text
-            assert "look_at" in text or "gaze" in text
+            assert "orrery/html-to-pdf" in text
 
     async def test_agent_invocation_streams_on_home_feed(self, example_app) -> None:
         async with TestClient(example_app) as client:
