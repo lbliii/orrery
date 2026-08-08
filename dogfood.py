@@ -1,10 +1,11 @@
 """Temporary dogfood skills for the Orrery host — N wrapped ``chirp.skill`` apps.
 
-Gaze / Resolve / html-to-pdf share one aggregated ``/mcp`` with unique tool
-names. Gaze discovers skills (``gaze_match`` / ``gaze_search`` /
+Gaze / Resolve / html-to-pdf / world-time share one aggregated ``/mcp`` with
+unique tool names. Gaze discovers skills (``gaze_match`` / ``gaze_search`` /
 ``gaze_describe`` / ``gaze_list_constellations``); Resolve returns Skill DNS
-via ``resolve_name``; html-to-pdf is the Call / Envelope demo star (issues
-#25-#27): stub conversion, real Chirp Envelope signing.
+via ``resolve_name``; html-to-pdf is the Call / Envelope plumbing demo (issues
+#25-#27); world-time is the Wave 1 reactive expertise spike (#37) — live UTC
+payload sealed at call time.
 
 Each skill has a golden corpus entry that passes the publish oracle
 (``run_publish_gate`` / smoke harness).
@@ -12,7 +13,10 @@ Each skill has a golden corpus entry that passes the publish oracle
 
 from __future__ import annotations
 
+import json
 import os
+import urllib.error
+import urllib.request
 from typing import Any
 
 from chirp.skill import Envelope, Skill, verify_envelope
@@ -21,13 +25,23 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from catalog import CATALOG
 
-#: How many dogfood skills this host mounts (Foundation epic #2).
-N_DOGFOOD_SKILLS = 3
+#: How many dogfood skills this host mounts (Foundation epic #2 + Wave 1).
+N_DOGFOOD_SKILLS = 4
 
 #: Smoke HTML used by the star detail receipt and corpus.
 SMOKE_HTML = "<!doctype html><html><body><h1>Orrery</h1></body></html>"
 
+#: Public UTC clock used by the reactive world-time star (stdlib urllib).
+WORLD_TIME_URL = "https://timeapi.io/api/Time/current/zone?timeZone=UTC"
+
+#: Why an offline clone fails the value test (README + star page + payload).
+WORLD_TIME_CLONE_WARNING = (
+    "Offline clones cannot mint a fresh UTC instant from the public clock API; "
+    "any baked-in datetime is stale by definition. Value is live truth at call time."
+)
+
 _html_to_pdf_skill: Skill | None = None
+_world_time_skill: Skill | None = None
 
 
 def _load_or_generate_key(env_name: str) -> Ed25519PrivateKey:
@@ -35,6 +49,65 @@ def _load_or_generate_key(env_name: str) -> Ed25519PrivateKey:
     if raw:
         return Ed25519PrivateKey.from_private_bytes(bytes.fromhex(raw))
     return Ed25519PrivateKey.generate()
+
+
+def fetch_live_utc() -> dict[str, object]:
+    """Pull a live UTC clock reading (injectable via ``ORRERY_WORLD_TIME_JSON``).
+
+    Tests/CI set ``ORRERY_WORLD_TIME_JSON`` to a deterministic fixture so smoke
+    does not depend on upstream availability. Production leaves it unset and
+    hits :data:`WORLD_TIME_URL` at call time.
+    """
+    override = os.environ.get("ORRERY_WORLD_TIME_JSON", "").strip()
+    if override:
+        data = json.loads(override)
+        if not isinstance(data, dict):
+            msg = "ORRERY_WORLD_TIME_JSON must be a JSON object"
+            raise ValueError(msg)
+        return _world_time_payload(data, source="fixture:ORRERY_WORLD_TIME_JSON")
+
+    req = urllib.request.Request(
+        WORLD_TIME_URL,
+        headers={
+            "User-Agent": "orrery-world-time/0.1 (+https://github.com/lbliii/orrery)",
+            "Accept": "application/json",
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            raw = json.loads(resp.read().decode("utf-8"))
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, OSError) as exc:
+        return {
+            "error": "upstream_unreachable",
+            "detail": str(exc),
+            "timezone": "UTC",
+            "source": WORLD_TIME_URL,
+            "live_at_call": True,
+            "clone_warning": WORLD_TIME_CLONE_WARNING,
+        }
+    if not isinstance(raw, dict):
+        return {
+            "error": "upstream_malformed",
+            "timezone": "UTC",
+            "source": WORLD_TIME_URL,
+            "live_at_call": True,
+            "clone_warning": WORLD_TIME_CLONE_WARNING,
+        }
+    return _world_time_payload(raw, source=WORLD_TIME_URL)
+
+
+def _world_time_payload(raw: dict[str, Any], *, source: str) -> dict[str, object]:
+    datetime_s = raw.get("dateTime") or raw.get("datetime") or raw.get("utc_datetime")
+    return {
+        "timezone": str(raw.get("timeZone") or raw.get("timezone") or "UTC"),
+        "datetime": datetime_s,
+        "date": raw.get("date"),
+        "time": raw.get("time"),
+        "day_of_week": raw.get("dayOfWeek") or raw.get("day_of_week"),
+        "source": source,
+        "live_at_call": True,
+        "clone_warning": WORLD_TIME_CLONE_WARNING,
+    }
 
 
 def build_gaze_skill(*, private_key: Any | None = None) -> Skill:
@@ -152,12 +225,61 @@ def build_html_to_pdf_skill(*, private_key: Any | None = None) -> Skill:
     return skill
 
 
+def build_world_time_skill(*, private_key: Any | None = None) -> Skill:
+    """world-time — live UTC clock sealed in an Envelope at call time (#37)."""
+    private = private_key or _load_or_generate_key("ORRERY_WORLD_TIME_PRIVATE_KEY")
+    public = private.public_key().public_bytes_raw()
+    skill = Skill(
+        "world-time",
+        version="0.1.0",
+        private_key=private,
+        key_id=os.environ.get("ORRERY_WORLD_TIME_KEY_ID", "orrery-world-time-1"),
+        public_key=public,
+    )
+
+    @skill.tool(
+        "fetch",
+        description="Fetch live UTC from the public clock API (signed at call time)",
+    )
+    def fetch() -> dict[str, object]:
+        return fetch_live_utc()
+
+    @skill.tool(
+        "get",
+        description="Get the live UTC reading (same live source as fetch)",
+    )
+    def get() -> dict[str, object]:
+        return fetch_live_utc()
+
+    @skill.tool(
+        "answer",
+        description="Answer with the live UTC datetime sealed in an Envelope",
+    )
+    def answer() -> dict[str, object]:
+        live = fetch_live_utc()
+        when = live.get("datetime") or live.get("error") or "unknown"
+        return {
+            **live,
+            "answer": f"UTC now is {when}",
+        }
+
+    return skill
+
+
 def get_html_to_pdf_skill() -> Skill:
     """Return the shared html-to-pdf skill (same instance the host mounts)."""
     global _html_to_pdf_skill
     if _html_to_pdf_skill is None:
         _html_to_pdf_skill = build_html_to_pdf_skill()
     return _html_to_pdf_skill
+
+
+def get_world_time_skill() -> Skill:
+    """Return the shared world-time skill (same instance the host mounts)."""
+    global _world_time_skill
+    if _world_time_skill is None:
+        _world_time_skill = build_world_time_skill()
+    return _world_time_skill
 
 
 def _tool_handler(skill: Skill, name: str) -> Any:
@@ -186,6 +308,20 @@ def signed_convert_receipt(
     return receipt, verified
 
 
+def signed_world_time_receipt(
+    *,
+    tool: str = "answer",
+    skill: Skill | None = None,
+) -> tuple[dict[str, Any], bool]:
+    """Invoke a world-time tool and return ``(receipt_dict, verified)``."""
+    sk = skill or get_world_time_skill()
+    envelope: Envelope = _tool_handler(sk, tool)()
+    verified = verify_envelope(envelope, sk.public_key)
+    receipt = envelope.to_wire()
+    receipt["payment_id"] = "pay_world_time"
+    return receipt, verified
+
+
 def envelope_from_wire(data: dict[str, Any]) -> Envelope:
     """Rebuild an :class:`Envelope` from a wire / receipt dict (fails closed)."""
     return Envelope(
@@ -201,13 +337,25 @@ def envelope_from_wire(data: dict[str, Any]) -> Envelope:
     )
 
 
+def skill_for_receipt(data: dict[str, Any]) -> Skill | None:
+    """Pick the dogfood skill whose public key should verify this receipt."""
+    name = str(data.get("skill") or "")
+    if name == "html-to-pdf":
+        return get_html_to_pdf_skill()
+    if name == "world-time":
+        return get_world_time_skill()
+    return None
+
+
 def verify_receipt(
     data: dict[str, Any],
     *,
     skill: Skill | None = None,
 ) -> bool:
-    """Verify a receipt dict against the html-to-pdf public key (fails closed)."""
-    sk = skill or get_html_to_pdf_skill()
+    """Verify a receipt dict against the matching dogfood public key."""
+    sk = skill or skill_for_receipt(data)
+    if sk is None:
+        return False
     try:
         env = envelope_from_wire(data)
     except (KeyError, TypeError, ValueError):
@@ -223,6 +371,7 @@ def build_dogfood_skills() -> tuple[Skill, ...]:
         build_gaze_skill(),
         build_resolve_skill(),
         get_html_to_pdf_skill(),
+        get_world_time_skill(),
     )
     assert len(skills) == N_DOGFOOD_SKILLS
     return skills
@@ -255,5 +404,17 @@ DOGFOOD_CORPUS: tuple[CorpusPrompt, ...] = (
         tool="convert",
         arguments={"html": SMOKE_HTML},
         required_facts=("application/pdf", "pages", "bytes_hint"),
+    ),
+    CorpusPrompt(
+        id="world-time-answer-smoke",
+        prompt="Answer with the live UTC time via world-time.",
+        tool="answer",
+        arguments={},
+        required_facts=(
+            "UTC",
+            "live_at_call",
+            "clone_warning",
+            "answer",
+        ),
     ),
 )

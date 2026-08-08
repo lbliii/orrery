@@ -6,6 +6,11 @@
     Point any agent at this skill. No clone, no install — call MCP, pay if
     required, keep the signed Envelope as your receipt.
   </p>
+  {% if is_reactive %}
+  <p class="muted" style="margin: 0.75rem 0 0; max-width: 36rem">
+    Live at call time. {{ clone_warning }}
+  </p>
+  {% end %}
 </div>
 
 <div class="detail-grid">
@@ -88,7 +93,7 @@
       <div class="verify-fail">Forge fail · signature rejected</div>
       {% end %}
       {% else %}
-      <pre class="muted">No live Envelope for this star yet — call convert on the demo skill.</pre>
+      <pre class="muted">No live Envelope for this star yet — call a demo skill tool (convert or answer).</pre>
       {% end %}
     </div>
   </aside>
