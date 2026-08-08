@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gaze — Orrery</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
+  </head>
+  <body>
+    <div class="cosmos" aria-hidden="true">
+      <div class="cosmos-milky"></div>
+      <div class="cosmos-dust"></div>
+      <div class="cosmos-stars cosmos-stars-far"></div>
+      <div class="cosmos-stars cosmos-stars-mid"></div>
+      <div class="cosmos-stars cosmos-stars-near"></div>
+      <div class="cosmos-meteor"></div>
+      <div class="cosmos-vignette"></div>
+    </div>
+    <div
+      class="shell"
+      x-data="{
+        node: 'public',
+        q: 'docs ship ready links',
+        nodes: {
+          public: {
+            label: 'Public sky',
+            url: 'mcp://orrery.dev/gaze',
+            scope: 'orrery/*',
+            tools: ['search', 'match', 'resolve', 'describe', 'list_constellations']
+          },
+          acme: {
+            label: 'acme namespace',
+            url: 'mcp://acme.orrery.dev/gaze',
+            scope: 'acme/*',
+            tools: ['search', 'match', 'resolve', 'describe', 'list_constellations']
+          },
+          docs: {
+            label: 'docs-gate node',
+            url: 'mcp://acme.orrery.dev/constellations/docs-gate',
+            scope: 'constellation',
+            tools: ['run', 'status', 'explain_policy']
+          }
+        },
+        hits: {
+          public: [
+            { name: 'orrery/html-to-pdf', kind: 'star', blurb: 'HTML → PDF · $0.02', href: 'star.html' },
+            { name: 'orrery/md-linkcheck', kind: 'star', blurb: 'Link verdict for markdown/HTML', href: 'resolve.html' }
+          ],
+          acme: [
+            { name: 'acme/docs-gate', kind: 'constellation', blurb: 'linkcheck → term-guard → human-approve', href: 'constellation.html' },
+            { name: 'acme/term-guard', kind: 'star', blurb: 'Glossary + banned phrases', href: 'resolve.html' },
+            { name: 'acme/release-gate', kind: 'constellation', blurb: 'Ship policy graph', href: 'constellation.html' }
+          ],
+          docs: [
+            { name: 'run', kind: 'tool', blurb: 'Execute docs-gate on a Doc Bundle', href: 'constellation.html' },
+            { name: 'status', kind: 'tool', blurb: 'Composite receipt / in-flight chain', href: 'constellation.html' },
+            { name: 'explain_policy', kind: 'tool', blurb: 'Gates, loops, fan-in in plain language', href: 'constellation.html' }
+          ]
+        }
+      }"
+    >
+      <header class="topbar">
+        <a class="brand" href="index.html">Orrery<span>.</span></a>
+        <nav class="nav" aria-label="Primary">
+          <a href="gaze.html" aria-current="page">Gaze</a>
+          <a href="resolve.html">Resolve</a>
+          <a href="star.html">Stars</a>
+          <a href="constellation.html">Constellations</a>
+          <a href="namespace.html">Namespaces</a>
+        </nav>
+      </header>
+
+      <header class="console-head">
+        <div>
+          <p class="kicker">MCP browse · route · don’t install</p>
+          <h1>Gaze</h1>
+          <p class="lede" style="margin-bottom: 0">
+            Agents discover stars through gaze nodes — progressive disclosure for
+            live skills. Gaze returns names and triggers; call returns Envelopes.
+          </p>
+        </div>
+      </header>
+
+      <div class="gaze-nodes" role="tablist" aria-label="Gaze nodes">
+        <template x-for="(meta, id) in nodes" :key="id">
+          <button
+            type="button"
+            class="gaze-node"
+            role="tab"
+            :aria-selected="node === id"
+            :data-active="node === id"
+            @click="node = id"
+          >
+            <span class="gaze-node-label" x-text="meta.label"></span>
+            <span class="mono gaze-node-url" x-text="meta.url"></span>
+          </button>
+        </template>
+      </div>
+
+      <div class="detail-grid">
+        <section>
+          <div class="panel">
+            <p class="kicker">Active node</p>
+            <p class="mono" style="margin: 0.35rem 0 0.75rem" x-text="nodes[node].url"></p>
+            <ul class="meta-list">
+              <li>
+                <span>Scope</span>
+                <code class="mono" x-text="nodes[node].scope"></code>
+              </li>
+              <li>
+                <span>Tools</span>
+                <code class="mono" x-text="nodes[node].tools.join(' · ')"></code>
+              </li>
+            </ul>
+
+            <p class="kicker" style="margin-top: 1rem">match(intent)</p>
+            <div class="lookup" style="margin-top: 0.5rem">
+              <input type="search" x-model="q" aria-label="Gaze match query" />
+              <button type="button" class="btn btn-brass" @click="$refs.results.scrollIntoView({behavior:'smooth'})">
+                Gaze
+              </button>
+            </div>
+            <p class="muted" style="margin: 0.75rem 0 0; font-size: 0.92rem">
+              Same call from Cursor, Claude Code, or CI — no catalog install.
+            </p>
+          </div>
+
+          <div class="panel" style="margin-top: 1rem">
+            <p class="kicker">Agent shape</p>
+            <pre class="mono muted" style="margin: 0.5rem 0 0; white-space: pre-wrap" x-text="node === 'docs'
+              ? 'tools/call run\\n  bundle: { pages, links, examples }\\n→ composite Envelope'
+              : 'tools/call match\\n  intent: \"' + q + '\"\\n→ [{ name, blurb, endpoint, price }]\\n\\ntools/call resolve\\n  name: \"acme/docs-gate\"\\n→ endpoint, digest, pubkey'"></pre>
+          </div>
+        </section>
+
+        <aside>
+          <div class="panel" x-ref="results">
+            <p class="kicker">
+              <span class="live-dot" aria-hidden="true"></span>
+              Gaze results
+            </p>
+            <ul class="gaze-hits">
+              <template x-for="hit in hits[node]" :key="hit.name">
+                <li>
+                  <a :href="hit.href">
+                    <span class="pill" :class="hit.kind === 'constellation' ? 'pill-pay' : hit.kind === 'tool' ? 'pill-priv' : 'pill-ok'" x-text="hit.kind"></span>
+                    <strong class="mono" x-text="hit.name"></strong>
+                    <span class="muted" x-text="hit.blurb"></span>
+                  </a>
+                </li>
+              </template>
+            </ul>
+          </div>
+
+          <div class="panel" style="margin-top: 1rem">
+            <p class="kicker">Progressive disclosure</p>
+            <ol class="steps" style="margin-top: 0.75rem">
+              <li>
+                <div>
+                  <strong>Gaze</strong>
+                  Descriptions + prices only (~trigger layer).
+                </div>
+              </li>
+              <li>
+                <div>
+                  <strong>Resolve</strong>
+                  Endpoint, digest, key — still no payload.
+                </div>
+              </li>
+              <li>
+                <div>
+                  <strong>Call</strong>
+                  Tool runs; Envelope is the receipt.
+                </div>
+              </li>
+            </ol>
+          </div>
+        </aside>
+      </div>
+
+      <section class="section" style="padding-top: 0.5rem">
+        <h2>Many nodes, one protocol.</h2>
+        <p class="lede">
+          Public gaze for gravity. Namespace gaze for <code class="mono">acme/*</code>.
+          Constellation nodes expose <code class="mono">run</code> so agents don’t
+          re-implement the gate graph.
+        </p>
+        <div class="ns-grid">
+          <article>
+            <h3>Gaze</h3>
+            <p>Browse &amp; route. MCP entry for lazy agents.</p>
+          </article>
+          <article>
+            <h3>Resolve</h3>
+            <p>Name → live record. The DNS moment.</p>
+          </article>
+          <article class="featured">
+            <h3>Call</h3>
+            <p>Star or constellation executes. Verify or don’t trust it.</p>
+          </article>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <span>Mock · gaze nodes</span>
+        <span class="mono">gaze → resolve → call</span>
+      </footer>
+    </div>
+    <script src="motion.js"></script>
+  </body>
+</html>

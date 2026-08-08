@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Orrery — skills you point at</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="cosmos" aria-hidden="true">
+      <div class="cosmos-milky"></div>
+      <div class="cosmos-dust"></div>
+      <div class="cosmos-stars cosmos-stars-far"></div>
+      <div class="cosmos-stars cosmos-stars-mid"></div>
+      <div class="cosmos-stars cosmos-stars-near"></div>
+      <div class="cosmos-meteor"></div>
+      <div class="cosmos-vignette"></div>
+    </div>
+    <div class="shell">
+      <header class="topbar">
+        <a class="brand" href="index.html">Orrery<span>.</span></a>
+        <nav class="nav" aria-label="Primary">
+          <a href="gaze.html">Gaze</a>
+          <a href="resolve.html">Resolve</a>
+          <a href="star.html">Stars</a>
+          <a href="constellation.html">Constellations</a>
+          <a href="namespace.html">Namespaces</a>
+        </nav>
+      </header>
+
+      <main class="hero">
+        <div class="hero-sky" aria-hidden="true"></div>
+        <div class="orb" aria-hidden="true"><i></i></div>
+
+        <div class="hero-copy">
+          <h1>Skills you <em>point at</em>, not install.</h1>
+          <p>
+            Gaze to discover, resolve to lock the record, call for a verified
+            result — from any machine, any harness.
+          </p>
+          <div class="hero-actions">
+            <a class="btn" href="gaze.html">Open gaze</a>
+            <a class="btn btn-ghost" href="namespace.html">Private namespace</a>
+          </div>
+        </div>
+
+        <div class="resolve-demo">
+          <label for="q">Try a resolve</label>
+          <form class="resolve-row" action="star.html" method="get">
+            <input
+              id="q"
+              name="q"
+              value="orrery/html-to-pdf@1.2.0"
+              spellcheck="false"
+              aria-label="Skill name to resolve"
+            />
+            <button class="btn btn-brass" type="submit">Resolve</button>
+          </form>
+        </div>
+      </main>
+
+      <section class="section">
+        <p class="kicker">How agents win</p>
+        <h2>Fewer steps than a GitHub hub.</h2>
+        <p class="lede">
+          Catalogs hand you a repo. Orrery hands you an endpoint, a digest, and a
+          receipt — so the agent can keep moving.
+        </p>
+        <ol class="steps">
+          <li>
+            <div>
+              <strong>Resolve</strong>
+              Name → MCP URL, public key, content digest, price.
+            </div>
+          </li>
+          <li>
+            <div>
+              <strong>Call</strong>
+              Same contract from Cursor, Claude Code, CI, or a phone session.
+            </div>
+          </li>
+          <li>
+            <div>
+              <strong>Verify</strong>
+              Signed Envelope — or don’t treat it as done. Pay only for truth.
+            </div>
+          </li>
+        </ol>
+      </section>
+
+      <footer class="footer">
+        <span>Mock · not the shipping product</span>
+        <span class="mono">mcp://orrery.dev</span>
+      </footer>
+    </div>
+    <script src="motion.js"></script>
+  </body>
+</html>

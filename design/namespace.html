@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Private namespaces — Orrery</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="cosmos" aria-hidden="true">
+      <div class="cosmos-milky"></div>
+      <div class="cosmos-dust"></div>
+      <div class="cosmos-stars cosmos-stars-far"></div>
+      <div class="cosmos-stars cosmos-stars-mid"></div>
+      <div class="cosmos-stars cosmos-stars-near"></div>
+      <div class="cosmos-meteor"></div>
+      <div class="cosmos-vignette"></div>
+    </div>
+    <div class="shell">
+      <header class="topbar">
+        <a class="brand" href="index.html">Orrery<span>.</span></a>
+        <nav class="nav" aria-label="Primary">
+          <a href="gaze.html">Gaze</a>
+          <a href="resolve.html">Resolve</a>
+          <a href="star.html">Stars</a>
+          <a href="constellation.html">Constellations</a>
+          <a href="namespace.html" aria-current="page">Namespaces</a>
+        </nav>
+      </header>
+
+      <section class="ns-hero">
+        <p class="kicker">Company skill DNS</p>
+        <h1>Your agents resolve <span style="color: var(--brass)">acme/*</span></h1>
+        <p class="lede">
+          Public Orrery is gravity. Private namespaces are the business —
+          scoped stars, audit retention, and no install on every laptop.
+        </p>
+        <div class="hero-actions">
+          <a class="btn" href="#">Create namespace</a>
+          <a class="btn btn-ghost" href="resolve.html">See public resolve</a>
+        </div>
+      </section>
+
+      <div class="ns-grid">
+        <article>
+          <h3>Resolve only</h3>
+          <p>
+            <code class="mono">acme/pdf</code>,
+            <code class="mono">acme/release-gate</code> — live endpoints your
+            fleet already trusts.
+          </p>
+        </article>
+        <article>
+          <h3>Keys &amp; scopes</h3>
+          <p>
+            Machine budgets, allowlisted callers, Envelope retention for audit —
+            not another GitHub org full of READMEs.
+          </p>
+        </article>
+        <article class="featured">
+          <h3>Private by default</h3>
+          <p>
+            Competitors don’t scrape your catalog. Agents still get zero-setup
+            access from any harness you authorize.
+          </p>
+        </article>
+      </div>
+
+      <div class="panel" style="margin-bottom: 3rem">
+        <p class="kicker">Example resolve</p>
+        <pre class="mono" style="margin: 0.5rem 0 0; white-space: pre-wrap">
+acme/release-gate
+  → mcp://acme.orrery.dev/s/release-gate
+  → digest sha256:77d0…
+  → constellation: secret-scan → license → human-approve
+  → namespace: private · seats billed monthly</pre>
+      </div>
+
+      <footer class="footer">
+        <span>Mock · SaaS wedge</span>
+        <span>Public free · namespace paid</span>
+      </footer>
+    </div>
+  </body>
+</html>

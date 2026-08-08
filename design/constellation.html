@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Constellation — Orrery</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="cosmos" aria-hidden="true">
+      <div class="cosmos-milky"></div>
+      <div class="cosmos-dust"></div>
+      <div class="cosmos-stars cosmos-stars-far"></div>
+      <div class="cosmos-stars cosmos-stars-mid"></div>
+      <div class="cosmos-stars cosmos-stars-near"></div>
+      <div class="cosmos-meteor"></div>
+      <div class="cosmos-vignette"></div>
+    </div>
+    <div class="shell">
+      <header class="topbar">
+        <a class="brand" href="index.html">Orrery<span>.</span></a>
+        <nav class="nav" aria-label="Primary">
+          <a href="gaze.html">Gaze</a>
+          <a href="resolve.html">Resolve</a>
+          <a href="star.html">Stars</a>
+          <a href="constellation.html" aria-current="page">Constellations</a>
+          <a href="namespace.html">Namespaces</a>
+        </nav>
+      </header>
+
+      <header class="console-head">
+        <div>
+          <p class="kicker">Drawn policy · not a folder</p>
+          <h1>acme/launch-gate</h1>
+          <p class="lede" style="margin-bottom: 0">
+            A constellation is chalk lines across stars: gates, a repair loop,
+            fan-in to a composite Envelope. Agents run the graph; humans read
+            the receipt.
+          </p>
+        </div>
+      </header>
+
+      <div class="legend">
+        <span><i class="gate"></i> gate (must verify)</span>
+        <span><i class="loop"></i> repair loop (bounded)</span>
+        <span><i class="fan"></i> fan-in</span>
+      </div>
+
+      <div
+        class="constellation"
+        data-constellation
+        role="img"
+        aria-label="Constellation graph for launch-gate"
+      >
+        <svg viewBox="0 0 960 520" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 Z" fill="#c4a06a" />
+            </marker>
+            <marker id="arrow-g" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 Z" fill="#7ec8a3" />
+            </marker>
+            <filter id="soft">
+              <feGaussianBlur stdDeviation="2.5" result="b" />
+              <feMerge>
+                <feMergeNode in="b" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
+          <g stroke="rgba(212,228,240,0.06)" stroke-width="1">
+            <path d="M40 40 H920 M40 140 H920 M40 260 H920 M40 380 H920 M40 480 H920" />
+            <path d="M80 20 V500 M240 20 V500 M400 20 V500 M560 20 V500 M720 20 V500 M880 20 V500" />
+          </g>
+
+          <g fill="none" stroke-linecap="round">
+            <path
+              class="edge-draw edge-arrive"
+              style="--step: 1"
+              d="M170 160 C260 160, 260 160, 340 160"
+              stroke="#c4a06a"
+              stroke-width="1.6"
+              marker-end="url(#arrow)"
+            />
+            <path
+              class="edge-draw edge-arrive"
+              style="--step: 2"
+              d="M460 160 C540 160, 540 160, 620 160"
+              stroke="#c4a06a"
+              stroke-width="1.6"
+              marker-end="url(#arrow)"
+            />
+            <path
+              class="edge-draw edge-arrive"
+              style="--step: 3"
+              d="M740 200 C780 280, 780 300, 700 360"
+              stroke="#9aafc2"
+              stroke-width="1.4"
+              marker-end="url(#arrow)"
+            />
+            <path
+              class="edge-draw edge-arrive"
+              style="--step: 3"
+              d="M400 220 C400 300, 400 300, 520 360"
+              stroke="#9aafc2"
+              stroke-width="1.4"
+              marker-end="url(#arrow)"
+            />
+            <path
+              class="edge-draw edge-arrive"
+              style="--step: 3"
+              d="M170 200 C170 300, 280 360, 520 380"
+              stroke="#9aafc2"
+              stroke-width="1.3"
+              opacity="0.7"
+              marker-end="url(#arrow)"
+            />
+            <path
+              class="edge-draw edge-arrive"
+              style="--step: 2"
+              d="M340 200 C300 280, 220 280, 170 200"
+              stroke="#7ec8a3"
+              stroke-width="1.5"
+              marker-end="url(#arrow-g)"
+            />
+            <path
+              class="edge-arrive"
+              style="--step: 4"
+              d="M560 400 C640 430, 720 430, 780 400"
+              stroke="#c4a06a"
+              stroke-width="1.8"
+              marker-end="url(#arrow)"
+            />
+          </g>
+
+          <g font-family="IBM Plex Mono, monospace" font-size="12" fill="#d4e4f0">
+            <g transform="translate(170 160)">
+              <g class="node-pulse node-arrive" style="--step: 0" filter="url(#soft)">
+                <circle r="14" fill="#0d1520" stroke="#c4a06a" stroke-width="1.5" />
+                <circle r="3" fill="#c4a06a" />
+                <text text-anchor="middle" y="-28">secret-scan</text>
+                <text text-anchor="middle" y="36" fill="#7ec8a3" font-size="10">PASS</text>
+              </g>
+            </g>
+            <g transform="translate(400 160)">
+              <g class="node-pulse node-arrive" style="--step: 1" filter="url(#soft)">
+                <circle r="14" fill="#0d1520" stroke="#c4a06a" stroke-width="1.5" />
+                <circle r="3" fill="#c4a06a" />
+                <text text-anchor="middle" y="-28">license</text>
+                <text text-anchor="middle" y="36" fill="#7ec8a3" font-size="10">PASS</text>
+              </g>
+            </g>
+            <g transform="translate(680 160)">
+              <g class="node-pulse node-arrive" style="--step: 2" filter="url(#soft)">
+                <circle r="14" fill="#0d1520" stroke="#c4a06a" stroke-width="1.5" />
+                <circle r="3" fill="#c4a06a" />
+                <text text-anchor="middle" y="-28">html-to-pdf*</text>
+                <text text-anchor="middle" y="36" fill="#7ec8a3" font-size="10">PASS</text>
+              </g>
+            </g>
+            <g transform="translate(560 380)">
+              <g class="node-pulse node-arrive" style="--step: 3" filter="url(#soft)">
+                <circle r="16" fill="#0d1520" stroke="#7ec8a3" stroke-width="1.6" />
+                <circle r="3.5" fill="#7ec8a3" />
+                <text text-anchor="middle" y="-30">human-approve</text>
+                <text text-anchor="middle" y="38" fill="#9aafc2" font-size="10">witness</text>
+              </g>
+            </g>
+            <g transform="translate(820 400)">
+              <g class="node-arrive" style="--step: 4" filter="url(#soft)">
+                <circle r="18" fill="#121c2a" stroke="#c4a06a" stroke-width="2" />
+                <circle r="5" fill="#c4a06a" />
+                <text text-anchor="middle" y="-32" font-size="13">release</text>
+                <text text-anchor="middle" y="40" fill="#c4a06a" font-size="10">composite</text>
+              </g>
+            </g>
+          </g>
+
+          <text x="48" y="500" fill="#6d8296" font-family="Bricolage Grotesque, sans-serif" font-size="12">
+            * demo star in public namespace · loop retries secret-scan ≤ 3
+          </text>
+        </svg>
+      </div>
+
+      <div class="detail-grid">
+        <div class="panel">
+          <p class="kicker">Composite receipt</p>
+          <pre class="mono muted" style="margin: 0; white-space: pre-wrap">
+constellation: acme/launch-gate@2
+policy_digest: sha256:c0ffee…
+chain:
+  1. secret-scan     Envelope ✓  pay_01
+  2. license         Envelope ✓  (internal)
+  3. html-to-pdf     Envelope ✓  pay_02
+  4. human-approve   Envelope ✓  witness
+release: sha256:aa11…  signed acme-release-1</pre>
+        </div>
+        <div class="panel">
+          <p class="kicker">Why this isn’t CI YAML</p>
+          <p class="muted" style="margin: 0.4rem 0 1rem">
+            Same graph from any harness. Stars can live in different namespaces.
+            Edges require verified Envelopes — not green checkmarks in one repo.
+          </p>
+          <a class="btn" href="namespace.html">Run under acme/*</a>
+        </div>
+      </div>
+
+      <footer class="footer">
+        <span>Mock · constellation graph</span>
+        <span class="mono">gates · loops · fan-in</span>
+      </footer>
+    </div>
+    <script src="motion.js"></script>
+  </body>
+</html>
