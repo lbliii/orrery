@@ -14,6 +14,7 @@ import json
 from chirp import NotFound, Page, Request
 
 from catalog import CATALOG
+from commerce import charge_on_verify, refund_on_forge
 from dogfood import (
     SMOKE_HTML,
     WORLD_TIME_CLONE_WARNING,
@@ -42,6 +43,27 @@ def get(request: Request) -> Page:
     elif rec.name == _WORLD_TIME_STAR:
         envelope, verified = signed_world_time_receipt()
 
+    if envelope is not None:
+        # Star-page verify path: same loud stubs as ``/api/envelope/verify``.
+        payment_id = envelope.get("payment_id")
+        price = envelope.get("price_per_call") or rec.price_per_call
+        if verified:
+            charge_on_verify(
+                payment_id=str(payment_id) if payment_id else None,
+                price_per_call=str(price) if price else None,
+                skill=str(envelope.get("skill")),
+                nonce=str(envelope.get("nonce")),
+                reason="star_page_verified",
+            )
+        else:
+            refund_on_forge(
+                payment_id=str(payment_id) if payment_id else None,
+                price_per_call=str(price) if price else None,
+                skill=str(envelope.get("skill")),
+                nonce=str(envelope.get("nonce")),
+                reason="star_page_forge_or_fail",
+            )
+
     envelope_json = (
         json.dumps(
             {
@@ -53,6 +75,7 @@ def get(request: Request) -> Page:
                 "key_id": envelope["key_id"],
                 "alg": envelope["alg"],
                 "payment_id": envelope.get("payment_id"),
+                "price_per_call": envelope.get("price_per_call") or rec.price_per_call,
                 "signature": envelope["signature"],
             },
             indent=2,

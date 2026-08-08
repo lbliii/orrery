@@ -315,6 +315,7 @@ class TestReactiveWorldTimeStar:
 
 @pytest.mark.issue(26)
 @pytest.mark.issue(27)
+@pytest.mark.issue(35)
 class TestEnvelopeVerifyAndPdfStub:
     def test_signed_convert_receipt_verifies(self) -> None:
         from dogfood import signed_convert_receipt, verify_receipt
@@ -324,6 +325,8 @@ class TestEnvelopeVerifyAndPdfStub:
         assert receipt["tool"] == "convert"
         assert receipt["key_id"] == "orrery-pdf-1"
         assert receipt["payload"]["content_type"] == "application/pdf"
+        assert receipt["payment_id"]
+        assert receipt["price_per_call"] == "$0.02"
         assert verify_receipt(receipt) is True
 
     def test_tampered_receipt_fails_closed(self) -> None:
@@ -334,20 +337,34 @@ class TestEnvelopeVerifyAndPdfStub:
         forged["payload"] = {"pages": 999, "bytes_hint": 1, "content_type": "application/pdf"}
         assert verify_receipt(forged) is False
 
-    async def test_api_verify_ok_and_forge_fail(self, example_app) -> None:
+    async def test_api_verify_ok_and_forge_fail(self, example_app, caplog) -> None:
+        import logging
+
         from dogfood import signed_convert_receipt
 
         receipt, _ = signed_convert_receipt()
         async with TestClient(example_app) as client:
-            ok = await client.post("/api/envelope/verify", json=receipt)
+            with caplog.at_level(logging.WARNING, logger="orrery.commerce"):
+                ok = await client.post("/api/envelope/verify", json=receipt)
             assert ok.status == 200
-            assert json.loads(ok.text)["verified"] is True
+            ok_body = json.loads(ok.text)
+            assert ok_body["verified"] is True
+            assert ok_body["payment_id"] == receipt["payment_id"]
+            assert ok_body["price_per_call"] == "$0.02"
+            assert ok_body["commerce"]["action"] == "charge"
+            assert ok_body["commerce"]["stub"] is True
+            assert "commerce.charge_stub" in caplog.text
 
             forged = dict(receipt)
             forged["nonce"] = "tampered-nonce"
-            bad = await client.post("/api/envelope/verify", json=forged)
+            with caplog.at_level(logging.WARNING, logger="orrery.commerce"):
+                bad = await client.post("/api/envelope/verify", json=forged)
             assert bad.status == 200
-            assert json.loads(bad.text)["verified"] is False
+            bad_body = json.loads(bad.text)
+            assert bad_body["verified"] is False
+            assert bad_body["commerce"]["action"] == "refund"
+            assert bad_body["commerce"]["stub"] is True
+            assert "commerce.refund_stub" in caplog.text
 
     async def test_mcp_convert_returns_signed_envelope(self, example_app) -> None:
         async with TestClient(example_app) as client:
@@ -379,6 +396,57 @@ class TestEnvelopeVerifyAndPdfStub:
             assert "html-to-pdf" in text
             assert "input_digest" in text or "sha256:" in text
             assert "signature" in text
+
+
+@pytest.mark.issue(35)
+class TestCommerceStubs:
+    def test_stubs_are_loud_not_silent(self, caplog) -> None:
+        import logging
+
+        from commerce import charge_on_verify, refund_on_forge
+
+        with caplog.at_level(logging.WARNING, logger="orrery.commerce"):
+            charged = charge_on_verify(
+                payment_id="pay_test",
+                price_per_call="$0.02",
+                skill="html-to-pdf",
+                nonce="n1",
+            )
+            refunded = refund_on_forge(
+                payment_id="pay_test",
+                price_per_call="$0.02",
+                skill="html-to-pdf",
+                nonce="n1",
+            )
+        assert charged["status"] == "stub_charged"
+        assert refunded["status"] == "stub_refunded"
+        assert "commerce.charge_stub" in caplog.text
+        assert "commerce.refund_stub" in caplog.text
+
+    async def test_star_page_invokes_charge_stub(self, example_app, caplog) -> None:
+        import logging
+
+        async with TestClient(example_app) as client:
+            with caplog.at_level(logging.WARNING, logger="orrery.commerce"):
+                r = await client.get("/stars")
+            assert r.status == 200
+            assert "payment_id" in r.text
+            assert "price_per_call" in r.text
+            assert "$0.02" in r.text
+            assert "commerce.charge_stub" in caplog.text
+
+    async def test_resolve_and_gaze_include_price(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            resolve = await client.get("/api/resolve?name=html-to-pdf")
+            assert resolve.status == 200
+            assert json.loads(resolve.text)["price_per_call"] == "$0.02"
+
+            gaze = await client.get("/api/gaze/match?intent=html+pdf")
+            assert gaze.status == 200
+            hits = json.loads(gaze.text)["hits"]
+            pdf_hits = [h for h in hits if h["name"] == "orrery/html-to-pdf"]
+            assert pdf_hits
+            assert pdf_hits[0]["price"] == "$0.02"
 
 
 @pytest.mark.issue(19)
