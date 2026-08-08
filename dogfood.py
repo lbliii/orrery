@@ -1,12 +1,12 @@
 """Temporary dogfood skills for the Orrery host — N wrapped ``chirp.skill`` apps.
 
-Three astronomy-themed stubs with unique tool names so they share one
-aggregated ``/mcp``. Each has a golden corpus that passes the publish
-oracle (``run_publish_gate`` / smoke harness).
+Gaze / Resolve / Star share one aggregated ``/mcp`` with unique tool names.
+Gaze discovers skills (``gaze_match`` / ``gaze_search`` / ``gaze_describe`` /
+``gaze_list_constellations``); Resolve returns Skill DNS via ``resolve_name``;
+Star remains a seal stub until the Call epic lands.
 
-These are **host plumbing placeholders** for Gaze / Star semantics.
-Resolve already returns product Skill DNS records from :mod:`catalog`
-(issue #20). Replace Gaze / Star under epics #4 and #6 (see Saga #1).
+Each skill has a golden corpus entry that passes the publish oracle
+(``run_publish_gate`` / smoke harness).
 """
 
 from __future__ import annotations
@@ -18,6 +18,8 @@ from typing import Any
 from chirp.skill import Skill
 from chirp.skill.smoke import CorpusPrompt
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+from catalog import CATALOG
 
 #: How many dogfood skills this host mounts (Foundation epic #2).
 N_DOGFOOD_SKILLS = 3
@@ -31,7 +33,7 @@ def _load_or_generate_key(env_name: str) -> Ed25519PrivateKey:
 
 
 def build_gaze_skill(*, private_key: Any | None = None) -> Skill:
-    """Gaze — inspect a named target on the celestial sphere."""
+    """Gaze — progressive-disclosure discovery over the skill catalog."""
     private = private_key or _load_or_generate_key("ORRERY_GAZE_PRIVATE_KEY")
     public = private.public_key().public_bytes_raw()
     skill = Skill(
@@ -42,13 +44,47 @@ def build_gaze_skill(*, private_key: Any | None = None) -> Skill:
         public_key=public,
     )
 
-    @skill.tool("look_at", description="Inspect a named celestial target")
-    def look_at(target: str) -> dict[str, str]:
-        digest = hashlib.sha256(target.encode()).hexdigest()[:8]
+    @skill.tool(
+        "gaze_match",
+        description="Match an intent to ranked catalog hits (name, blurb, endpoint, price)",
+    )
+    def gaze_match(intent: str, node: str = "public") -> dict[str, object]:
+        hits = CATALOG.match(intent, node=node or "public")
         return {
-            "target": target,
-            "bearing": f"{(int(digest, 16) % 360):03d}°",
-            "magnitude": f"{(int(digest, 16) % 50) / 10:.1f}",
+            "intent": intent,
+            "node": node or "public",
+            "hits": [h.as_dict() for h in hits],
+            "status": "ok",
+        }
+
+    @skill.tool(
+        "gaze_search",
+        description="Search catalog names and descriptions by substring",
+    )
+    def gaze_search(query: str, node: str = "") -> dict[str, object]:
+        hits = CATALOG.search(query, node=node or None)
+        return {
+            "query": query,
+            "hits": [h.as_dict() for h in hits],
+            "status": "ok",
+        }
+
+    @skill.tool(
+        "gaze_describe",
+        description="Describe a skill by name (manifest metadata, no execution)",
+    )
+    def gaze_describe(name: str) -> dict[str, object]:
+        return CATALOG.describe(name)
+
+    @skill.tool(
+        "gaze_list_constellations",
+        description="List constellation-kind records in the catalog",
+    )
+    def gaze_list_constellations(node: str = "") -> dict[str, object]:
+        hits = CATALOG.list_constellations(node=node or None)
+        return {
+            "hits": [h.as_dict() for h in hits],
+            "status": "ok",
         }
 
     return skill
@@ -56,8 +92,6 @@ def build_gaze_skill(*, private_key: Any | None = None) -> Skill:
 
 def build_resolve_skill(*, private_key: Any | None = None) -> Skill:
     """Resolve — Skill DNS: name → endpoint, digest, key, price."""
-    from catalog import CATALOG
-
     private = private_key or _load_or_generate_key("ORRERY_RESOLVE_PRIVATE_KEY")
     public = private.public_key().public_bytes_raw()
     skill = Skill(
@@ -116,11 +150,11 @@ def build_dogfood_skills() -> tuple[Skill, ...]:
 
 DOGFOOD_CORPUS: tuple[CorpusPrompt, ...] = (
     CorpusPrompt(
-        id="gaze-look-vega",
-        prompt="Look at Vega through the gaze skill.",
-        tool="look_at",
-        arguments={"target": "Vega"},
-        required_facts=("Vega",),
+        id="gaze-match-html-pdf",
+        prompt="Match an intent to convert HTML documents into PDF.",
+        tool="gaze_match",
+        arguments={"intent": "html pdf convert", "node": "public"},
+        required_facts=("orrery/html-to-pdf",),
     ),
     CorpusPrompt(
         id="resolve-html-to-pdf",

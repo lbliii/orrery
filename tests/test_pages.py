@@ -241,13 +241,181 @@ class TestResolveHttpAndMcp:
             text = json.loads(called.text)["result"]["content"][0]["text"]
             assert "not_found" in text
 
-    async def test_gaze_renders_nodes_and_alpine(self, example_app) -> None:
+
+@pytest.mark.issue(22)
+class TestGazeCatalog:
+    def test_match_ranks_html_pdf_intent(self) -> None:
+        hits = CATALOG.match("html pdf convert", node="public")
+        names = [h.name for h in hits]
+        assert "orrery/html-to-pdf" in names
+        assert names[0] == "orrery/html-to-pdf"
+        hit = hits[0]
+        assert hit.kind == "star"
+        assert hit.endpoint
+        assert "payload" not in hit.as_dict()
+        assert "tools" not in hit.as_dict()
+
+    def test_match_namespace_node_scopes_acme(self) -> None:
+        hits = CATALOG.match("ship gate", node="acme")
+        assert hits
+        assert all(h.name.startswith("acme/") for h in hits)
+
+    def test_search_and_describe_and_list_constellations(self) -> None:
+        searched = CATALOG.search("linkcheck")
+        assert any(h.name == "orrery/md-linkcheck" for h in searched)
+
+        described = CATALOG.describe("orrery/html-to-pdf")
+        assert described["status"] == "ok"
+        assert described["tools"] == ["convert", "health"]
+        assert described["price_per_call"] == "$0.02"
+
+        consts = CATALOG.list_constellations()
+        assert {h.name for h in consts} >= {"acme/release-gate", "acme/launch-gate"}
+        assert all(h.kind == "constellation" for h in consts)
+
+    def test_describe_miss(self) -> None:
+        assert CATALOG.describe("nope")["error"] == "not_found"
+
+
+@pytest.mark.issue(23)
+class TestGazeMcpTools:
+    async def test_tools_list_exposes_gaze_set(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            listed = await client.post(
+                "/mcp",
+                json={
+                    "jsonrpc": "2.0",
+                    "method": "tools/list",
+                    "id": 20,
+                    "params": {
+                        "_meta": {
+                            "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+                            "io.modelcontextprotocol/clientCapabilities": {},
+                        },
+                    },
+                },
+                headers={
+                    "content-type": "application/json",
+                    "mcp-protocol-version": "2026-07-28",
+                    "mcp-method": "tools/list",
+                },
+            )
+            assert listed.status == 200
+            names = {t["name"] for t in json.loads(listed.text)["result"]["tools"]}
+            assert {
+                "gaze_match",
+                "gaze_search",
+                "gaze_describe",
+                "gaze_list_constellations",
+            } <= names
+
+    async def test_mcp_search_describe_list(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            searched = await client.post(
+                "/mcp",
+                json={
+                    "jsonrpc": "2.0",
+                    "method": "tools/call",
+                    "id": 21,
+                    "params": {
+                        "_meta": {
+                            "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+                            "io.modelcontextprotocol/clientCapabilities": {},
+                        },
+                        "name": "gaze_search",
+                        "arguments": {"query": "html-to-pdf"},
+                    },
+                },
+                headers={
+                    "content-type": "application/json",
+                    "mcp-protocol-version": "2026-07-28",
+                    "mcp-method": "tools/call",
+                    "mcp-name": "gaze_search",
+                },
+            )
+            assert searched.status == 200
+            assert "orrery/html-to-pdf" in json.loads(searched.text)["result"]["content"][0]["text"]
+
+            described = await client.post(
+                "/mcp",
+                json={
+                    "jsonrpc": "2.0",
+                    "method": "tools/call",
+                    "id": 22,
+                    "params": {
+                        "_meta": {
+                            "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+                            "io.modelcontextprotocol/clientCapabilities": {},
+                        },
+                        "name": "gaze_describe",
+                        "arguments": {"name": "orrery/html-to-pdf"},
+                    },
+                },
+                headers={
+                    "content-type": "application/json",
+                    "mcp-protocol-version": "2026-07-28",
+                    "mcp-method": "tools/call",
+                    "mcp-name": "gaze_describe",
+                },
+            )
+            text = json.loads(described.text)["result"]["content"][0]["text"]
+            assert "convert" in text
+            assert "sha256:" in text
+
+            listed = await client.post(
+                "/mcp",
+                json={
+                    "jsonrpc": "2.0",
+                    "method": "tools/call",
+                    "id": 23,
+                    "params": {
+                        "_meta": {
+                            "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+                            "io.modelcontextprotocol/clientCapabilities": {},
+                        },
+                        "name": "gaze_list_constellations",
+                        "arguments": {},
+                    },
+                },
+                headers={
+                    "content-type": "application/json",
+                    "mcp-protocol-version": "2026-07-28",
+                    "mcp-method": "tools/call",
+                    "mcp-name": "gaze_list_constellations",
+                },
+            )
+            text = json.loads(listed.text)["result"]["content"][0]["text"]
+            assert "acme/launch-gate" in text
+
+
+@pytest.mark.issue(24)
+class TestGazeConsole:
+    async def test_gaze_renders_catalog_names(self, example_app) -> None:
         async with TestClient(example_app) as client:
             r = await client.get("/gaze")
             assert r.status == 200
             assert "gaze-nodes" in r.text
-            assert "x-data" in r.text
             assert "mcp://orrery.dev/gaze" in r.text
+            assert "orrery/html-to-pdf" in r.text
+            assert "orrery/md-linkcheck" in r.text
+            assert "acme/launch-gate" in r.text
+            assert "look_at" not in r.text
+            assert "gaze_match" in r.text
+
+    async def test_gaze_intent_query_filters_hits(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/gaze?intent=html+pdf&node=public")
+            assert r.status == 200
+            assert "orrery/html-to-pdf" in r.text
+
+    async def test_api_gaze_match(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/api/gaze/match?intent=link+docs&node=public")
+            assert r.status == 200
+            body = json.loads(r.text)
+            assert body["status"] == "ok"
+            names = [h["name"] for h in body["hits"]]
+            assert "orrery/md-linkcheck" in names
 
 
 @pytest.mark.issue(32)

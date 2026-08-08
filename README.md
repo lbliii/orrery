@@ -43,13 +43,13 @@ curl -s http://localhost:8000/mcp \
   -H 'mcp-method: tools/list' \
   -d '{"jsonrpc":"2.0","method":"tools/list","id":1,"params":{"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientCapabilities":{}}}}'
 
-# Invoke look_at — watch `/` show the call
+# Invoke gaze_match — watch `/` show the call
 curl -s http://localhost:8000/mcp \
   -H 'Content-Type: application/json' \
   -H 'mcp-protocol-version: 2026-07-28' \
   -H 'mcp-method: tools/call' \
-  -H 'mcp-name: look_at' \
-  -d '{"jsonrpc":"2.0","method":"tools/call","id":2,"params":{"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientCapabilities":{}},"name":"look_at","arguments":{"target":"Vega"}}}'
+  -H 'mcp-name: gaze_match' \
+  -d '{"jsonrpc":"2.0","method":"tools/call","id":2,"params":{"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientCapabilities":{}},"name":"gaze_match","arguments":{"intent":"html pdf convert","node":"public"}}}'
 ```
 
 Boot runs freeze + smoke against the dogfood corpus so `/console` shows reliability scores. Set `ORRERY_SKIP_PUBLISH=1` to skip that during local iteration.

@@ -3,13 +3,22 @@
 ``Catalog`` is a thin, deterministic index over :class:`ResolveRecord` seeds.
 It is the server-side half of the resolver mock's client behavior in
 ``design/motion.js`` (match by full name, namespaced name, or bare name).
-Later epics swap the seed list for the live skill registry; the ``resolve``
-contract stays the same.
+Gaze discovery (``match`` / ``search`` / ``describe`` / ``list_constellations``)
+reads the same index — one seed list, two product surfaces.
 """
 
 from __future__ import annotations
 
 from .fixtures import SEED_RECORDS
+from .gaze import (
+    GAZE_NODE_TOOLS,
+    GazeHit,
+    GazeNode,
+    _tokens,
+    hit_from_record,
+    score_record,
+    tool_hit,
+)
 from .models import ResolveRecord
 
 
@@ -60,6 +69,131 @@ class Catalog:
             if bare in record.name.lower():
                 return record
         return None
+
+    # ------------------------------------------------------------------
+    # Gaze discovery (issues #22 / #23)
+    # ------------------------------------------------------------------
+
+    def records_for_node(self, node: str) -> tuple[ResolveRecord, ...]:
+        """Records visible under a gaze node id (``public`` / namespace / …)."""
+        key = (node or "public").strip().lower()
+        if key == "public":
+            return tuple(r for r in self._records if r.visibility == "public")
+        # Namespace node: match records whose namespace equals the node id.
+        return tuple(r for r in self._records if (r.namespace or "").lower() == key)
+
+    def match(self, intent: str, *, node: str = "public") -> tuple[GazeHit, ...]:
+        """Rank catalog records for an agent intent (progressive disclosure)."""
+        tokens = _tokens(intent)
+        scored: list[tuple[int, ResolveRecord]] = []
+        for record in self.records_for_node(node):
+            score = score_record(record, tokens)
+            if score > 0:
+                scored.append((score, record))
+        scored.sort(key=lambda item: (-item[0], item[1].name))
+        return tuple(hit_from_record(record) for _, record in scored)
+
+    def search(self, query: str, *, node: str | None = None) -> tuple[GazeHit, ...]:
+        """Substring search over name + description."""
+        q = (query or "").strip().lower()
+        pool = self.records_for_node(node) if node else self._records
+        if not q:
+            return tuple(hit_from_record(r) for r in pool)
+        hits = [
+            hit_from_record(r)
+            for r in pool
+            if q in r.name.lower() or q in (r.description or "").lower()
+        ]
+        return tuple(hits)
+
+    def describe(self, name: str) -> dict[str, object]:
+        """Richer manifest-ish metadata without executing tools."""
+        record = self.resolve(name)
+        if record is None:
+            return {"error": "not_found", "name": name, "status": "not_found"}
+        return {
+            "name": record.name,
+            "version": record.version,
+            "kind": record.kind,
+            "visibility": record.visibility,
+            "description": record.description,
+            "endpoint": record.endpoint,
+            "content_digest": record.content_digest,
+            "key_id": record.key_id,
+            "price_per_call": record.price_per_call,
+            "oracle_ok": record.oracle_ok,
+            "tools": list(record.tools),
+            "href": record.href,
+            "status": "ok",
+        }
+
+    def list_constellations(self, *, node: str | None = None) -> tuple[GazeHit, ...]:
+        """Constellation-kind records (optionally scoped to a gaze node)."""
+        pool = self.records_for_node(node) if node else self._records
+        return tuple(
+            hit_from_record(r) for r in pool if r.kind == "constellation"
+        )
+
+    def gaze_nodes(self) -> tuple[GazeNode, ...]:
+        """Console node tabs: public sky, namespace, then a constellation node."""
+        namespaces = sorted(
+            {
+                r.namespace
+                for r in self._records
+                if r.namespace and r.visibility == "private"
+            }
+        )
+        nodes: list[GazeNode] = [
+            GazeNode(
+                id="public",
+                label="Public sky",
+                url="mcp://orrery.dev/gaze",
+                scope="orrery/*",
+                tools=GAZE_NODE_TOOLS,
+            )
+        ]
+        for ns in namespaces:
+            nodes.append(
+                GazeNode(
+                    id=ns,
+                    label=f"{ns} namespace",
+                    url=f"mcp://{ns}.orrery.dev/gaze",
+                    scope=f"{ns}/*",
+                    tools=GAZE_NODE_TOOLS,
+                )
+            )
+        # Constellation node: first constellation's tools (progressive disclosure).
+        constellation = next(
+            (r for r in self._records if r.kind == "constellation"),
+            None,
+        )
+        if constellation is not None:
+            nodes.append(
+                GazeNode(
+                    id="docs",
+                    label=f"{constellation.short_name} node",
+                    url=constellation.endpoint,
+                    scope="constellation",
+                    tools=constellation.tools or ("run", "status"),
+                )
+            )
+        return tuple(nodes)
+
+    def hits_for_node(self, node_id: str, *, intent: str = "") -> tuple[GazeHit, ...]:
+        """Hits shown for a console node (records or constellation tools)."""
+        key = (node_id or "public").strip().lower()
+        if key == "docs":
+            constellation = next(
+                (r for r in self._records if r.kind == "constellation"),
+                None,
+            )
+            if constellation is None:
+                return ()
+            tools = constellation.tools or ("run", "status")
+            return tuple(tool_hit(t, constellation=constellation) for t in tools)
+        if intent.strip():
+            return self.match(intent, node=key)
+        return tuple(hit_from_record(r) for r in self.records_for_node(key))
 
 
 #: Process-wide catalog seeded from the design mocks.

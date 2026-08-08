@@ -1,42 +1,26 @@
 {% block content %}
 <div
   x-data="{
-    node: 'public',
-    q: 'docs ship ready links',
-    nodes: {
-      public: {
-        label: 'Public sky',
-        url: 'mcp://orrery.dev/gaze',
-        scope: 'orrery/*',
-        tools: ['search', 'match', 'resolve', 'describe', 'list_constellations']
-      },
-      acme: {
-        label: 'acme namespace',
-        url: 'mcp://acme.orrery.dev/gaze',
-        scope: 'acme/*',
-        tools: ['search', 'match', 'resolve', 'describe', 'list_constellations']
-      },
-      docs: {
-        label: 'docs-gate node',
-        url: 'mcp://acme.orrery.dev/constellations/docs-gate',
-        scope: 'constellation',
-        tools: ['run', 'status', 'explain_policy']
-      }
-    },
-    hits: {
-      public: [
-        { name: 'orrery/html-to-pdf', kind: 'star', blurb: 'HTML → PDF · $0.02', href: '/stars?name=orrery/html-to-pdf' },
-        { name: 'orrery/md-linkcheck', kind: 'star', blurb: 'Link verdict for markdown/HTML', href: '/stars?name=orrery/md-linkcheck' }
-      ],
-      acme: [
-        { name: 'acme/launch-gate', kind: 'constellation', blurb: 'secret-scan → license → human-approve', href: '/constellations?name=acme/launch-gate' },
-        { name: 'acme/release-gate', kind: 'constellation', blurb: 'Ship policy graph', href: '/constellations?name=acme/release-gate' }
-      ],
-      docs: [
-        { name: 'run', kind: 'tool', blurb: 'Execute docs-gate on a Doc Bundle', href: '/constellations' },
-        { name: 'status', kind: 'tool', blurb: 'Composite receipt / in-flight chain', href: '/constellations' },
-        { name: 'explain_policy', kind: 'tool', blurb: 'Gates, loops, fan-in in plain language', href: '/constellations' }
-      ]
+    node: '{{ active_node }}',
+    q: {{ intent_js }},
+    async runMatch() {
+      const url = '/api/gaze/match?intent=' + encodeURIComponent(this.q) + '&node=' + encodeURIComponent(this.node);
+      const data = await (await fetch(url)).json();
+      const list = document.querySelector('[data-gaze-hits=&quot;' + this.node + '&quot;]');
+      if (!list || !data.hits) return;
+      list.innerHTML = data.hits.map(hit => {
+        const pill = hit.kind === 'constellation' ? 'pill-pay' : hit.kind === 'tool' ? 'pill-priv' : 'pill-ok';
+        const href = hit.href || '#';
+        const name = hit.name || '';
+        const blurb = hit.blurb || '';
+        const kind = hit.kind || '';
+        return '<li><a href=&quot;' + href + '&quot;>'
+          + '<span class=&quot;pill ' + pill + '&quot;>' + kind + '</span>'
+          + '<strong class=&quot;mono&quot;>' + name + '</strong>'
+          + '<span class=&quot;muted&quot;>' + blurb + '</span>'
+          + '</a></li>';
+      }).join('');
+      this.$refs.results.scrollIntoView({behavior: 'smooth'});
     }
   }"
 >
@@ -52,44 +36,60 @@
   </header>
 
   <div class="gaze-nodes" role="tablist" aria-label="Gaze nodes">
-    <template x-for="(meta, id) in nodes" :key="id">
-      <button
-        type="button"
-        class="gaze-node"
-        role="tab"
-        :aria-selected="node === id"
-        :data-active="node === id"
-        @click="node = id"
-      >
-        <span class="gaze-node-label" x-text="meta.label"></span>
-        <span class="mono gaze-node-url" x-text="meta.url"></span>
-      </button>
-    </template>
+    {% for n in node_panels %}
+    <button
+      type="button"
+      class="gaze-node"
+      role="tab"
+      :aria-selected="node === '{{ n.id }}'"
+      :data-active="node === '{{ n.id }}'"
+      @click="node = '{{ n.id }}'"
+      {% if n.active %}data-active="true" aria-selected="true"{% end %}
+    >
+      <span class="gaze-node-label">{{ n.label }}</span>
+      <span class="mono gaze-node-url">{{ n.url }}</span>
+    </button>
+    {% end %}
   </div>
 
   <div class="detail-grid">
     <section>
       <div class="panel">
         <p class="kicker">Active node</p>
-        <p class="mono" style="margin: 0.35rem 0 0.75rem" x-text="nodes[node].url"></p>
-        <ul class="meta-list">
-          <li>
-            <span>Scope</span>
-            <code class="mono" x-text="nodes[node].scope"></code>
-          </li>
-          <li>
-            <span>Tools</span>
-            <code class="mono" x-text="nodes[node].tools.join(' · ')"></code>
-          </li>
-        </ul>
-
-        <p class="kicker" style="margin-top: 1rem">match(intent)</p>
-        <div class="lookup" style="margin-top: 0.5rem">
-          <input type="search" x-model="q" aria-label="Gaze match query" />
-          <button type="button" class="btn btn-brass" @click="$refs.results.scrollIntoView({behavior:'smooth'})">
-            Gaze
-          </button>
+        {% for n in node_panels %}
+        <div x-show="node === '{{ n.id }}'" {% if not n.active %}style="display:none"{% end %}>
+          <p class="mono" style="margin: 0.35rem 0 0.75rem">{{ n.url }}</p>
+          <ul class="meta-list">
+            <li>
+              <span>Scope</span>
+              <code class="mono">{{ n.scope }}</code>
+            </li>
+            <li>
+              <span>Tools</span>
+              <code class="mono">{{ n.tools_display }}</code>
+            </li>
+          </ul>
         </div>
+        {% end %}
+
+        <p class="kicker" style="margin-top: 1rem">gaze_match(intent)</p>
+        <form
+          class="lookup"
+          style="margin-top: 0.5rem"
+          action="/gaze"
+          method="get"
+          @submit.prevent="runMatch()"
+        >
+          <input type="hidden" name="node" :value="node" value="{{ active_node }}" />
+          <input
+            type="search"
+            name="intent"
+            x-model="q"
+            value="{{ intent }}"
+            aria-label="Gaze match query"
+          />
+          <button type="submit" class="btn btn-brass">Gaze</button>
+        </form>
         <p class="muted" style="margin: 0.75rem 0 0; font-size: 0.92rem">
           Same call from Cursor, Claude Code, or CI — no catalog install.
         </p>
@@ -97,9 +97,21 @@
 
       <div class="panel" style="margin-top: 1rem">
         <p class="kicker">Agent shape</p>
-        <pre class="mono muted" style="margin: 0.5rem 0 0; white-space: pre-wrap" x-text="node === 'docs'
-          ? 'tools/call run\n  bundle: { pages, links, examples }\n→ composite Envelope'
-          : 'tools/call match\n  intent: &quot;' + q + '&quot;\n→ [{ name, blurb, endpoint, price }]\n\ntools/call resolve\n  name: &quot;acme/launch-gate&quot;\n→ endpoint, digest, pubkey'"></pre>
+        {% for n in node_panels %}
+        <pre
+          class="mono muted"
+          style="margin: 0.5rem 0 0; white-space: pre-wrap{% if not n.active %}; display:none{% end %}"
+          x-show="node === '{{ n.id }}'"
+        >{% if n.is_constellation %}tools/call run
+  bundle: { pages, links, examples }
+→ composite Envelope{% else %}tools/call gaze_match
+  intent: "{{ intent }}"
+→ [{ name, blurb, endpoint, price }]
+
+tools/call resolve_name
+  name: "acme/launch-gate"
+→ endpoint, digest, pubkey{% end %}</pre>
+        {% end %}
       </div>
     </section>
 
@@ -109,17 +121,24 @@
           <span class="live-dot" aria-hidden="true"></span>
           Gaze results
         </p>
-        <ul class="gaze-hits">
-          <template x-for="hit in hits[node]" :key="hit.name">
-            <li>
-              <a :href="hit.href">
-                <span class="pill" :class="hit.kind === 'constellation' ? 'pill-pay' : hit.kind === 'tool' ? 'pill-priv' : 'pill-ok'" x-text="hit.kind"></span>
-                <strong class="mono" x-text="hit.name"></strong>
-                <span class="muted" x-text="hit.blurb"></span>
-              </a>
-            </li>
-          </template>
+        {% for n in node_panels %}
+        <ul
+          class="gaze-hits"
+          data-gaze-hits="{{ n.id }}"
+          x-show="node === '{{ n.id }}'"
+          {% if not n.active %}style="display:none"{% end %}
+        >
+          {% for hit in n.hits %}
+          <li>
+            <a href="{{ hit.href }}">
+              <span class="pill {% if hit.kind == 'constellation' %}pill-pay{% elif hit.kind == 'tool' %}pill-priv{% else %}pill-ok{% end %}">{{ hit.kind }}</span>
+              <strong class="mono">{{ hit.name }}</strong>
+              <span class="muted">{{ hit.blurb }}</span>
+            </a>
+          </li>
+          {% end %}
         </ul>
+        {% end %}
       </div>
 
       <div class="panel" style="margin-top: 1rem">
