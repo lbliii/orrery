@@ -1,9 +1,10 @@
 """Temporary dogfood skills for the Orrery host — N wrapped ``chirp.skill`` apps.
 
-Gaze / Resolve / Star share one aggregated ``/mcp`` with unique tool names.
-Gaze discovers skills (``gaze_match`` / ``gaze_search`` / ``gaze_describe`` /
-``gaze_list_constellations``); Resolve returns Skill DNS via ``resolve_name``;
-Star remains a seal stub until the Call epic lands.
+Gaze / Resolve / html-to-pdf share one aggregated ``/mcp`` with unique tool
+names. Gaze discovers skills (``gaze_match`` / ``gaze_search`` /
+``gaze_describe`` / ``gaze_list_constellations``); Resolve returns Skill DNS
+via ``resolve_name``; html-to-pdf is the Call / Envelope demo star (issues
+#25-#27): stub conversion, real Chirp Envelope signing.
 
 Each skill has a golden corpus entry that passes the publish oracle
 (``run_publish_gate`` / smoke harness).
@@ -11,11 +12,10 @@ Each skill has a golden corpus entry that passes the publish oracle
 
 from __future__ import annotations
 
-import hashlib
 import os
 from typing import Any
 
-from chirp.skill import Skill
+from chirp.skill import Envelope, Skill, verify_envelope
 from chirp.skill.smoke import CorpusPrompt
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
@@ -23,6 +23,11 @@ from catalog import CATALOG
 
 #: How many dogfood skills this host mounts (Foundation epic #2).
 N_DOGFOOD_SKILLS = 3
+
+#: Smoke HTML used by the star detail receipt and corpus.
+SMOKE_HTML = "<!doctype html><html><body><h1>Orrery</h1></body></html>"
+
+_html_to_pdf_skill: Skill | None = None
 
 
 def _load_or_generate_key(env_name: str) -> Ed25519PrivateKey:
@@ -117,24 +122,99 @@ def build_resolve_skill(*, private_key: Any | None = None) -> Skill:
     return skill
 
 
-def build_star_skill(*, private_key: Any | None = None) -> Skill:
-    """Star — seal a short label into a deterministic digest hint."""
-    private = private_key or _load_or_generate_key("ORRERY_STAR_PRIVATE_KEY")
+def build_html_to_pdf_skill(*, private_key: Any | None = None) -> Skill:
+    """html-to-pdf — stub HTML→PDF convert + health (Call / Envelope demo)."""
+    private = private_key or _load_or_generate_key("ORRERY_PDF_PRIVATE_KEY")
     public = private.public_key().public_bytes_raw()
     skill = Skill(
-        "star",
-        version="1.0.0",
+        "html-to-pdf",
+        version="1.2.0",
         private_key=private,
-        key_id=os.environ.get("ORRERY_STAR_KEY_ID", "star-1"),
+        key_id=os.environ.get("ORRERY_PDF_KEY_ID", "orrery-pdf-1"),
         public_key=public,
     )
 
-    @skill.tool("seal_label", description="Seal a label into a digest hint")
-    def seal_label(label: str) -> dict[str, str]:
-        digest = "sha256:" + hashlib.sha256(label.encode()).hexdigest()[:16]
-        return {"label": label, "sealed": "true", "digest": digest}
+    @skill.tool("convert", description="Convert HTML to PDF (stub; real Envelope)")
+    def convert(html: str) -> dict[str, object]:
+        raw = html.encode("utf-8")
+        # Stub metrics — enough for digest + Envelope proof without a PDF engine.
+        pages = max(1, (len(raw) + 1499) // 1500)
+        return {
+            "pages": pages,
+            "bytes_hint": len(raw) + 1024,
+            "content_type": "application/pdf",
+        }
+
+    @skill.tool("health", description="html-to-pdf readiness probe")
+    def health() -> dict[str, str]:
+        return {"status": "ok", "skill": "html-to-pdf"}
 
     return skill
+
+
+def get_html_to_pdf_skill() -> Skill:
+    """Return the shared html-to-pdf skill (same instance the host mounts)."""
+    global _html_to_pdf_skill
+    if _html_to_pdf_skill is None:
+        _html_to_pdf_skill = build_html_to_pdf_skill()
+    return _html_to_pdf_skill
+
+
+def _tool_handler(skill: Skill, name: str) -> Any:
+    for pending in skill._pending:
+        if pending.name == name:
+            return pending.handler
+    msg = f"Skill {skill.name!r} has no tool {name!r}"
+    raise KeyError(msg)
+
+
+def signed_convert_receipt(
+    html: str = SMOKE_HTML,
+    *,
+    skill: Skill | None = None,
+) -> tuple[dict[str, Any], bool]:
+    """Invoke ``convert`` and return ``(receipt_dict, verified)``.
+
+    Receipt includes Chirp Envelope wire fields plus a stub ``payment_id`` for
+    star-page mock parity (commerce lands later).
+    """
+    sk = skill or get_html_to_pdf_skill()
+    envelope: Envelope = _tool_handler(sk, "convert")(html=html)
+    verified = verify_envelope(envelope, sk.public_key)
+    receipt = envelope.to_wire()
+    receipt["payment_id"] = "pay_smoke"
+    return receipt, verified
+
+
+def envelope_from_wire(data: dict[str, Any]) -> Envelope:
+    """Rebuild an :class:`Envelope` from a wire / receipt dict (fails closed)."""
+    return Envelope(
+        payload=data["payload"],
+        skill=str(data["skill"]),
+        version=str(data["version"]),
+        tool=str(data["tool"]),
+        nonce=str(data["nonce"]),
+        input_digest=str(data["input_digest"]),
+        signature=str(data["signature"]),
+        key_id=str(data["key_id"]),
+        alg=str(data.get("alg", "Ed25519")),
+    )
+
+
+def verify_receipt(
+    data: dict[str, Any],
+    *,
+    skill: Skill | None = None,
+) -> bool:
+    """Verify a receipt dict against the html-to-pdf public key (fails closed)."""
+    sk = skill or get_html_to_pdf_skill()
+    try:
+        env = envelope_from_wire(data)
+    except (KeyError, TypeError, ValueError):
+        return False
+    if sk.public_key is None:
+        return False
+    return verify_envelope(env, sk.public_key)
 
 
 def build_dogfood_skills() -> tuple[Skill, ...]:
@@ -142,7 +222,7 @@ def build_dogfood_skills() -> tuple[Skill, ...]:
     skills = (
         build_gaze_skill(),
         build_resolve_skill(),
-        build_star_skill(),
+        get_html_to_pdf_skill(),
     )
     assert len(skills) == N_DOGFOOD_SKILLS
     return skills
@@ -170,10 +250,10 @@ DOGFOOD_CORPUS: tuple[CorpusPrompt, ...] = (
         ),
     ),
     CorpusPrompt(
-        id="star-seal-orion",
-        prompt="Seal the label Orion.",
-        tool="seal_label",
-        arguments={"label": "Orion"},
-        required_facts=("Orion", "sealed", "sha256:"),
+        id="pdf-convert-smoke",
+        prompt="Convert a short HTML document to PDF via html-to-pdf.",
+        tool="convert",
+        arguments={"html": SMOKE_HTML},
+        required_facts=("application/pdf", "pages", "bytes_hint"),
     ),
 )

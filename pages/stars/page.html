@@ -35,7 +35,14 @@
         </li>
       </ul>
       <div style="display: flex; flex-wrap: wrap; gap: 0.5rem">
-        <a class="btn" href="#">Copy MCP URL</a>
+        <button
+          type="button"
+          class="btn"
+          data-copy-mcp
+          data-mcp-url="{{ rec.endpoint }}"
+        >
+          Copy MCP URL
+        </button>
         <a class="btn btn-ghost" href="/resolve">Back to resolve</a>
       </div>
     </div>
@@ -66,19 +73,23 @@
       <a class="btn btn-brass" href="#">Enable for my agents</a>
     </div>
 
-    <div class="receipt" data-receipt style="margin-top: 1rem">
+    <div
+      class="receipt"
+      data-receipt
+      {% if verified %}data-verified="true"{% else %}data-verified="false"{% end %}
+      style="margin-top: 1rem"
+    >
       <h3>Last Envelope</h3>
-      <pre>{
-  "skill": "{{ rec.name }}",
-  "version": "{{ rec.version or '—' }}",
-  "tool": "{{ rec.primary_tool }}",
-  "input_digest": "sha256:b1…",
-  "nonce": "n_8f3a…",
-  "key_id": "{{ rec.key_id }}",
-  "alg": "{{ rec.alg }}",
-  "payment_id": "pay_02c…"
-}</pre>
+      {% if envelope_json %}
+      <pre>{{ envelope_json }}</pre>
+      {% if verified %}
       <div class="verify-ok">Verified · not forged</div>
+      {% else %}
+      <div class="verify-fail">Forge fail · signature rejected</div>
+      {% end %}
+      {% else %}
+      <pre class="muted">No live Envelope for this star yet — call convert on the demo skill.</pre>
+      {% end %}
     </div>
   </aside>
 </div>
