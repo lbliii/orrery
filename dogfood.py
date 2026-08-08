@@ -290,6 +290,13 @@ def _tool_handler(skill: Skill, name: str) -> Any:
     raise KeyError(msg)
 
 
+def _price_for_skill(skill_name: str) -> str | None:
+    """Look up ``price_per_call`` from the resolve catalog (demo star pricing)."""
+    # Chirp wire ``skill`` is bare (``html-to-pdf``); catalog uses ``orrery/…``.
+    record = CATALOG.resolve(skill_name) or CATALOG.resolve(f"orrery/{skill_name}")
+    return record.price_per_call if record is not None else None
+
+
 def signed_convert_receipt(
     html: str = SMOKE_HTML,
     *,
@@ -297,14 +304,15 @@ def signed_convert_receipt(
 ) -> tuple[dict[str, Any], bool]:
     """Invoke ``convert`` and return ``(receipt_dict, verified)``.
 
-    Receipt includes Chirp Envelope wire fields plus a stub ``payment_id`` for
-    star-page mock parity (commerce lands later).
+    Receipt includes Chirp Envelope wire fields plus ``payment_id`` and
+    ``price_per_call`` for commerce stub hooks (#35).
     """
     sk = skill or get_html_to_pdf_skill()
     envelope: Envelope = _tool_handler(sk, "convert")(html=html)
     verified = verify_envelope(envelope, sk.public_key)
     receipt = envelope.to_wire()
-    receipt["payment_id"] = "pay_smoke"
+    receipt["payment_id"] = f"pay_{envelope.nonce[:12]}"
+    receipt["price_per_call"] = _price_for_skill(str(receipt.get("skill", sk.name)))
     return receipt, verified
 
 

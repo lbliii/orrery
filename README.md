@@ -30,6 +30,14 @@ Wave 1 spike ([#37](https://github.com/lbliii/orrery/issues/37)): tools `fetch` 
 
 Remaining product work (live MCP wiring, provisioning, commerce) is tracked in **[Saga #1](https://github.com/lbliii/orrery/issues/1)**.
 
+Strategy ADRs (control plane, prepaid wallet, Stripe top-up):
+
+| ADR | Topic |
+| --- | --- |
+| [`docs/adr/0001-control-plane-wallet.md`](./docs/adr/0001-control-plane-wallet.md) | Control vs data plane, reactive stars, prepaid wallet, Not now |
+| [`docs/adr/0002-prepaid-wallet-ledger.md`](./docs/adr/0002-prepaid-wallet-ledger.md) | Ledger schema, hold/capture, insufficient-balance |
+| [`docs/adr/0003-stripe-topup.md`](./docs/adr/0003-stripe-topup.md) | Checkout + webhook credit (design only) |
+
 Design mocks (validated direction): [`design/`](./design/). Frozen favorite: [`design/v1-night-gold/`](./design/v1-night-gold/).
 
 ## Run locally

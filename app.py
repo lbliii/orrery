@@ -45,6 +45,7 @@ from chirp.skill import (
 from chirp.skill.smoke import render_faithful_answer, run_smoke
 
 from catalog import CATALOG
+from commerce import charge_on_verify, refund_on_forge
 from dogfood import DOGFOOD_CORPUS, build_dogfood_skills, verify_receipt
 
 _ROOT = Path(__file__).parent
@@ -178,9 +179,28 @@ def api_gaze_match(request: Request) -> JSONResponse:
     )
 
 
+def _commerce_fields(body: dict) -> tuple[str | None, str | None]:
+    """Pull payment + price from a receipt body (catalog fallback for price)."""
+    payment_id = body.get("payment_id")
+    if payment_id is not None:
+        payment_id = str(payment_id)
+    price = body.get("price_per_call")
+    if price is None and isinstance(body.get("skill"), str):
+        skill_name = body["skill"]
+        record = CATALOG.resolve(skill_name) or CATALOG.resolve(f"orrery/{skill_name}")
+        if record is not None:
+            price = record.price_per_call
+    if price is not None:
+        price = str(price)
+    return payment_id, price
+
+
 @app.route("/api/envelope/verify", methods=["POST"], referenced=True)
 async def api_envelope_verify(request: Request) -> JSONResponse:
-    """Verify a Chirp Envelope / star receipt dict (fails closed on tamper)."""
+    """Verify a Chirp Envelope / star receipt dict (fails closed on tamper).
+
+    Success → loud ``commerce.charge_stub``; failure → loud ``commerce.refund_stub``.
+    """
     try:
         body = await request.json()
     except Exception:
@@ -191,10 +211,36 @@ async def api_envelope_verify(request: Request) -> JSONResponse:
         return JSONResponse.from_value(
             {"verified": False, "error": "expected_object"}, status=400
         )
-    # Allow clients to POST the receipt panel shape (payment_id is display-only).
-    payload = {k: v for k, v in body.items() if k != "payment_id"}
+    payment_id, price_per_call = _commerce_fields(body)
+    # payment_id / price_per_call are commerce metadata, not Envelope wire fields.
+    payload = {
+        k: v for k, v in body.items() if k not in ("payment_id", "price_per_call")
+    }
     ok = verify_receipt(payload)
-    return JSONResponse.from_value({"verified": ok})
+    skill = str(body["skill"]) if isinstance(body.get("skill"), str) else None
+    nonce = str(body["nonce"]) if isinstance(body.get("nonce"), str) else None
+    if ok:
+        commerce = charge_on_verify(
+            payment_id=payment_id,
+            price_per_call=price_per_call,
+            skill=skill,
+            nonce=nonce,
+        )
+    else:
+        commerce = refund_on_forge(
+            payment_id=payment_id,
+            price_per_call=price_per_call,
+            skill=skill,
+            nonce=nonce,
+        )
+    return JSONResponse.from_value(
+        {
+            "verified": ok,
+            "payment_id": payment_id,
+            "price_per_call": price_per_call,
+            "commerce": commerce,
+        }
+    )
 
 
 # Publish-oracle dogfood: freeze + smoke after all routes are registered so the
