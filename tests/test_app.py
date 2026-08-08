@@ -64,7 +64,7 @@ class TestOrreryHostFoundation:
             assert discovery.status == 200
             body = json.loads(discovery.text)
             names = {entry["name"] for entry in body["skills"]}
-            assert names == {"gaze", "resolve", "star"}
+            assert names == {"gaze", "resolve", "html-to-pdf"}
 
             console = await client.get("/console")
             assert console.status == 200
@@ -94,7 +94,8 @@ class TestOrreryHostFoundation:
                 "gaze_describe",
                 "gaze_list_constellations",
                 "resolve_name",
-                "seal_label",
+                "convert",
+                "health",
             }
 
             called = await client.post(
@@ -126,11 +127,11 @@ class TestOrreryHostFoundation:
                         "method": "tools/call",
                         "id": 3,
                         "params": _modern_mcp_params(
-                            name="seal_label",
-                            arguments={"label": "Orion"},
+                            name="convert",
+                            arguments={"html": "<p>Orion</p>"},
                         ),
                     },
-                    headers=_modern_mcp_headers("tools/call", "seal_label"),
+                    headers=_modern_mcp_headers("tools/call", "convert"),
                 )
                 await asyncio.sleep(0.15)
 
@@ -142,7 +143,7 @@ class TestOrreryHostFoundation:
             assert result.events
             event = result.events[0]
             assert (event.event or "message") == "message"
-            assert "seal_label" in event.data
+            assert "convert" in event.data
             assert "Orion" in event.data
 
     def test_dogfood_skills_pass_publish_oracle(self, example_app) -> None:

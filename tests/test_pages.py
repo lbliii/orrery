@@ -135,6 +135,7 @@ class TestResolveConsole:
 
 @pytest.mark.issue(25)
 @pytest.mark.issue(26)
+@pytest.mark.issue(27)
 class TestStarDetail:
     async def test_default_star_manifest_and_receipt(self, example_app) -> None:
         async with TestClient(example_app) as client:
@@ -144,6 +145,13 @@ class TestStarDetail:
             assert "mcp://orrery.dev/s/html-to-pdf" in r.text
             assert "Last Envelope" in r.text
             assert "data-receipt" in r.text
+            assert 'data-copy-mcp' in r.text
+            assert 'data-mcp-url="mcp://orrery.dev/s/html-to-pdf"' in r.text
+            assert "Verified · not forged" in r.text
+            assert "input_digest" in r.text
+            assert "signature" in r.text
+            assert "orrery-pdf-1" in r.text
+            assert "convert" in r.text
 
     async def test_named_star_switches_record(self, example_app) -> None:
         async with TestClient(example_app) as client:
@@ -161,6 +169,74 @@ class TestStarDetail:
         async with TestClient(example_app) as client:
             r = await client.get("/stars?name=acme/launch-gate")
             assert r.status == 404
+
+
+@pytest.mark.issue(26)
+@pytest.mark.issue(27)
+class TestEnvelopeVerifyAndPdfStub:
+    def test_signed_convert_receipt_verifies(self) -> None:
+        from dogfood import signed_convert_receipt, verify_receipt
+
+        receipt, verified = signed_convert_receipt()
+        assert verified is True
+        assert receipt["tool"] == "convert"
+        assert receipt["key_id"] == "orrery-pdf-1"
+        assert receipt["payload"]["content_type"] == "application/pdf"
+        assert verify_receipt(receipt) is True
+
+    def test_tampered_receipt_fails_closed(self) -> None:
+        from dogfood import signed_convert_receipt, verify_receipt
+
+        receipt, _ = signed_convert_receipt()
+        forged = dict(receipt)
+        forged["payload"] = {"pages": 999, "bytes_hint": 1, "content_type": "application/pdf"}
+        assert verify_receipt(forged) is False
+
+    async def test_api_verify_ok_and_forge_fail(self, example_app) -> None:
+        from dogfood import signed_convert_receipt
+
+        receipt, _ = signed_convert_receipt()
+        async with TestClient(example_app) as client:
+            ok = await client.post("/api/envelope/verify", json=receipt)
+            assert ok.status == 200
+            assert json.loads(ok.text)["verified"] is True
+
+            forged = dict(receipt)
+            forged["nonce"] = "tampered-nonce"
+            bad = await client.post("/api/envelope/verify", json=forged)
+            assert bad.status == 200
+            assert json.loads(bad.text)["verified"] is False
+
+    async def test_mcp_convert_returns_signed_envelope(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            called = await client.post(
+                "/mcp",
+                json={
+                    "jsonrpc": "2.0",
+                    "method": "tools/call",
+                    "id": 27,
+                    "params": {
+                        "_meta": {
+                            "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+                            "io.modelcontextprotocol/clientCapabilities": {},
+                        },
+                        "name": "convert",
+                        "arguments": {"html": "<html><body>hi</body></html>"},
+                    },
+                },
+                headers={
+                    "content-type": "application/json",
+                    "mcp-protocol-version": "2026-07-28",
+                    "mcp-method": "tools/call",
+                    "mcp-name": "convert",
+                },
+            )
+            assert called.status == 200
+            text = json.loads(called.text)["result"]["content"][0]["text"]
+            assert "application/pdf" in text
+            assert "html-to-pdf" in text
+            assert "input_digest" in text or "sha256:" in text
+            assert "signature" in text
 
 
 @pytest.mark.issue(19)

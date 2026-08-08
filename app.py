@@ -45,7 +45,7 @@ from chirp.skill import (
 from chirp.skill.smoke import render_faithful_answer, run_smoke
 
 from catalog import CATALOG
-from dogfood import DOGFOOD_CORPUS, build_dogfood_skills
+from dogfood import DOGFOOD_CORPUS, build_dogfood_skills, verify_receipt
 
 _ROOT = Path(__file__).parent
 PAGES_DIR = _ROOT / "pages"
@@ -95,7 +95,7 @@ if config.env != "development" and config.secret_key == _DEFAULT_SECRET:
 for middleware in secure_stack(
     app.config,
     # MCP JSON-RPC clients have no browser CSRF cookie; exempt the machine face.
-    csrf=CSRFConfig(exempt_paths=frozenset({"/mcp"})),
+    csrf=CSRFConfig(exempt_paths=frozenset({"/mcp", "/api/envelope/verify"})),
     headers=SecurityHeadersConfig(content_security_policy=_ORRERY_CSP),
 ):
     app.add_middleware(middleware)
@@ -176,6 +176,25 @@ def api_gaze_match(request: Request) -> JSONResponse:
             "status": "ok",
         }
     )
+
+
+@app.route("/api/envelope/verify", methods=["POST"], referenced=True)
+async def api_envelope_verify(request: Request) -> JSONResponse:
+    """Verify a Chirp Envelope / star receipt dict (fails closed on tamper)."""
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse.from_value(
+            {"verified": False, "error": "invalid_json"}, status=400
+        )
+    if not isinstance(body, dict):
+        return JSONResponse.from_value(
+            {"verified": False, "error": "expected_object"}, status=400
+        )
+    # Allow clients to POST the receipt panel shape (payment_id is display-only).
+    payload = {k: v for k, v in body.items() if k != "payment_id"}
+    ok = verify_receipt(payload)
+    return JSONResponse.from_value({"verified": ok})
 
 
 # Publish-oracle dogfood: freeze + smoke after all routes are registered so the

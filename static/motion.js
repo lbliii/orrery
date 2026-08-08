@@ -120,9 +120,30 @@
     window.setTimeout(() => receipt.classList.add("is-sealed"), 360);
   }
 
+  /** Copy MCP URL from star manifest (issue #25). */
+  function initCopyMcp() {
+    document.querySelectorAll("[data-copy-mcp]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const url = btn.getAttribute("data-mcp-url");
+        if (!url) return;
+        try {
+          await navigator.clipboard.writeText(url);
+          const prev = btn.textContent;
+          btn.textContent = "Copied";
+          window.setTimeout(() => {
+            btn.textContent = prev;
+          }, 1200);
+        } catch {
+          btn.textContent = "Copy failed";
+        }
+      });
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
     initResolve();
     initConstellation();
     initStarReceipt();
+    initCopyMcp();
   });
 })();
