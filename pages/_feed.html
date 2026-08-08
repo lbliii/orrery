@@ -1,0 +1,13 @@
+{# Live-invocation SSE row. Rendered as a Fragment by the /feed EventStream so
+   each MCP tools/call appears on the landing activity strip. #}
+{% block activity_row %}
+{% if (event ?? none) %}
+<div class="activity-item">
+  <div>
+    <span class="tool-name mono">{{ event.tool_name }}</span>
+    <span class="call-time mono">{{ event.timestamp | format_call_time }}</span>
+  </div>
+  <div class="call-args mono">{{ event.arguments | format_args }}</div>
+</div>
+{% end %}
+{% end %}

@@ -1,20 +1,23 @@
 """Orrery — skills you point at, not install.
 
-Host starting point ported from ``chirp/examples/standalone/orrery``
-(Chirp epic #964 / issue #985). Mounts temporary dogfood skills via
-``mount_skills`` onto one aggregated ``/mcp``, exposes discovery at
-``/skills``, and a hypermedia console at ``/console``. A home-page live
-feed bridges ``ToolEventBus`` → ``EventStream``.
+The product surfaces (Gaze, Resolve, Stars, Constellations, Namespaces) live in
+``pages/`` via Chirp filesystem routing (``mount_pages``) and match the frozen
+``v1-night-gold`` design mocks. Resolve records ("Skill DNS") come from the
+in-memory :mod:`catalog`.
 
-Product vocabulary (Skill DNS, public-sky Gaze, constellations, namespaces)
-lands in later epics — see https://github.com/lbliii/orrery/issues/1.
+The same process is also a dogfood MCP host: it wraps N ``chirp.skill`` apps via
+``mount_skills`` onto one aggregated ``/mcp``, exposes discovery at ``/skills``,
+and a hypermedia console at ``/console``. The landing page's live feed bridges
+``ToolEventBus`` → ``EventStream`` so agent invocations appear in real time.
+
+See the backlog at https://github.com/lbliii/orrery/issues/1.
 
 Run locally::
 
     uv run python app.py
 
-Point an MCP client at ``/mcp``. Open ``/`` for the live feed or ``/console``
-to browse manifests and reliability scores.
+Point an MCP client at ``/mcp``. Open ``/`` for the brand + live feed,
+``/resolve`` for the resolver console, or ``/console`` for reliability scores.
 """
 
 from __future__ import annotations
@@ -23,7 +26,15 @@ import asyncio
 import os
 from pathlib import Path
 
-from chirp import App, AppConfig, EventStream, Fragment, Request, Template, secure_stack
+from chirp import (
+    App,
+    AppConfig,
+    EventStream,
+    Fragment,
+    JSONResponse,
+    Request,
+    secure_stack,
+)
 from chirp.middleware.csrf import CSRFConfig
 from chirp.middleware.security_headers import SecurityHeadersConfig
 from chirp.skill import (
@@ -33,19 +44,23 @@ from chirp.skill import (
 )
 from chirp.skill.smoke import render_faithful_answer, run_smoke
 
-from dogfood import DOGFOOD_CORPUS, N_DOGFOOD_SKILLS, build_dogfood_skills
+from catalog import CATALOG
+from dogfood import DOGFOOD_CORPUS, build_dogfood_skills
 
-TEMPLATES_DIR = Path(__file__).parent / "templates"
+_ROOT = Path(__file__).parent
+PAGES_DIR = _ROOT / "pages"
+STATIC_DIR = _ROOT / "static"
 
 # Default secure_stack CSP allows CDN scripts but NOT inline <style>, style=, or
-# fonts.googleapis.com — which blanked the branded home page in production.
-# Keep scripts host-allowlisted; permit the demo's inline CSS + Google Fonts.
+# fonts.googleapis.com — which blanked the branded pages in production. Keep
+# scripts host-allowlisted; permit inline CSS (mock parity) + Google Fonts.
+# 'unsafe-eval' is required for the standard Alpine.js build used on /gaze.
 _ORRERY_CSP = (
     "default-src 'self'; "
     "img-src 'self' data:; "
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
     "font-src 'self' https://fonts.gstatic.com data:; "
-    "script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net; "
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net; "
     "connect-src 'self'; "
     "base-uri 'self'; frame-ancestors 'none'; object-src 'none'"
 )
@@ -64,7 +79,8 @@ config = AppConfig.from_env(
     secret_key=_secret,
     env=_env,
     debug=_debug,
-    template_dir=TEMPLATES_DIR,
+    template_dir=PAGES_DIR,
+    static_dir=STATIC_DIR,
     worker_mode="async",
 )
 app = App(config=config)
@@ -94,6 +110,12 @@ registry = mount_skills(app, _skills)
 scores = ReliabilityStore()
 mount_console(app, registry, scores=scores)
 
+# ---------------------------------------------------------------------------
+# Product surfaces → filesystem-routed pages (Gaze / Resolve / Stars / …)
+# ---------------------------------------------------------------------------
+
+app.mount_pages(str(PAGES_DIR))
+
 
 @app.template_filter("format_args")
 def format_args(args: dict) -> str:
@@ -114,28 +136,27 @@ def format_call_time(timestamp: float) -> str:
     return datetime.fromtimestamp(timestamp, tz=UTC).strftime("%H:%M:%S")
 
 
-@app.route("/")
-def index(request: Request) -> Template:
-    """Host landing — brand + paths + live invocation feed."""
-    return Template(
-        "index.html",
-        skill_count=N_DOGFOOD_SKILLS,
-        skill_names=tuple(s.name for s in registry.skills()),
-        console_path="/console",
-        discovery_path=registry.discovery_path or "/skills",
-        mcp_path=app.config.mcp_path,
-    )
-
-
 @app.route("/feed", referenced=True)
 def feed():
-    """Stream tool-call events so agent invocations appear on the home console."""
+    """Stream tool-call events so agent invocations appear on the landing feed."""
 
     async def generate():
         async for event in app.tool_events.subscribe():
-            yield Fragment("index.html", "activity_row", event=event)
+            yield Fragment("_feed.html", "activity_row", event=event)
 
     return EventStream(generate())
+
+
+@app.route("/api/resolve", referenced=True)
+def api_resolve(request: Request) -> JSONResponse:
+    """Skill DNS lookup: ``?name=`` → resolve record JSON, or 404."""
+    name = (request.query.get("name") or "").strip()
+    record = CATALOG.resolve(name) if name else None
+    if record is None:
+        return JSONResponse.from_value(
+            {"error": "not_found", "name": name}, status=404
+        )
+    return JSONResponse.from_value(record.as_dict())
 
 
 # Publish-oracle dogfood: freeze + smoke after all routes are registered so the

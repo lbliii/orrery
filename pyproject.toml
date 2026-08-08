@@ -19,8 +19,8 @@ build-backend = "hatchling.build"
 allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
-# Application project — sync deps with uv; no library package to ship yet.
-only-include = ["dogfood.py"]
+# Application project — sync deps with uv; run from the repo root (not a wheel).
+only-include = ["dogfood.py", "catalog"]
 
 [dependency-groups]
 dev = [

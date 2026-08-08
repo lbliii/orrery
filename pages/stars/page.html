@@ -1,0 +1,85 @@
+{% block content %}
+<div class="detail-hero" style="padding: 2rem 0 1.25rem">
+  <p class="kicker">Star · {{ rec.visibility }}</p>
+  <h1>{{ rec.name }}{% if rec.version %}@{{ rec.version }}{% end %}</h1>
+  <p class="muted" style="margin: 0; max-width: 36rem">
+    Point any agent at this skill. No clone, no install — call MCP, pay if
+    required, keep the signed Envelope as your receipt.
+  </p>
+</div>
+
+<div class="detail-grid">
+  <section>
+    <div class="panel">
+      <p class="kicker">Manifest</p>
+      <ul class="meta-list">
+        <li>
+          <span>Endpoint</span>
+          <code class="mono">{{ rec.endpoint }}</code>
+        </li>
+        <li>
+          <span>Tools</span>
+          <code class="mono">{{ rec.tools_display }}</code>
+        </li>
+        <li>
+          <span>Digest</span>
+          <code class="mono">{{ rec.content_digest }}</code>
+        </li>
+        <li>
+          <span>Key</span>
+          <code class="mono">key_id: {{ rec.key_id }} · {{ rec.alg }}</code>
+        </li>
+        <li>
+          <span>Oracle</span>
+          <span class="pill pill-ok">check · freeze · smoke</span>
+        </li>
+      </ul>
+      <div style="display: flex; flex-wrap: wrap; gap: 0.5rem">
+        <a class="btn" href="#">Copy MCP URL</a>
+        <a class="btn btn-ghost" href="/resolve">Back to resolve</a>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top: 1rem">
+      <p class="kicker">Agent one-liner</p>
+      <p class="mono" style="margin: 0.5rem 0 0">
+        Call {{ rec.name }}.{{ rec.primary_tool }} with input=… · verify Envelope ·
+        refund if signature fails
+      </p>
+    </div>
+  </section>
+
+  <aside>
+    <div class="panel">
+      <p class="kicker">Price</p>
+      {% if rec.is_paid %}
+      <p class="price">{{ rec.price_per_call }} <small>/ verified call</small></p>
+      <p class="muted" style="margin: 0 0 1rem; font-size: 0.95rem">
+        Free smoke. Paid only when Envelope verifies.
+      </p>
+      {% else %}
+      <p class="price">Free <small>/ verified call</small></p>
+      <p class="muted" style="margin: 0 0 1rem; font-size: 0.95rem">
+        Internal skill. Envelope still required to trust the result.
+      </p>
+      {% end %}
+      <a class="btn btn-brass" href="#">Enable for my agents</a>
+    </div>
+
+    <div class="receipt" data-receipt style="margin-top: 1rem">
+      <h3>Last Envelope</h3>
+      <pre>{
+  "skill": "{{ rec.name }}",
+  "version": "{{ rec.version or '—' }}",
+  "tool": "{{ rec.primary_tool }}",
+  "input_digest": "sha256:b1…",
+  "nonce": "n_8f3a…",
+  "key_id": "{{ rec.key_id }}",
+  "alg": "{{ rec.alg }}",
+  "payment_id": "pay_02c…"
+}</pre>
+      <div class="verify-ok">Verified · not forged</div>
+    </div>
+  </aside>
+</div>
+{% end %}

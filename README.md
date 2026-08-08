@@ -8,9 +8,21 @@ Catalogs hand you a repo. Orrery hands you an endpoint, a digest, and a receipt 
 
 ## Status
 
-Host starting point is the Chirp dogfood example ([#964](https://github.com/lbliii/chirp/issues/964) / [#985](https://github.com/lbliii/chirp/issues/985)): aggregated `/mcp`, `/skills`, `/console`, live invocation feed, three temporary stub skills, publish-oracle smoke.
+The product surfaces are implemented as Chirp filesystem-routed pages in [`pages/`](./pages/), at parity with the frozen design mocks:
 
-Product work (Skill DNS, Gaze UI, constellations, namespaces, brand parity) is tracked in **[Saga #1](https://github.com/lbliii/orrery/issues/1)**.
+| Path | Surface |
+| --- | --- |
+| `/` | Brand hero + the gaze → resolve → call story + live invocation feed |
+| `/gaze` | Discovery console (public sky / namespace / constellation nodes) |
+| `/resolve` | Skill-DNS resolver zone table + lookup |
+| `/stars` | Star detail — manifest, price, signed Envelope receipt |
+| `/constellations` | Drawn policy graph + composite receipt |
+| `/namespaces` | Private tenancy pitch |
+| `/api/resolve?name=` | JSON resolve record (Skill DNS) |
+
+The same process is also a dogfood MCP host ([#964](https://github.com/lbliii/chirp/issues/964) / [#985](https://github.com/lbliii/chirp/issues/985)): aggregated `/mcp`, discovery at `/skills`, a reliability `/console`, three temporary stub skills, and publish-oracle smoke. Resolve records are seeded from the design mocks in [`catalog/`](./catalog/) until the live registry feeds them.
+
+Remaining product work (live MCP wiring, provisioning, commerce) is tracked in **[Saga #1](https://github.com/lbliii/orrery/issues/1)**.
 
 Design mocks (validated direction): [`design/`](./design/). Frozen favorite: [`design/v1-night-gold/`](./design/v1-night-gold/).
 
@@ -21,7 +33,7 @@ uv sync --group dev
 uv run python app.py
 ```
 
-Open `/` for the live feed, `/console` to browse manifests, or point an MCP client at `/mcp`.
+Open `/` for the brand + live feed, browse `/gaze`, `/resolve`, `/stars`, `/constellations`, `/namespaces`, check reliability at `/console`, or point an MCP client at `/mcp`.
 
 ```bash
 # List tools (modern Streamable HTTP headers)

@@ -1,0 +1,49 @@
+{% block content %}
+<section class="ns-hero">
+  <p class="kicker">Company skill DNS</p>
+  <h1>Your agents resolve <span style="color: var(--brass)">acme/*</span></h1>
+  <p class="lede">
+    Public Orrery is gravity. Private namespaces are the business —
+    scoped stars, audit retention, and no install on every laptop.
+  </p>
+  <div class="hero-actions">
+    <a class="btn" href="#">Create namespace</a>
+    <a class="btn btn-ghost" href="/resolve">See public resolve</a>
+  </div>
+</section>
+
+<div class="ns-grid">
+  <article>
+    <h3>Resolve only</h3>
+    <p>
+      <code class="mono">acme/pdf</code>,
+      <code class="mono">acme/release-gate</code> — live endpoints your
+      fleet already trusts.
+    </p>
+  </article>
+  <article>
+    <h3>Keys &amp; scopes</h3>
+    <p>
+      Machine budgets, allowlisted callers, Envelope retention for audit —
+      not another GitHub org full of READMEs.
+    </p>
+  </article>
+  <article class="featured">
+    <h3>Private by default</h3>
+    <p>
+      Competitors don't scrape your catalog. Agents still get zero-setup
+      access from any harness you authorize.
+    </p>
+  </article>
+</div>
+
+<div class="panel" style="margin-bottom: 3rem">
+  <p class="kicker">Example resolve</p>
+  <pre class="mono" style="margin: 0.5rem 0 0; white-space: pre-wrap">
+acme/release-gate
+  → mcp://acme.orrery.dev/s/release-gate
+  → digest sha256:77d0…
+  → constellation: secret-scan → license → human-approve
+  → namespace: private · seats billed monthly</pre>
+</div>
+{% end %}

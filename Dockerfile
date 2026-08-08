@@ -34,7 +34,9 @@ RUN uv pip install --python /opt/venv/bin/python \
     "itsdangerous>=2.2.0"
 
 COPY app.py dogfood.py /app/
-COPY templates /app/templates/
+COPY catalog /app/catalog/
+COPY pages /app/pages/
+COPY static /app/static/
 
 EXPOSE 8000
 CMD ["python", "app.py"]

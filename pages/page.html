@@ -1,0 +1,76 @@
+{% block content %}
+<section class="hero">
+  <div class="hero-sky" aria-hidden="true"></div>
+  <div class="orb" aria-hidden="true"><i></i></div>
+
+  <div class="hero-copy">
+    <h1>Skills you <em>point at</em>, not install.</h1>
+    <p>
+      Gaze to discover, resolve to lock the record, call for a verified
+      result — from any machine, any harness.
+    </p>
+    <div class="hero-actions">
+      <a class="btn" href="/gaze">Open gaze</a>
+      <a class="btn btn-ghost" href="/namespaces">Private namespace</a>
+    </div>
+  </div>
+
+  <div class="resolve-demo">
+    <label for="q">Try a resolve</label>
+    <form class="resolve-row" action="/resolve" method="get">
+      <input
+        id="q"
+        name="q"
+        value="orrery/html-to-pdf@1.2.0"
+        spellcheck="false"
+        aria-label="Skill name to resolve"
+      />
+      <button class="btn btn-brass" type="submit">Resolve</button>
+    </form>
+  </div>
+</section>
+
+<section class="section">
+  <p class="kicker">How agents win</p>
+  <h2>Fewer steps than a GitHub hub.</h2>
+  <p class="lede">
+    Catalogs hand you a repo. Orrery hands you an endpoint, a digest, and a
+    receipt — so the agent can keep moving.
+  </p>
+  <ol class="steps">
+    <li>
+      <div>
+        <strong>Resolve</strong>
+        Name → MCP URL, public key, content digest, price.
+      </div>
+    </li>
+    <li>
+      <div>
+        <strong>Call</strong>
+        Same contract from Cursor, Claude Code, CI, or a phone session.
+      </div>
+    </li>
+    <li>
+      <div>
+        <strong>Verify</strong>
+        Signed Envelope — or don't treat it as done. Pay only for truth.
+      </div>
+    </li>
+  </ol>
+</section>
+
+<section class="feed" aria-label="Live invocations">
+  <div class="feed-head">
+    <h2>Invocations</h2>
+    <span class="kicker" style="margin:0">
+      <span class="live-dot" aria-hidden="true"></span>
+      {{ skill_count }} skills · <span class="mono">{{ mcp_path }}</span>
+    </span>
+  </div>
+  {# sse-eager-connect: intentional #}
+  <div class="activity" hx-ext="sse" sse-connect="/feed" hx-disinherit="hx-target hx-swap">
+    <div sse-swap="message" hx-target="this" hx-swap="afterbegin"></div>
+    <p class="empty">Waiting for an MCP <code>tools/call</code>&hellip;</p>
+  </div>
+</section>
+{% end %}

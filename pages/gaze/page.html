@@ -1,0 +1,174 @@
+{% block content %}
+<div
+  x-data="{
+    node: 'public',
+    q: 'docs ship ready links',
+    nodes: {
+      public: {
+        label: 'Public sky',
+        url: 'mcp://orrery.dev/gaze',
+        scope: 'orrery/*',
+        tools: ['search', 'match', 'resolve', 'describe', 'list_constellations']
+      },
+      acme: {
+        label: 'acme namespace',
+        url: 'mcp://acme.orrery.dev/gaze',
+        scope: 'acme/*',
+        tools: ['search', 'match', 'resolve', 'describe', 'list_constellations']
+      },
+      docs: {
+        label: 'docs-gate node',
+        url: 'mcp://acme.orrery.dev/constellations/docs-gate',
+        scope: 'constellation',
+        tools: ['run', 'status', 'explain_policy']
+      }
+    },
+    hits: {
+      public: [
+        { name: 'orrery/html-to-pdf', kind: 'star', blurb: 'HTML → PDF · $0.02', href: '/stars?name=orrery/html-to-pdf' },
+        { name: 'orrery/md-linkcheck', kind: 'star', blurb: 'Link verdict for markdown/HTML', href: '/stars?name=orrery/md-linkcheck' }
+      ],
+      acme: [
+        { name: 'acme/launch-gate', kind: 'constellation', blurb: 'secret-scan → license → human-approve', href: '/constellations?name=acme/launch-gate' },
+        { name: 'acme/release-gate', kind: 'constellation', blurb: 'Ship policy graph', href: '/constellations?name=acme/release-gate' }
+      ],
+      docs: [
+        { name: 'run', kind: 'tool', blurb: 'Execute docs-gate on a Doc Bundle', href: '/constellations' },
+        { name: 'status', kind: 'tool', blurb: 'Composite receipt / in-flight chain', href: '/constellations' },
+        { name: 'explain_policy', kind: 'tool', blurb: 'Gates, loops, fan-in in plain language', href: '/constellations' }
+      ]
+    }
+  }"
+>
+  <header class="console-head">
+    <div>
+      <p class="kicker">MCP browse · route · don't install</p>
+      <h1>Gaze</h1>
+      <p class="lede" style="margin-bottom: 0">
+        Agents discover stars through gaze nodes — progressive disclosure for
+        live skills. Gaze returns names and triggers; call returns Envelopes.
+      </p>
+    </div>
+  </header>
+
+  <div class="gaze-nodes" role="tablist" aria-label="Gaze nodes">
+    <template x-for="(meta, id) in nodes" :key="id">
+      <button
+        type="button"
+        class="gaze-node"
+        role="tab"
+        :aria-selected="node === id"
+        :data-active="node === id"
+        @click="node = id"
+      >
+        <span class="gaze-node-label" x-text="meta.label"></span>
+        <span class="mono gaze-node-url" x-text="meta.url"></span>
+      </button>
+    </template>
+  </div>
+
+  <div class="detail-grid">
+    <section>
+      <div class="panel">
+        <p class="kicker">Active node</p>
+        <p class="mono" style="margin: 0.35rem 0 0.75rem" x-text="nodes[node].url"></p>
+        <ul class="meta-list">
+          <li>
+            <span>Scope</span>
+            <code class="mono" x-text="nodes[node].scope"></code>
+          </li>
+          <li>
+            <span>Tools</span>
+            <code class="mono" x-text="nodes[node].tools.join(' · ')"></code>
+          </li>
+        </ul>
+
+        <p class="kicker" style="margin-top: 1rem">match(intent)</p>
+        <div class="lookup" style="margin-top: 0.5rem">
+          <input type="search" x-model="q" aria-label="Gaze match query" />
+          <button type="button" class="btn btn-brass" @click="$refs.results.scrollIntoView({behavior:'smooth'})">
+            Gaze
+          </button>
+        </div>
+        <p class="muted" style="margin: 0.75rem 0 0; font-size: 0.92rem">
+          Same call from Cursor, Claude Code, or CI — no catalog install.
+        </p>
+      </div>
+
+      <div class="panel" style="margin-top: 1rem">
+        <p class="kicker">Agent shape</p>
+        <pre class="mono muted" style="margin: 0.5rem 0 0; white-space: pre-wrap" x-text="node === 'docs'
+          ? 'tools/call run\n  bundle: { pages, links, examples }\n→ composite Envelope'
+          : 'tools/call match\n  intent: &quot;' + q + '&quot;\n→ [{ name, blurb, endpoint, price }]\n\ntools/call resolve\n  name: &quot;acme/launch-gate&quot;\n→ endpoint, digest, pubkey'"></pre>
+      </div>
+    </section>
+
+    <aside>
+      <div class="panel" x-ref="results">
+        <p class="kicker">
+          <span class="live-dot" aria-hidden="true"></span>
+          Gaze results
+        </p>
+        <ul class="gaze-hits">
+          <template x-for="hit in hits[node]" :key="hit.name">
+            <li>
+              <a :href="hit.href">
+                <span class="pill" :class="hit.kind === 'constellation' ? 'pill-pay' : hit.kind === 'tool' ? 'pill-priv' : 'pill-ok'" x-text="hit.kind"></span>
+                <strong class="mono" x-text="hit.name"></strong>
+                <span class="muted" x-text="hit.blurb"></span>
+              </a>
+            </li>
+          </template>
+        </ul>
+      </div>
+
+      <div class="panel" style="margin-top: 1rem">
+        <p class="kicker">Progressive disclosure</p>
+        <ol class="steps" style="margin-top: 0.75rem">
+          <li>
+            <div>
+              <strong>Gaze</strong>
+              Descriptions + prices only (~trigger layer).
+            </div>
+          </li>
+          <li>
+            <div>
+              <strong>Resolve</strong>
+              Endpoint, digest, key — still no payload.
+            </div>
+          </li>
+          <li>
+            <div>
+              <strong>Call</strong>
+              Tool runs; Envelope is the receipt.
+            </div>
+          </li>
+        </ol>
+      </div>
+    </aside>
+  </div>
+
+  <section class="section" style="padding-top: 0.5rem">
+    <h2>Many nodes, one protocol.</h2>
+    <p class="lede">
+      Public gaze for gravity. Namespace gaze for <code class="mono">acme/*</code>.
+      Constellation nodes expose <code class="mono">run</code> so agents don't
+      re-implement the gate graph.
+    </p>
+    <div class="ns-grid">
+      <article>
+        <h3>Gaze</h3>
+        <p>Browse &amp; route. MCP entry for lazy agents.</p>
+      </article>
+      <article>
+        <h3>Resolve</h3>
+        <p>Name → live record. The DNS moment.</p>
+      </article>
+      <article class="featured">
+        <h3>Call</h3>
+        <p>Star or constellation executes. Verify or don't trust it.</p>
+      </article>
+    </div>
+  </section>
+</div>
+{% end %}
