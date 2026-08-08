@@ -4,8 +4,9 @@ Three astronomy-themed stubs with unique tool names so they share one
 aggregated ``/mcp``. Each has a golden corpus that passes the publish
 oracle (``run_publish_gate`` / smoke harness).
 
-These are **host plumbing placeholders**, not product Gaze / Resolve / Star
-semantics. Replace under epics #4-#6 (see Saga #1).
+These are **host plumbing placeholders** for Gaze / Star semantics.
+Resolve already returns product Skill DNS records from :mod:`catalog`
+(issue #20). Replace Gaze / Star under epics #4 and #6 (see Saga #1).
 """
 
 from __future__ import annotations
@@ -54,7 +55,9 @@ def build_gaze_skill(*, private_key: Any | None = None) -> Skill:
 
 
 def build_resolve_skill(*, private_key: Any | None = None) -> Skill:
-    """Resolve — map a skill name to a stable host path."""
+    """Resolve — Skill DNS: name → endpoint, digest, key, price."""
+    from catalog import CATALOG
+
     private = private_key or _load_or_generate_key("ORRERY_RESOLVE_PRIVATE_KEY")
     public = private.public_key().public_bytes_raw()
     skill = Skill(
@@ -65,14 +68,17 @@ def build_resolve_skill(*, private_key: Any | None = None) -> Skill:
         public_key=public,
     )
 
-    @skill.tool("resolve_name", description="Resolve a skill name to a host path")
-    def resolve_name(name: str) -> dict[str, str]:
-        slug = name.strip().lower().replace(" ", "-")
-        return {
-            "name": name,
-            "path": f"/console/{slug}",
-            "status": "resolved",
-        }
+    @skill.tool(
+        "resolve_name",
+        description="Resolve a skill name to a Skill DNS record (endpoint, digest, key, price)",
+    )
+    def resolve_name(name: str) -> dict[str, object]:
+        record = CATALOG.resolve(name)
+        if record is None:
+            return {"error": "not_found", "name": name, "status": "not_found"}
+        payload = record.as_dict()
+        payload["status"] = "resolved"
+        return payload
 
     return skill
 
@@ -117,11 +123,17 @@ DOGFOOD_CORPUS: tuple[CorpusPrompt, ...] = (
         required_facts=("Vega",),
     ),
     CorpusPrompt(
-        id="resolve-gaze",
-        prompt="Resolve the skill named gaze.",
+        id="resolve-html-to-pdf",
+        prompt="Resolve the skill named orrery/html-to-pdf.",
         tool="resolve_name",
-        arguments={"name": "gaze"},
-        required_facts=("gaze", "resolved", "/console/gaze"),
+        arguments={"name": "orrery/html-to-pdf"},
+        required_facts=(
+            "orrery/html-to-pdf",
+            "resolved",
+            "mcp://orrery.dev/s/html-to-pdf",
+            "sha256:",
+            "orrery-pdf-1",
+        ),
     ),
     CorpusPrompt(
         id="star-seal-orion",

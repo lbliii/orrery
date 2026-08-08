@@ -148,12 +148,99 @@ class TestStarDetail:
     async def test_named_star_switches_record(self, example_app) -> None:
         async with TestClient(example_app) as client:
             r = await client.get("/stars?name=orrery/md-linkcheck")
+            assert r.status == 200
             assert "orrery/md-linkcheck" in r.text
             assert "$0.01" in r.text
 
+    async def test_unknown_star_name_is_404(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/stars?name=does-not-exist")
+            assert r.status == 404
 
-@pytest.mark.issue(24)
-class TestGazeConsole:
+    async def test_constellation_name_is_not_a_star_page(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/stars?name=acme/launch-gate")
+            assert r.status == 404
+
+
+@pytest.mark.issue(19)
+@pytest.mark.issue(20)
+class TestResolveHttpAndMcp:
+    async def test_resolve_name_query_returns_json(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/resolve?name=html-to-pdf")
+            assert r.status == 200
+            body = json.loads(r.text)
+            assert body["name"] == "orrery/html-to-pdf"
+            assert body["endpoint"] == "mcp://orrery.dev/s/html-to-pdf"
+            assert body["key_id"] == "orrery-pdf-1"
+
+    async def test_resolve_html_console_still_renders(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/resolve")
+            assert r.status == 200
+            assert "data-resolve-table" in r.text
+            assert "orrery/html-to-pdf" in r.text
+
+    async def test_mcp_resolve_name_returns_dns_record(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            called = await client.post(
+                "/mcp",
+                json={
+                    "jsonrpc": "2.0",
+                    "method": "tools/call",
+                    "id": 9,
+                    "params": {
+                        "_meta": {
+                            "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+                            "io.modelcontextprotocol/clientCapabilities": {},
+                        },
+                        "name": "resolve_name",
+                        "arguments": {"name": "orrery/html-to-pdf"},
+                    },
+                },
+                headers={
+                    "content-type": "application/json",
+                    "mcp-protocol-version": "2026-07-28",
+                    "mcp-method": "tools/call",
+                    "mcp-name": "resolve_name",
+                },
+            )
+            assert called.status == 200
+            text = json.loads(called.text)["result"]["content"][0]["text"]
+            assert "orrery/html-to-pdf" in text
+            assert "mcp://orrery.dev/s/html-to-pdf" in text
+            assert "/console/" not in text
+            assert "sha256:" in text
+
+    async def test_mcp_resolve_name_miss(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            called = await client.post(
+                "/mcp",
+                json={
+                    "jsonrpc": "2.0",
+                    "method": "tools/call",
+                    "id": 10,
+                    "params": {
+                        "_meta": {
+                            "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+                            "io.modelcontextprotocol/clientCapabilities": {},
+                        },
+                        "name": "resolve_name",
+                        "arguments": {"name": "nope"},
+                    },
+                },
+                headers={
+                    "content-type": "application/json",
+                    "mcp-protocol-version": "2026-07-28",
+                    "mcp-method": "tools/call",
+                    "mcp-name": "resolve_name",
+                },
+            )
+            assert called.status == 200
+            text = json.loads(called.text)["result"]["content"][0]["text"]
+            assert "not_found" in text
+
     async def test_gaze_renders_nodes_and_alpine(self, example_app) -> None:
         async with TestClient(example_app) as client:
             r = await client.get("/gaze")
