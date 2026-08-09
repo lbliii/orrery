@@ -44,6 +44,7 @@ class StarDefinition:
     receipt_algorithm: str
     publish_corpus: str
     tools: tuple[str, ...] = ()
+    kind: str = "star"
 
     @property
     def endpoint_path(self) -> str:
@@ -88,7 +89,10 @@ class StarDefinition:
             receipt_algorithm=_require_nonempty_string(receipt, "receipt", "algorithm"),
             publish_corpus=_require_attribute_reference(publish, "publish", "corpus"),
             tools=_optional_string_list(star, "star", "tools"),
+            kind=_optional_nonempty_string(star, "star", "kind", "star"),
         )
+        if definition.kind not in {"star", "constellation"}:
+            raise StarManifestError("star.kind must be star or constellation")
         _validate_unique(definition.allowed_egress, "policy.allowed_egress")
         _validate_unique(definition.tools, "star.tools")
         return definition

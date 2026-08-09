@@ -42,7 +42,7 @@ def build_star_records(
             ResolveRecord(
                 name=definition.name,
                 version=definition.version,
-                kind="star",
+                kind=definition.kind,
                 visibility="public",
                 description=definition.description,
                 endpoint=_direct_endpoint(definition.direct_mcp_path),

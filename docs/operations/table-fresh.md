@@ -1,0 +1,2 @@
+# Table Fresh
+`orrery/table-fresh` is a direct callable constellation. Call `run` with a caller-held baseline `{rows, source_digest?}`; Orrery freshly fetches `csv-url`'s bounded flights-airport sample, converts origin/destination to a deterministic route key, and invokes `table-diff`. It retains no baseline. The verdict is explicitly limited to the current 100-row sample and carries both source and independently computed snapshot digests.
