@@ -339,10 +339,40 @@ TABLE_FRESH_POLICY = PolicyGraph(
     release_key_id="orrery-table-fresh-1",
 )
 
+SHIP_CHECK_POLICY = PolicyGraph(
+    nodes=(
+        PolicyNode("release", "release metadata", "gate", 130, 180, 0, status_label="release"),
+        PolicyNode(
+            "source-watch", "source-watch", "gate", 390, 180, 1, "orrery/source-watch", "fresh"
+        ),
+        PolicyNode("world-time", "world-time", "gate", 630, 180, 2, "orrery/world-time", "UTC"),
+        PolicyNode("reason", "reason", "composite", 820, 300, 3, status_label="composite", r=18),
+    ),
+    edges=(
+        PolicyEdge(
+            "sc1", "release", "source-watch", "gate", "M170 180 C250 180, 290 180, 350 180", 1
+        ),
+        PolicyEdge(
+            "sc2", "source-watch", "world-time", "gate", "M430 180 C510 180, 550 180, 590 180", 2
+        ),
+        PolicyEdge("sc3", "world-time", "reason", "gate", "M670 200 C730 250, 770 280, 790 290", 3),
+    ),
+    repair_loop_max=None,
+    footnote="Release metadata + source change evidence + UTC; never deploy approval.",
+    composite_chain=(
+        CompositeStep(1, "release", "Envelope ✓", "PyPI/npm latest"),
+        CompositeStep(2, "source-watch", "Envelope ✓", "Python notes diff"),
+        CompositeStep(3, "world-time", "Envelope ✓", "UTC evidence"),
+    ),
+    release_digest="sha256:ship-check…",
+    release_key_id="orrery-ship-check-1",
+)
+
 POLICIES: dict[str, PolicyGraph] = {
     "acme/launch-gate": LAUNCH_GATE_POLICY,
     "orrery/stale-proof": STALE_PROOF_POLICY,
     "orrery/table-fresh": TABLE_FRESH_POLICY,
+    "orrery/ship-check": SHIP_CHECK_POLICY,
 }
 
 

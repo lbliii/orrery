@@ -1,0 +1,26 @@
+[star]
+name="orrery/ship-check"
+kind="constellation"
+version="0.1.0"
+description="Bounded release, freshness, and UTC evidence for reasoning"
+publisher="orrery"
+publisher_key_id_env="ORRERY_SHIP_CHECK_KEY_ID"
+direct_mcp_path="/constellations/ship-check/mcp"
+tools=["run"]
+[pricing]
+unit="call"
+price_per_call="0.00"
+currency="USD"
+[runtime]
+python_package="stars.ship_check"
+skill_factory="stars.ship_check.skill:build_skill"
+[policy]
+allowed_egress=["https://pypi.org","https://registry.npmjs.org","https://docs.python.org"]
+freshness="at_call"
+redirects="deny"
+max_response_bytes=1048576
+[receipt]
+schema_version="1"
+algorithm="Ed25519"
+[publish]
+corpus="stars.ship_check.corpus:CORPUS"

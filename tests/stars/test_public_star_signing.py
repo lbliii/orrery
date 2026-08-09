@@ -16,6 +16,7 @@ from stars.npm_release.skill import build_skill as build_npm_release
 from stars.pypi_release.skill import build_skill as build_pypi_release
 from stars.row_lookup.skill import build_skill as build_row_lookup
 from stars.row_validate.skill import build_skill as build_row_validate
+from stars.ship_check.skill import build_skill as build_ship_check
 from stars.source_watch.skill import build_skill as build_watch
 from stars.spdx_license.skill import build_skill as build_spdx
 from stars.table_diff.skill import build_skill as build_table_diff
@@ -61,6 +62,7 @@ def test_global_public_star_key_is_stable_and_verifies_all_factory_envelopes(
     import stars.pypi_release.skill as pypi_release_module
     import stars.row_lookup.skill as row_lookup_module
     import stars.row_validate.skill as row_validate_module
+    import stars.ship_check.skill as ship_check_module
     import stars.spdx_license.skill as spdx_module
     import stars.table_diff.skill as table_diff_module
     import stars.table_fresh.skill as table_fresh_module
@@ -74,6 +76,7 @@ def test_global_public_star_key_is_stable_and_verifies_all_factory_envelopes(
     row_lookup_module.lookup_row = lambda _dataset, _key: {"row": {"count": 853}}
     row_validate_module.validate_row = lambda _profile, _row: {"valid": True}
     spdx_module.get_license = lambda _license_id: {"license_id": "MIT"}
+    ship_check_module.run_check = lambda _package, _digest: {"verdict": "ready_to_reason"}
     table_diff_module.diff_tables = lambda _left, _right, _key: {"changed_count": 0}
     table_fresh_module.run_fresh = lambda _baseline: {"scope": "bounded_sample"}
     factories = {
@@ -115,6 +118,7 @@ def test_global_public_star_key_is_stable_and_verifies_all_factory_envelopes(
             {"target": "orrery-readme", "ref": "0" * 40},
         ),
         "orrery/gh-release-notes": (build_gh_release_notes, "observe", {}),
+        "orrery/ship-check": (build_ship_check, "run", {"package": "httpx"}),
     }
     first = {name: factory() for name, (factory, _, _) in factories.items()}
     second = {name: factory() for name, (factory, _, _) in factories.items()}
@@ -156,6 +160,7 @@ def test_production_public_stars_fail_without_valid_config(
         "ORRERY_NPM_RELEASE_PRIVATE_KEY",
         "ORRERY_GH_FILE_AT_REF_PRIVATE_KEY",
         "ORRERY_GH_RELEASE_NOTES_PRIVATE_KEY",
+        "ORRERY_SHIP_CHECK_PRIVATE_KEY",
     ):
         monkeypatch.delenv(name, raising=False)
     if key is not None:
@@ -176,6 +181,7 @@ def test_production_public_stars_fail_without_valid_config(
         build_npm_release,
         build_gh_file,
         build_gh_release_notes,
+        build_ship_check,
     ):
         with pytest.raises((RuntimeError, ValueError)):
             factory()
