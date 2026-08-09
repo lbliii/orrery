@@ -6,27 +6,16 @@ canonical contract into a signed Chirp skill with its natural tool names.
 
 from __future__ import annotations
 
-import os
 from typing import Any
 
 from chirp.skill import Skill
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+from stars.signing import public_star_signing_key
 
 from .contract import ANSWER_MAX_CHARS, DEFAULT_SOURCE, STAR_VERSION
 from .service import answer as answer_from_source
 from .service import diff as diff_from_source
 from .service import observe as observe_from_source
-
-
-def _private_key(private_key: Any | None) -> Ed25519PrivateKey:
-    if private_key is not None:
-        return private_key
-    raw = os.environ.get("ORRERY_SOURCE_WATCH_PRIVATE_KEY", "").strip()
-    return (
-        Ed25519PrivateKey.from_private_bytes(bytes.fromhex(raw))
-        if raw
-        else Ed25519PrivateKey.generate()
-    )
 
 
 def build_skill(
@@ -35,12 +24,17 @@ def build_skill(
     answer_tool_name: str = "answer",
 ) -> Skill:
     """Build a Source Watch skill, optionally aliasing ``answer`` for an aggregate host."""
-    private = _private_key(private_key)
+    private, key_id = public_star_signing_key(
+        private_key=private_key,
+        private_key_env="ORRERY_SOURCE_WATCH_PRIVATE_KEY",
+        key_id_env="ORRERY_SOURCE_WATCH_KEY_ID",
+        default_key_id="orrery-source-watch-1",
+    )
     skill = Skill(
         "source-watch",
         version=STAR_VERSION,
         private_key=private,
-        key_id=os.environ.get("ORRERY_SOURCE_WATCH_KEY_ID", "orrery-source-watch-1"),
+        key_id=key_id,
         public_key=private.public_key().public_bytes_raw(),
     )
 
