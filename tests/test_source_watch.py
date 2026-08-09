@@ -72,9 +72,9 @@ class TestSourceWatch:
 
     def test_rejects_an_unallowlisted_source(self) -> None:
         from stars.source_watch.service import observe
+        from tests.stars.helpers import assert_allowlist_rejects
 
-        result = observe("https://example.com/not-a-source")
-        assert result["error"] == "source_not_allowed"
+        result = assert_allowlist_rejects(observe, "https://example.com/not-a-source")
         assert result["live_at_call"] is True
 
     def test_signed_source_watch_receipt_verifies(self, monkeypatch: pytest.MonkeyPatch) -> None:

@@ -9,7 +9,9 @@ payload sealed at call time. Source Watch observes an allowlisted official
 source and seals current evidence or a bounded answer at call time (#51).
 
 Each skill has a golden corpus entry that passes the publish oracle
-(``run_publish_gate`` / smoke harness).
+(``run_publish_gate`` / smoke harness). Public star packages also ship their
+own non-empty ``corpus.py`` ``CORPUS`` (L1 / #117); missing corpus ⇒ not
+``oracle_ok``.
 """
 
 from __future__ import annotations

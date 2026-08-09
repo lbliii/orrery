@@ -5,6 +5,7 @@
 - **Parent product saga:** [#1](https://github.com/lbliii/orrery/issues/1)
 - **Strategy saga:** [#56](https://github.com/lbliii/orrery/issues/56) (vending-machine sky / discovery / dual trust)
 - **Conventions:** [scouting.md](../design/scouting.md) · [atlas.md](../design/atlas.md)
+- **Eval bar:** [star-eval.md](../design/star-eval.md) (L0+L1 required; plan [star-eval.md](./star-eval.md) · epic [#114](https://github.com/lbliii/orrery/issues/114))
 - **Depends on:** [ADR 0001](../adr/0001-control-plane-wallet.md), [ADR 0004](../adr/0004-publisher-direct-call.md), [ADR 0005](../adr/0005-discovery-and-dual-trust.md)
 
 ## Why this matters
@@ -89,6 +90,9 @@ transform · attest · gate**.
 3. Publisher-direct call path (ADR 0004); dogfood on this host is demo.
 4. Each star teaches a shape; avoid duplicate “fetch URL” clones.
 5. Products recommend SKUs; they do not hard-depend on a single publisher forever.
+6. **Eval bar:** every public specimen star ships L0 allowlist-negative tests + L1
+   non-empty `CORPUS` ([star-eval.md](../design/star-eval.md)). LLM rubrics are
+   **Not now** for the publish gate.
 
 ## Sprint overview
 
