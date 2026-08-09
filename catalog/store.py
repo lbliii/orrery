@@ -16,6 +16,7 @@ from .gaze import (
     GazeHit,
     GazeNode,
     _tokens,
+    clamp_gaze_limit,
     hit_from_record,
     score_record,
     tool_hit,
@@ -88,8 +89,15 @@ class Catalog:
         # Namespace node: match records whose namespace equals the node id.
         return tuple(r for r in self._records if (r.namespace or "").lower() == key)
 
-    def match(self, intent: str, *, node: str = "public") -> tuple[GazeHit, ...]:
-        """Rank catalog records for an agent intent (progressive disclosure)."""
+    def match(
+        self,
+        intent: str,
+        *,
+        node: str = "public",
+        limit: int | None = None,
+    ) -> tuple[GazeHit, ...]:
+        """Rank catalog records for an agent intent (bounded shortlist)."""
+        cap = clamp_gaze_limit(limit)
         tokens = _tokens(intent)
         scored: list[tuple[int, ResolveRecord]] = []
         for record in self.records_for_node(node):
@@ -97,20 +105,27 @@ class Catalog:
             if score > 0:
                 scored.append((score, record))
         scored.sort(key=lambda item: (-item[0], item[1].name))
-        return tuple(hit_from_record(record) for _, record in scored)
+        return tuple(hit_from_record(record) for _, record in scored[:cap])
 
-    def search(self, query: str, *, node: str | None = None) -> tuple[GazeHit, ...]:
-        """Substring search over name + description."""
+    def search(
+        self,
+        query: str,
+        *,
+        node: str | None = None,
+        limit: int | None = None,
+    ) -> tuple[GazeHit, ...]:
+        """Substring search over name + description (bounded shortlist)."""
+        cap = clamp_gaze_limit(limit)
         q = (query or "").strip().lower()
         pool = self.records_for_node(node) if node else self._records
         if not q:
-            return tuple(hit_from_record(r) for r in pool)
+            return tuple(hit_from_record(r) for r in pool[:cap])
         hits = [
             hit_from_record(r)
             for r in pool
             if q in r.name.lower() or q in (r.description or "").lower()
         ]
-        return tuple(hits)
+        return tuple(hits[:cap])
 
     def describe(self, name: str) -> dict[str, object]:
         """Richer manifest-ish metadata without executing tools."""
@@ -191,7 +206,13 @@ class Catalog:
             )
         return tuple(nodes)
 
-    def hits_for_node(self, node_id: str, *, intent: str = "") -> tuple[GazeHit, ...]:
+    def hits_for_node(
+        self,
+        node_id: str,
+        *,
+        intent: str = "",
+        limit: int | None = None,
+    ) -> tuple[GazeHit, ...]:
         """Hits shown for a console node (records or constellation tools)."""
         key = (node_id or "public").strip().lower()
         if key == "docs":
@@ -204,8 +225,9 @@ class Catalog:
             tools = constellation.tools or ("run", "status")
             return tuple(tool_hit(t, constellation=constellation) for t in tools)
         if intent.strip():
-            return self.match(intent, node=key)
-        return tuple(hit_from_record(r) for r in self.records_for_node(key))
+            return self.match(intent, node=key, limit=limit)
+        cap = clamp_gaze_limit(limit)
+        return tuple(hit_from_record(r) for r in self.records_for_node(key)[:cap])
 
 
 #: Process-wide catalog; refreshed from live manifests after publish-oracle.

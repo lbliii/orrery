@@ -6,31 +6,66 @@
     return {
       node: cfg.node,
       q: cfg.q,
+      filterKind: '',
+      filterReactive: false,
+      filterOracleOk: false,
+      hitVisible(el) {
+        if (this.filterKind && el.dataset.kind !== this.filterKind) return false;
+        if (this.filterReactive && el.dataset.reactive !== 'true') return false;
+        if (this.filterOracleOk && el.dataset.oracleOk !== 'true') return false;
+        return true;
+      },
+      applyFilters() {
+        document.querySelectorAll('[data-gaze-hits] li[data-kind]').forEach((el) => {
+          el.style.display = this.hitVisible(el) ? '' : 'none';
+        });
+      },
+      renderHit(hit) {
+        const kindPill = hit.kind === 'constellation' ? 'pill-pay' : hit.kind === 'tool' ? 'pill-priv' : 'pill-ok';
+        const tollPill = hit.price
+          ? '<span class=&quot;pill pill-pay&quot;>' + hit.price + '</span>'
+          : '<span class=&quot;pill pill-free&quot;>free</span>';
+        const oracle = (hit.trust && hit.trust.oracle) ? hit.trust.oracle : {};
+        const oracleClass = oracle.pill_class || (hit.oracle_ok ? 'pill-ok' : 'pill-priv');
+        const oracleText = oracle.pill_text || (hit.oracle_ok ? 'check · freeze · smoke' : 'unscored');
+        const consoleHref = hit.console_href || '/console';
+        const href = hit.href || '#';
+        const name = hit.name || '';
+        const blurb = hit.blurb || '';
+        const kind = hit.kind || '';
+        const ns = hit.namespace || '';
+        const reactive = hit.reactive ? 'true' : 'false';
+        const oracleOk = hit.oracle_ok ? 'true' : 'false';
+        const reactivePill = hit.reactive
+          ? '<span class=&quot;pill pill-priv&quot;>reactive</span>'
+          : '';
+        return '<li data-kind=&quot;' + kind + '&quot; data-reactive=&quot;' + reactive
+          + '&quot; data-oracle-ok=&quot;' + oracleOk + '&quot; data-namespace=&quot;' + ns + '&quot;>'
+          + '<a href=&quot;' + href + '&quot;>'
+          + '<span class=&quot;pill ' + kindPill + '&quot;>' + kind + '</span>'
+          + tollPill
+          + reactivePill
+          + '<span class=&quot;pill ' + oracleClass + '&quot;>' + oracleText + '</span>'
+          + '<strong class=&quot;mono&quot;>' + name + '</strong>'
+          + '<span class=&quot;muted&quot;>' + blurb + '</span>'
+          + '</a>'
+          + (kind === 'star' || kind === 'tool'
+            ? ' <a class=&quot;mono&quot; href=&quot;' + consoleHref + '&quot; style=&quot;font-size:0.82rem&quot;>console</a>'
+            : '')
+          + '</li>';
+      },
       async runMatch() {
         const url = '/api/gaze/match?intent=' + encodeURIComponent(this.q) + '&node=' + encodeURIComponent(this.node);
         const data = await (await fetch(url)).json();
         const list = document.querySelector('[data-gaze-hits=&quot;' + this.node + '&quot;]');
         if (!list || !data.hits) return;
-        list.innerHTML = data.hits.map(hit => {
-          const pill = hit.kind === 'constellation' ? 'pill-pay' : hit.kind === 'tool' ? 'pill-priv' : 'pill-ok';
-          const tollPill = hit.price
-            ? '<span class=&quot;pill pill-pay&quot;>' + hit.price + '</span>'
-            : '<span class=&quot;pill pill-free&quot;>free</span>';
-          const href = hit.href || '#';
-          const name = hit.name || '';
-          const blurb = hit.blurb || '';
-          const kind = hit.kind || '';
-          return '<li><a href=&quot;' + href + '&quot;>'
-            + '<span class=&quot;pill ' + pill + '&quot;>' + kind + '</span>'
-            + tollPill
-            + '<strong class=&quot;mono&quot;>' + name + '</strong>'
-            + '<span class=&quot;muted&quot;>' + blurb + '</span>'
-            + '</a></li>';
-        }).join('');
+        list.innerHTML = data.hits.map((hit) => this.renderHit(hit)).join('');
+        this.applyFilters();
         this.$refs.results.scrollIntoView({behavior: 'smooth'});
       }
     };
   })()"
+  @change="applyFilters()"
 >
   <header class="console-head">
     <div>
@@ -38,7 +73,8 @@
       <h1>Gaze</h1>
       <p class="lede" style="margin-bottom: 0">
         Agents discover stars through gaze nodes — progressive disclosure for
-        live skills. Gaze returns names and triggers; call returns Envelopes.
+        live skills. Gaze returns a bounded shortlist (names, facets, oracle);
+        the agent is the semantic router. Call returns Envelopes.
       </p>
     </div>
   </header>
@@ -100,6 +136,7 @@
         </form>
         <p class="muted" style="margin: 0.75rem 0 0; font-size: 0.92rem">
           Same call from Cursor, Claude Code, or CI — no catalog install.
+          Default ≤{{ gaze_default_limit }} hits; agent re-ranks.
         </p>
       </div>
 
@@ -114,7 +151,7 @@
   bundle: { pages, links, examples }
 → composite Envelope{% else %}tools/call gaze_match
   intent: "{{ intent }}"
-→ [{ name, blurb, endpoint, price }]
+→ [{ name, kind, reactive, price, oracle_ok, namespace, trust.oracle }]
 
 tools/call resolve_name
   name: "acme/launch-gate"
@@ -129,6 +166,28 @@ tools/call resolve_name
           <span class="live-dot" aria-hidden="true"></span>
           Gaze results
         </p>
+        <p class="muted" style="margin: 0.35rem 0 0.75rem; font-size: 0.88rem">
+          Facet filter (client-side — agent does the same on MCP JSON)
+        </p>
+        <div class="lookup" style="margin-bottom: 0.75rem; gap: 0.5rem; flex-wrap: wrap">
+          <label class="muted" style="font-size: 0.88rem">
+            Kind
+            <select x-model="filterKind" aria-label="Filter by kind">
+              <option value="">any</option>
+              <option value="star">star</option>
+              <option value="constellation">constellation</option>
+              <option value="tool">tool</option>
+            </select>
+          </label>
+          <label class="muted" style="font-size: 0.88rem">
+            <input type="checkbox" x-model="filterReactive" />
+            reactive
+          </label>
+          <label class="muted" style="font-size: 0.88rem">
+            <input type="checkbox" x-model="filterOracleOk" />
+            oracle_ok
+          </label>
+        </div>
         {% for n in node_panels %}
         <ul
           class="gaze-hits"
@@ -137,7 +196,12 @@ tools/call resolve_name
           {% if not n.active %}style="display:none"{% end %}
         >
           {% for hit in n.hits %}
-          <li>
+          <li
+            data-kind="{{ hit.kind }}"
+            data-reactive="{% if hit.reactive %}true{% else %}false{% end %}"
+            data-oracle-ok="{% if hit.oracle_ok %}true{% else %}false{% end %}"
+            data-namespace="{{ hit.namespace or '' }}"
+          >
             <a href="{{ hit.href }}">
               <span class="pill {% if hit.kind == 'constellation' %}pill-pay{% elif hit.kind == 'tool' %}pill-priv{% else %}pill-ok{% end %}">{{ hit.kind }}</span>
               {% if hit.price %}
@@ -145,9 +209,22 @@ tools/call resolve_name
               {% else %}
               <span class="pill pill-free">free</span>
               {% end %}
+              {% if hit.reactive %}
+              <span class="pill pill-priv">reactive</span>
+              {% end %}
+              {% if hit.oracle %}
+              <span class="pill {{ hit.oracle.pill_class }}">{{ hit.oracle.pill_text }}</span>
+              {% elif hit.oracle_ok %}
+              <span class="pill pill-ok">check · freeze · smoke</span>
+              {% else %}
+              <span class="pill pill-priv">unscored</span>
+              {% end %}
               <strong class="mono">{{ hit.name }}</strong>
               <span class="muted">{{ hit.blurb }}</span>
             </a>
+            {% if hit.kind == 'star' or hit.kind == 'tool' %}
+            <a class="mono" href="{{ hit.console_href }}" style="font-size: 0.82rem">console</a>
+            {% end %}
           </li>
           {% end %}
         </ul>
@@ -160,7 +237,7 @@ tools/call resolve_name
           <li>
             <div>
               <strong>Gaze</strong>
-              Descriptions + prices only (~trigger layer).
+              Descriptions + prices + facets only (~trigger layer).
             </div>
           </li>
           <li>

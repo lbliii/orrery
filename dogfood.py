@@ -23,7 +23,7 @@ from chirp.skill import Envelope, Skill, verify_envelope
 from chirp.skill.smoke import CorpusPrompt
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
-from catalog import CATALOG
+from catalog import CATALOG, GAZE_DEFAULT_LIMIT, GAZE_MAX_LIMIT
 from catalog.constellation_run import explain_policy, run_constellation, status_for_run
 from stars.html_to_pdf.skill import build_skill as build_html_to_pdf_star
 from stars.source_watch.skill import build_skill as build_source_watch_star
@@ -66,27 +66,48 @@ def build_gaze_skill(*, private_key: Any | None = None) -> Skill:
 
     @skill.tool(
         "gaze_match",
-        description="Match an intent to ranked catalog hits (name, blurb, endpoint, price)",
+        description=(
+            "Match an intent to a bounded shortlist of catalog hits "
+            "(name, blurb, endpoint, price, facets, oracle). "
+            "Agent ranks the shortlist — Orrery does not pick a winner. "
+            f"Default limit {GAZE_DEFAULT_LIMIT}; explicit limit capped at {GAZE_MAX_LIMIT}."
+        ),
     )
-    def gaze_match(intent: str, node: str = "public") -> dict[str, object]:
-        hits = CATALOG.match(intent, node=node or "public")
+    def gaze_match(
+        intent: str,
+        node: str = "public",
+        limit: int = GAZE_DEFAULT_LIMIT,
+    ) -> dict[str, object]:
+        hits = CATALOG.match(intent, node=node or "public", limit=limit)
         return {
             "intent": intent,
             "node": node or "public",
+            "limit": len(hits),
             "hits": [h.as_dict() for h in hits],
             "status": "ok",
+            "note": "Agent is the semantic router; re-rank or filter by facets.",
         }
 
     @skill.tool(
         "gaze_search",
-        description="Search catalog names and descriptions by substring",
+        description=(
+            "Search catalog names and descriptions by substring "
+            "(bounded shortlist with facets; no tool payloads). "
+            f"Default limit {GAZE_DEFAULT_LIMIT}; explicit limit capped at {GAZE_MAX_LIMIT}."
+        ),
     )
-    def gaze_search(query: str, node: str = "") -> dict[str, object]:
-        hits = CATALOG.search(query, node=node or None)
+    def gaze_search(
+        query: str,
+        node: str = "",
+        limit: int = GAZE_DEFAULT_LIMIT,
+    ) -> dict[str, object]:
+        hits = CATALOG.search(query, node=node or None, limit=limit)
         return {
             "query": query,
+            "limit": len(hits),
             "hits": [h.as_dict() for h in hits],
             "status": "ok",
+            "note": "Agent is the semantic router; re-rank or filter by facets.",
         }
 
     @skill.tool(

@@ -275,19 +275,71 @@ def api_resolve(request: Request) -> JSONResponse:
 
 @app.route("/api/gaze/match", referenced=True)
 def api_gaze_match(request: Request) -> JSONResponse:
-    """Gaze match: ``?intent=`` (+ optional ``?node=``) → ranked hits JSON."""
+    """Gaze match: ``?intent=`` (+ optional ``?node=`` / ``?limit=``) → bounded hits.
+
+    Default shortlist cap is 20; explicit ``limit`` may raise up to 100.
+    Agent is the semantic router — Orrery does not force a single winner.
+    """
+    from catalog.gaze import clamp_gaze_limit
+
     intent = (request.query.get("intent") or request.query.get("q") or "").strip()
     node = (request.query.get("node") or "public").strip() or "public"
-    if node == "docs":
-        hits = CATALOG.hits_for_node("docs")
+    raw_limit = request.query.get("limit")
+    limit: int | None
+    if raw_limit is None or str(raw_limit).strip() == "":
+        limit = None
     else:
-        hits = CATALOG.match(intent, node=node) if intent else CATALOG.hits_for_node(node)
+        try:
+            limit = int(str(raw_limit).strip())
+        except ValueError:
+            limit = None
+    cap = clamp_gaze_limit(limit)
+    if node == "docs":
+        hits = CATALOG.hits_for_node("docs", limit=cap)
+    else:
+        hits = (
+            CATALOG.match(intent, node=node, limit=cap)
+            if intent
+            else CATALOG.hits_for_node(node, limit=cap)
+        )
     return JSONResponse.from_value(
         {
             "intent": intent,
             "node": node,
+            "limit": len(hits),
             "hits": [h.as_dict() for h in hits],
             "status": "ok",
+            "note": "Agent is the semantic router; re-rank or filter by facets.",
+        }
+    )
+
+
+@app.route("/api/gaze/search", referenced=True)
+def api_gaze_search(request: Request) -> JSONResponse:
+    """Gaze search: ``?q=`` (+ optional ``?node=`` / ``?limit=``) → bounded hits."""
+    from catalog.gaze import clamp_gaze_limit
+
+    query = (request.query.get("q") or request.query.get("query") or "").strip()
+    node_raw = (request.query.get("node") or "").strip()
+    node = node_raw or None
+    raw_limit = request.query.get("limit")
+    if raw_limit is None or str(raw_limit).strip() == "":
+        limit = None
+    else:
+        try:
+            limit = int(str(raw_limit).strip())
+        except ValueError:
+            limit = None
+    cap = clamp_gaze_limit(limit)
+    hits = CATALOG.search(query, node=node, limit=cap)
+    return JSONResponse.from_value(
+        {
+            "query": query,
+            "node": node,
+            "limit": len(hits),
+            "hits": [h.as_dict() for h in hits],
+            "status": "ok",
+            "note": "Agent is the semantic router; re-rank or filter by facets.",
         }
     )
 

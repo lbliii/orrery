@@ -779,7 +779,8 @@ class TestGazeConsole:
             attr = r.text[attr_start:attr_end]
             assert "runMatch" in attr
             assert "scrollIntoView" in attr
-            assert "const pill" in attr
+            assert "renderHit" in attr
+            assert "kindPill" in attr
 
     async def test_api_gaze_match(self, example_app) -> None:
         async with TestClient(example_app) as client:
