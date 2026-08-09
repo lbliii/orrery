@@ -62,6 +62,8 @@ def test_loader_returns_immutable_definition_from_canonical_nested_manifest(tmp_
     assert definition.price_currency == "USD"
     assert definition.python_package == "stars.source_watch"
     assert definition.skill_factory == "stars.source_watch.skill:build_skill"
+    assert definition.execution_mode == "direct-mcp"
+    assert definition.managed_cpu_workload is None
     assert definition.allowed_egress == ("https://example.com",)
     assert definition.freshness == "live_at_call"
     assert definition.redirects == "deny"
@@ -96,6 +98,32 @@ def test_loader_rejects_invalid_nested_manifest(
 
     with pytest.raises(StarManifestError, match=message):
         load_star_definition(path)
+
+
+def test_loader_builds_managed_cpu_workload_from_pinned_manifest(tmp_path: Path) -> None:
+    manifest = _manifest().replace(
+        'skill_factory = "stars.source_watch.skill:build_skill"',
+        'skill_factory = "stars.source_watch.skill:build_skill"\nexecution_mode = "managed-cpu"',
+    )
+    manifest += """
+
+[managed_cpu]
+image_digest = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+command = ["/app/run"]
+cpu_millicores = 500
+memory_bytes = 536870912
+wall_time_seconds = 60
+max_input_bytes = 1048576
+max_output_bytes = 4194304
+"""
+    path = tmp_path / "star.toml"
+    path.write_text(manifest, encoding="utf-8")
+
+    definition = load_star_definition(path)
+
+    assert definition.execution_mode == "managed-cpu"
+    assert definition.managed_cpu_workload is not None
+    assert definition.managed_cpu_workload.receipt_fields()["image_digest"].startswith("sha256:")
 
 
 def test_registry_loads_and_registers_a_builtin_package(

@@ -130,6 +130,7 @@ class Catalog:
             "oracle_ok": record.oracle_ok,
             "tools": list(record.tools),
             "href": record.href,
+            "provider_card": record.provider_card.as_dict() if record.provider_card else None,
             "status": "ok",
         }
         if record.kind == "constellation":

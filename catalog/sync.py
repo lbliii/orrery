@@ -10,6 +10,7 @@ from stars._core import StarRegistry
 from .dns import mcp_url
 from .fixtures import CONSTELLATION_SEEDS
 from .models import ResolveRecord
+from .provider import ProviderCard
 from .store import replace_catalog
 
 if TYPE_CHECKING:
@@ -50,6 +51,22 @@ def build_star_records(
                 price_per_call=None if price.is_zero() else f"{definition.price_currency} {price}",
                 oracle_ok=True,
                 tools=tuple(skill.tools),
+                provider_card=ProviderCard(
+                    publisher=definition.publisher,
+                    endpoint=_direct_endpoint(definition.direct_mcp_path),
+                    transport="streamable-http",
+                    connection_route="direct-mcp",
+                    compute_locality="orrery-hosted",
+                    authentication="none",
+                    approval="not-required",
+                    write_authority="read-only",
+                    terms_url="https://github.com/lbliii/orrery",
+                    retention="provider-defined; no external provider content cached",
+                    attribution="Orrery",
+                    pricing="free" if price.is_zero() else f"{definition.price_currency} {price}",
+                    health="verified",
+                    tool_context_budget=min(len(skill.tools), 12),
+                ),
             )
         )
     return tuple(records)
@@ -80,6 +97,7 @@ def refresh_catalog(
             price_per_call=r.price_per_call,
             oracle_ok=oracle_ok_for_record(r),
             tools=r.tools,
+            provider_card=r.provider_card,
         )
         for r in records
     )

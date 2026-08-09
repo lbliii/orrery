@@ -163,5 +163,7 @@ def convert(html: str) -> dict[str, object]:
 
 
 def health() -> dict[str, str]:
-    """Report readiness for the conversion Star."""
-    return {"status": "ok", "skill": "html-to-pdf"}
+    """Report conversion and artifact-delivery readiness separately."""
+    from .artifacts import get_pdf_artifacts
+
+    return {"skill": "html-to-pdf", **get_pdf_artifacts().health()}

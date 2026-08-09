@@ -9,7 +9,7 @@ from typing import Any
 from chirp.skill import Skill
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
-from .artifacts import artifact_store
+from .artifacts import get_pdf_artifacts
 from .contract import STAR_VERSION
 from .service import convert as convert_html
 from .service import health as health_check
@@ -42,7 +42,7 @@ def build_skill(*, private_key: Any | None = None) -> Skill:
     def convert(html: str) -> dict[str, object]:
         result = convert_html(html)
         encoded = str(result.pop("artifact_base64"))
-        artifact = artifact_store.put(base64.b64decode(encoded, validate=True))
+        artifact = get_pdf_artifacts().publish(base64.b64decode(encoded, validate=True))
         result["artifact_url"] = f"/artifacts/{artifact.artifact_id}"
         result["sha256"] = artifact.sha256
         return result

@@ -5,7 +5,13 @@ from __future__ import annotations
 import base64
 import hashlib
 
+from artifacts.storage import InMemoryObjectStorage
 from stars.html_to_pdf import convert, health
+from stars.html_to_pdf.artifacts import (
+    DurablePdfArtifactService,
+    InMemoryPdfArtifactRepository,
+    configure_pdf_artifacts,
+)
 
 
 def test_convert_returns_a_verifiable_pdf_artifact() -> None:
@@ -33,4 +39,7 @@ def test_convert_extracts_visible_text_without_including_html_or_scripts() -> No
 
 
 def test_health_remains_ready() -> None:
-    assert health() == {"status": "ok", "skill": "html-to-pdf"}
+    configure_pdf_artifacts(
+        DurablePdfArtifactService(InMemoryPdfArtifactRepository(), InMemoryObjectStorage())
+    )
+    assert health() == {"status": "ok", "skill": "html-to-pdf", "artifact_delivery": "durable"}
