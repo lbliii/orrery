@@ -20,6 +20,7 @@ def test_real_csv_to_diff_composition_is_unchanged_or_changed() -> None:
     }
     unchanged = run(baseline, csv_fetch=_fetch)
     assert unchanged["scope"] == "bounded_sample" and unchanged["diff"]["changed_count"] == 0
+    assert unchanged["verdict"] == "unchanged" and unchanged["current_rows_returned"] == 2
     changed = run(
         {"rows": [{"origin": "ABE", "destination": "ATL", "count": 800}]}, csv_fetch=_fetch
     )
@@ -27,6 +28,14 @@ def test_real_csv_to_diff_composition_is_unchanged_or_changed() -> None:
         "source_digest"
     ].startswith("sha256:")
     assert changed["baseline"]["snapshot_digest"].startswith("sha256:")
+    assert changed["verdict"] == "changed"
+
+
+def test_malformed_baseline_is_not_coerced_to_an_empty_table() -> None:
+    assert run({"rows": [{"origin": "ABE", "count": 853}]}, csv_fetch=_fetch) == {
+        "error": "invalid_baseline",
+        "scope": "bounded_sample",
+    }
 
 
 def test_constellation_definition_and_direct_skill() -> None:

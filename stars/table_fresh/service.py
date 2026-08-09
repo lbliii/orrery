@@ -16,6 +16,8 @@ def run(baseline: object, *, csv_fetch: Fetch | None = None) -> dict[str, object
         return {"error": "invalid_baseline", "scope": "bounded_sample"}
     baseline_rows = _routes(baseline["rows"])
     current_rows = _routes(current["rows"])
+    if baseline_rows is None or current_rows is None:
+        return {"error": "invalid_baseline", "scope": "bounded_sample"}
     left = {"rows": baseline_rows, "digest": baseline.get("source_digest", baseline.get("digest"))}
     right = {"rows": current_rows, "digest": current["source_digest"]}
     verdict = diff(left, right, "route")
@@ -45,6 +47,8 @@ def run(baseline: object, *, csv_fetch: Fetch | None = None) -> dict[str, object
                 "rows_truncated",
             )
         },
+        "current_rows_returned": len(current_rows),
+        "sample_size_limit": 100,
         "baseline": verdict["left"],
         "current": verdict["right"],
         "diff": {
@@ -59,19 +63,24 @@ def run(baseline: object, *, csv_fetch: Fetch | None = None) -> dict[str, object
                 "changed",
             )
         },
+        "verdict": (
+            "unchanged"
+            if not any(verdict[key] for key in ("added_count", "removed_count", "changed_count"))
+            else "changed"
+        ),
         "live_at_call": True,
     }
 
 
-def _routes(rows: object) -> list[dict[str, object]]:
+def _routes(rows: object) -> list[dict[str, object]] | None:
     if not isinstance(rows, list):
-        return []
+        return None
     result: list[dict[str, object]] = []
     for row in rows:
         if not isinstance(row, dict) or set(row) != {"origin", "destination", "count"}:
-            return []
+            return None
         origin, destination = row["origin"], row["destination"]
         if not isinstance(origin, str) or not isinstance(destination, str):
-            return []
+            return None
         result.append({"route": f"{origin}\u0000{destination}", "count": row["count"]})
     return result
