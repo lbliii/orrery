@@ -33,57 +33,59 @@
     <span class="live-dot" aria-hidden="true"></span>
     Live zone · public
   </p>
-  <table class="record-table" data-resolve-table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Endpoint</th>
-        <th>Digest</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for record in records %}
-      <tr
-        data-name="{{ record.name }}"
-        data-href="{{ record.href }}"
-        onclick="location.href='{{ record.href }}'"
-        style="cursor: pointer"
-        {% if matched_name == record.name %}class="row-resolved"{% end %}
-      >
-        <td>
-          <div class="mono">{{ record.name }}</div>
-          <div class="muted" style="font-size: 0.88rem">{{ record.description }}</div>
-        </td>
-        <td class="mono">{{ record.endpoint }}</td>
-        <td>
-          <span class="mono" data-digest data-final="{{ record.content_digest }}">{{ record.content_digest }}</span>
-        </td>
-        <td>
-          {% if record.visibility == "private" %}
-          <span class="pill pill-priv">private</span>
-          {% end %}
-          {% set oracle = oracle_by_name[record.name] %}
-          {% if record.oracle_ok %}
-          <span class="pill pill-ok">{{ oracle.pill_text }}</span>
-          {% elif oracle.pill_text == "unscored" %}
-          <span class="pill pill-priv">unscored</span>
-          {% else %}
-          <span class="pill pill-fail">{{ oracle.pill_text }}</span>
-          {% end %}
-          {% if record.kind == "star" %}
-          <a class="mono" href="{{ console_by_name[record.name] }}" style="font-size: 0.82rem">console</a>
-          {% end %}
-          {% if record.is_paid %}
-          <span class="pill pill-pay" data-price data-final="{{ record.price_per_call }}">{{ record.price_per_call }}</span>
-          {% else %}
-          <span class="pill pill-free">free</span>
-          {% end %}
-        </td>
-      </tr>
-      {% end %}
-    </tbody>
-  </table>
+  <div class="table-scroll">
+    <table class="record-table" data-resolve-table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Endpoint</th>
+          <th>Digest</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for record in records %}
+        <tr
+          data-name="{{ record.name }}"
+          data-href="{{ record.href }}"
+          onclick="location.href='{{ record.href }}'"
+          style="cursor: pointer"
+          {% if matched_name == record.name %}class="row-resolved"{% end %}
+        >
+          <td>
+            <div class="mono">{{ record.name }}</div>
+            <div class="muted" style="font-size: 0.88rem">{{ record.description }}</div>
+          </td>
+          <td class="mono">{{ record.endpoint }}</td>
+          <td>
+            <span class="mono" data-digest data-final="{{ record.content_digest }}">{{ record.content_digest }}</span>
+          </td>
+          <td>
+            {% if record.visibility == "private" %}
+            <span class="pill pill-priv">private</span>
+            {% end %}
+            {% set oracle = oracle_by_name[record.name] %}
+            {% if record.oracle_ok %}
+            <span class="pill pill-ok">{{ oracle.pill_text }}</span>
+            {% elif oracle.pill_text == "unscored" %}
+            <span class="pill pill-priv">unscored</span>
+            {% else %}
+            <span class="pill pill-fail">{{ oracle.pill_text }}</span>
+            {% end %}
+            {% if record.kind == "star" %}
+            <a class="mono" href="{{ console_by_name[record.name] }}" style="font-size: 0.82rem">console</a>
+            {% end %}
+            {% if record.is_paid %}
+            <span class="pill pill-pay" data-price data-final="{{ record.price_per_call }}">{{ record.price_per_call }}</span>
+            {% else %}
+            <span class="pill pill-free">free</span>
+            {% end %}
+          </td>
+        </tr>
+        {% end %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <section class="section" style="padding-top: 0">

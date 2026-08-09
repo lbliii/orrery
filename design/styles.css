@@ -1,4 +1,11 @@
-/* Orrery — night observatory mocks (no ChirpUI) */
+/* Orrery — night observatory (no ChirpUI)
+ * Layer order: Tokens → Atmosphere → Primitives → Components
+ *              → Widgets → Layouts → Motion
+ * See docs/design/identity.md + docs/design/system.md
+ */
+
+/* ===== 1. Tokens + base ===== */
+
 :root {
   --void: #070b12;
   --night: #0d1520;
@@ -40,6 +47,8 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
 }
+
+/* ===== 2. Atmosphere ===== */
 
 /* —— Deep space stack (awe) —— */
 .cosmos {
@@ -241,6 +250,9 @@ body {
     linear-gradient(180deg, color-mix(in oklab, var(--void) 35%, transparent), transparent 18%, transparent 70%, color-mix(in oklab, var(--void) 55%, transparent));
 }
 
+
+/* ===== 3. Primitives ===== */
+
 a {
   color: inherit;
   text-decoration-thickness: 1px;
@@ -249,21 +261,6 @@ a {
 
 a:hover {
   color: var(--brass);
-}
-
-.shell {
-  position: relative;
-  z-index: 1;
-  width: min(1120px, calc(100% - 2.5rem));
-  margin-inline: auto;
-}
-
-.topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1.25rem 0 0.75rem;
 }
 
 .brand {
@@ -277,25 +274,6 @@ a:hover {
 
 .brand span {
   color: var(--brass);
-}
-
-.nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem 1.25rem;
-  font-family: var(--font-display);
-  font-size: 0.9rem;
-  font-weight: 500;
-}
-
-.nav a {
-  text-decoration: none;
-  color: var(--mist);
-}
-
-.nav a[aria-current="page"],
-.nav a:hover {
-  color: var(--signal);
 }
 
 .btn {
@@ -346,82 +324,125 @@ a:hover {
   filter: none;
 }
 
-.hero {
-  position: relative;
-  min-height: calc(100vh - 5rem);
-  display: grid;
-  align-content: end;
-  padding: 3rem 0 4.5rem;
-  overflow: hidden;
-}
-
-.hero-sky {
-  /* Legacy local layer; global .cosmos owns the sky now */
-  display: none;
-}
-
-.hero-copy {
-  position: relative;
-  z-index: 1;
-  max-width: 38rem;
-  animation: rise 700ms var(--ease) both;
-}
-
-@keyframes rise {
-  from {
-    opacity: 0;
-    transform: translateY(18px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.hero h1 {
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   font-family: var(--font-display);
-  font-size: clamp(3.2rem, 8vw, 5.6rem);
-  font-weight: 700;
-  line-height: 0.95;
-  letter-spacing: -0.03em;
-  margin: 0 0 1rem;
-  color: var(--signal);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.45rem;
+  border: 1px solid currentColor;
 }
 
-.hero h1 em {
-  font-style: normal;
+.pill-ok {
+  color: var(--phosphor);
+}
+
+.pill-pay {
   color: var(--brass);
 }
 
-.hero p {
-  margin: 0 0 1.75rem;
-  font-size: 1.2rem;
-  color: var(--fog);
-  max-width: 28rem;
+.pill-free {
+  color: var(--phosphor);
+  opacity: 0.85;
 }
 
-.hero-actions {
+.pill-fail {
+  color: #f07178;
+}
+
+.pill-priv {
+  color: var(--fog);
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+}
+
+.kicker {
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--brass);
+  margin: 0 0 0.35rem;
+}
+
+.lede {
+  color: var(--fog);
+  max-width: 36rem;
+  margin: 0 0 2rem;
+}
+
+.muted {
+  color: var(--fog);
+}
+
+.price {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0.25rem 0 1rem;
+  color: var(--signal);
+}
+
+.price small {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--mist);
+}
+
+
+/* ===== 4. Components ===== */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 0 0.75rem;
+}
+
+.nav {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
-  margin-bottom: 2.5rem;
-}
-
-.resolve-demo {
-  position: relative;
-  z-index: 1;
-  margin-top: 1rem;
-  animation: rise 900ms var(--ease) 120ms both;
-}
-
-.resolve-demo label {
-  display: block;
+  gap: 1rem 1.25rem;
   font-family: var(--font-display);
-  font-size: 0.8rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.nav a {
+  text-decoration: none;
   color: var(--mist);
+}
+
+.nav a[aria-current="page"],
+.nav a:hover {
+  color: var(--signal);
+}
+
+.footer {
+  border-top: 1px solid var(--line);
+  padding: 1.5rem 0 2.5rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  color: var(--mist);
+}
+
+.panel {
+  border: 1px solid var(--line);
+  background: var(--glass);
+  backdrop-filter: blur(10px);
+  padding: 1.25rem 1.35rem;
 }
 
 .resolve-row,
@@ -451,11 +472,177 @@ a:hover {
   outline-offset: 2px;
 }
 
-.orb {
+.meta-list {
+  display: grid;
+  gap: 0.65rem;
+  margin: 1.25rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+.meta-list li {
+  display: grid;
+  grid-template-columns: 7.5rem 1fr;
+  gap: 0.75rem;
+  font-size: 0.95rem;
+}
+
+.meta-list span:first-child {
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--mist);
+  padding-top: 0.15rem;
+}
+
+.record-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.record-table th {
+  text-align: left;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--mist);
+  padding: 0.65rem 0.4rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.record-table td {
+  padding: 1rem 0.4rem;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+.record-table tbody tr:hover {
+  background: color-mix(in oklab, var(--brass) 8%, transparent);
+}
+
+
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-scroll .record-table {
+  min-width: 40rem;
+}
+
+.steps {
+  display: grid;
+  gap: 1.25rem;
+  counter-reset: step;
+  margin: 0;
+  padding: 0;
+}
+
+.steps li {
+  list-style: none;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+.steps li::before {
+  counter-increment: step;
+  content: counter(step, decimal-leading-zero);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--brass);
+  padding-top: 0.25rem;
+}
+
+.steps strong {
+  font-family: var(--font-display);
+  display: block;
+  margin-bottom: 0.15rem;
+  color: var(--signal);
+}
+
+.live-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--phosphor);
+  display: inline-block;
+  animation: pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.85);
+  }
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  color: var(--fog);
+  margin-bottom: 2rem;
+}
+
+.legend i {
+  display: inline-block;
+  width: 1.1rem;
+  height: 2px;
+  margin-right: 0.4rem;
+  vertical-align: middle;
+  background: var(--brass);
+}
+
+.legend .gate {
+  background: var(--brass);
+}
+
+.legend .loop {
+  background: var(--phosphor);
+}
+
+.legend .fan {
+  background: var(--fog);
+}
+
+
+/* ===== 5. Widgets ===== */
+
+/* Stage owns placement + soft fade so glow never reveals a hard parent edge. */
+.orb-stage {
   position: absolute;
-  right: 2%;
-  top: 14%;
-  width: min(420px, 46vw);
+  z-index: 0;
+  right: max(-1.5rem, -4%);
+  /* Anchor to the copy cluster (bottom), not the viewport top. */
+  bottom: clamp(8.5rem, 28%, 15rem);
+  width: min(28rem, 46vw);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  overflow: visible;
+  /* Opaque through the disk (~65% of closest-side); only the halo fades out. */
+  -webkit-mask-image: radial-gradient(closest-side, #000 72%, transparent 100%);
+  mask-image: radial-gradient(closest-side, #000 72%, transparent 100%);
+}
+
+.orb {
+  position: relative;
+  width: 65%;
   aspect-ratio: 1;
   border-radius: 50%;
   border: 1px solid color-mix(in oklab, var(--brass) 35%, transparent);
@@ -464,11 +651,10 @@ a:hover {
     radial-gradient(circle at 62% 68%, color-mix(in oklab, var(--brass) 28%, transparent), transparent 48%),
     color-mix(in oklab, #1a3048 70%, transparent);
   box-shadow:
-    0 0 80px color-mix(in oklab, var(--brass) 16%, transparent),
-    0 0 160px color-mix(in oklab, #1a3048 50%, transparent),
+    0 0 48px color-mix(in oklab, var(--brass) 18%, transparent),
+    0 0 96px color-mix(in oklab, #1a3048 55%, transparent),
     inset 0 0 60px color-mix(in oklab, var(--void) 40%, transparent);
   animation: spin 70s linear infinite;
-  pointer-events: none;
 }
 
 .orb::before,
@@ -505,182 +691,21 @@ a:hover {
   }
 }
 
-.section {
-  padding: 3.5rem 0 4.5rem;
+.resolve-demo {
+  position: relative;
+  z-index: 1;
+  margin-top: 1rem;
+  animation: rise 900ms var(--ease) 120ms both;
 }
 
-.section h2,
-.console-head h1,
-.ns-hero h1,
-.detail-hero h1 {
-  font-family: var(--font-display);
-  letter-spacing: -0.02em;
-  color: var(--signal);
-}
-
-.section h2 {
-  font-size: clamp(1.8rem, 3vw, 2.4rem);
-  margin: 0 0 0.5rem;
-}
-
-.lede {
-  color: var(--fog);
-  max-width: 36rem;
-  margin: 0 0 2rem;
-}
-
-.steps {
-  display: grid;
-  gap: 1.25rem;
-  counter-reset: step;
-  margin: 0;
-  padding: 0;
-}
-
-.steps li {
-  list-style: none;
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 1rem;
-  align-items: start;
-}
-
-.steps li::before {
-  counter-increment: step;
-  content: counter(step, decimal-leading-zero);
-  font-family: var(--font-mono);
-  font-size: 0.85rem;
-  color: var(--brass);
-  padding-top: 0.25rem;
-}
-
-.steps strong {
-  font-family: var(--font-display);
+.resolve-demo label {
   display: block;
-  margin-bottom: 0.15rem;
-  color: var(--signal);
-}
-
-.panel {
-  border: 1px solid var(--line);
-  background: var(--glass);
-  backdrop-filter: blur(10px);
-  padding: 1.25rem 1.35rem;
-}
-
-.mono {
-  font-family: var(--font-mono);
-  font-size: 0.9rem;
-}
-
-.kicker {
   font-family: var(--font-display);
-  font-size: 0.78rem;
-  letter-spacing: 0.1em;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--brass);
-  margin: 0 0 0.35rem;
-}
-
-.console-head {
-  padding: 2rem 0 1.25rem;
-  display: grid;
-  gap: 1rem;
-}
-
-.console-head h1 {
-  font-size: clamp(2rem, 4vw, 2.8rem);
-  margin: 0;
-}
-
-.record-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.95rem;
-}
-
-.record-table th {
-  text-align: left;
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 0.78rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  margin-bottom: 0.5rem;
   color: var(--mist);
-  padding: 0.65rem 0.4rem;
-  border-bottom: 1px solid var(--line);
-}
-
-.record-table td {
-  padding: 1rem 0.4rem;
-  border-bottom: 1px solid var(--line);
-  vertical-align: middle;
-}
-
-.record-table tbody tr:hover {
-  background: color-mix(in oklab, var(--brass) 8%, transparent);
-}
-
-.pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-family: var(--font-display);
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  padding: 0.2rem 0.45rem;
-  border: 1px solid currentColor;
-}
-
-.pill-ok {
-  color: var(--phosphor);
-}
-
-.pill-pay {
-  color: var(--brass);
-}
-
-.pill-priv {
-  color: var(--fog);
-}
-
-.detail-grid {
-  display: grid;
-  grid-template-columns: 1.3fr 0.9fr;
-  gap: 1.5rem;
-  padding-bottom: 4rem;
-}
-
-.detail-hero h1 {
-  font-family: var(--font-mono);
-  font-size: clamp(1.6rem, 3vw, 2.1rem);
-  margin: 0.2rem 0 0.75rem;
-}
-
-.meta-list {
-  display: grid;
-  gap: 0.65rem;
-  margin: 1.25rem 0;
-  padding: 0;
-  list-style: none;
-}
-
-.meta-list li {
-  display: grid;
-  grid-template-columns: 7.5rem 1fr;
-  gap: 0.75rem;
-  font-size: 0.95rem;
-}
-
-.meta-list span:first-child {
-  font-family: var(--font-display);
-  font-size: 0.78rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--mist);
-  padding-top: 0.15rem;
 }
 
 .receipt {
@@ -724,92 +749,17 @@ a:hover {
   color: var(--phosphor);
 }
 
-.price {
+.verify-fail {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.9rem;
   font-family: var(--font-display);
-  font-size: 2rem;
-  font-weight: 700;
-  margin: 0.25rem 0 1rem;
-  color: var(--signal);
+  font-weight: 600;
+  color: color-mix(in oklab, #f07178 85%, white);
 }
 
-.price small {
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: var(--mist);
-}
-
-.footer {
-  border-top: 1px solid var(--line);
-  padding: 1.5rem 0 2.5rem;
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-  font-family: var(--font-display);
-  font-size: 0.85rem;
-  color: var(--mist);
-}
-
-.ns-hero {
-  padding: 2.5rem 0 2rem;
-}
-
-.ns-hero h1 {
-  font-size: clamp(2.2rem, 5vw, 3.4rem);
-  margin: 0 0 0.75rem;
-  max-width: 14ch;
-}
-
-.ns-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-  margin: 2rem 0 3rem;
-}
-
-.ns-grid article {
-  border-top: 2px solid color-mix(in oklab, var(--signal) 28%, transparent);
-  padding-top: 1rem;
-}
-
-.ns-grid h3 {
-  font-family: var(--font-display);
-  margin: 0 0 0.4rem;
-  color: var(--signal);
-}
-
-.ns-grid p {
-  margin: 0;
-  color: var(--fog);
-  font-size: 0.98rem;
-}
-
-.featured {
-  border-top-color: var(--brass);
-}
-
-.live-dot {
-  width: 0.45rem;
-  height: 0.45rem;
-  border-radius: 50%;
-  background: var(--phosphor);
-  display: inline-block;
-  animation: pulse 1.8s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.45;
-    transform: scale(0.85);
-  }
-}
-
-/* Constellation graph */
+/* Constellation graph — wash fades to glass; inset veil softens any edge glow */
 .constellation {
   position: relative;
   border: 1px solid var(--line);
@@ -819,12 +769,25 @@ a:hover {
   min-height: 480px;
   margin: 1.5rem 0 2rem;
   overflow: hidden;
+  isolation: isolate;
+}
+
+.constellation::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  box-shadow: inset 0 0 48px 8px color-mix(in oklab, var(--void) 55%, transparent);
 }
 
 .constellation svg {
+  position: relative;
+  z-index: 0;
   width: 100%;
   height: auto;
   display: block;
+  overflow: visible;
 }
 
 .edge-draw {
@@ -852,41 +815,6 @@ a:hover {
   50% {
     opacity: 1;
   }
-}
-
-.legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem 1.5rem;
-  font-family: var(--font-display);
-  font-size: 0.85rem;
-  color: var(--fog);
-  margin-bottom: 2rem;
-}
-
-.legend i {
-  display: inline-block;
-  width: 1.1rem;
-  height: 2px;
-  margin-right: 0.4rem;
-  vertical-align: middle;
-  background: var(--brass);
-}
-
-.legend .gate {
-  background: var(--brass);
-}
-
-.legend .loop {
-  background: var(--phosphor);
-}
-
-.legend .fan {
-  background: var(--fog);
-}
-
-.muted {
-  color: var(--fog);
 }
 
 /* —— Gaze nodes —— */
@@ -1064,21 +992,289 @@ a:hover {
   opacity: 1;
 }
 
+/* ---------------------------------------------------------------------------
+ * Live invocation strip (landing) — bridges ToolEventBus → SSE feed.
+ * Ported from the original dogfood host so agent calls surface on-brand.
+ * ------------------------------------------------------------------------- */
+.feed {
+  margin: 2.5rem 0 0;
+  border-top: 1px solid var(--line);
+  padding-top: 1.25rem;
+}
+
+.feed-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+.feed-head h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fog);
+}
+
+.activity {
+  min-height: 4rem;
+}
+
+.activity-item {
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.8rem;
+  animation: fade-in 0.35s var(--ease);
+}
+
+.tool-name {
+  color: var(--brass);
+  font-weight: 500;
+}
+
+.call-time {
+  color: color-mix(in oklab, var(--fog) 55%, transparent);
+  font-size: 0.7rem;
+  margin-left: 0.5rem;
+}
+
+.call-args {
+  color: var(--fog);
+  margin-top: 0.15rem;
+  font-size: 0.75rem;
+}
+
+.empty {
+  color: color-mix(in oklab, var(--fog) 55%, transparent);
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.25rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .activity-item {
+    animation: none !important;
+  }
+}
+
+
+/* ===== 6. Layouts ===== */
+
+.shell {
+  position: relative;
+  z-index: 1;
+  width: min(1120px, calc(100% - 2.5rem));
+  margin-inline: auto;
+}
+
+.hero {
+  position: relative;
+  /* Fill the first viewport without letting tall displays
+     stretch the copy/orb composition apart. */
+  min-height: min(calc(100svh - 5rem), 52rem);
+  display: grid;
+  align-content: end;
+  padding: clamp(2.5rem, 8vh, 5rem) 0 4.5rem;
+  overflow: visible;
+  isolation: isolate;
+}
+
+.hero-sky {
+  /* Legacy local layer; global .cosmos owns the sky now */
+  display: none;
+}
+
+.hero-copy {
+  position: relative;
+  z-index: 1;
+  max-width: 38rem;
+  animation: rise 700ms var(--ease) both;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero h1 {
+  font-family: var(--font-display);
+  font-size: clamp(3.2rem, 8vw, 5.6rem);
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  margin: 0 0 1rem;
+  color: var(--signal);
+}
+
+.hero h1 em {
+  font-style: normal;
+  color: var(--brass);
+}
+
+.hero p {
+  margin: 0 0 1.75rem;
+  font-size: 1.2rem;
+  color: var(--fog);
+  max-width: 28rem;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 2.5rem;
+}
+
+.section {
+  padding: 3.5rem 0 4.5rem;
+}
+
+.section h2,
+.console-head h1,
+.ns-hero h1,
+.detail-hero h1 {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+  color: var(--signal);
+}
+
+.section h2 {
+  font-size: clamp(1.8rem, 3vw, 2.4rem);
+  margin: 0 0 0.5rem;
+}
+
+.console-head {
+  padding: 2rem 0 1.25rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.console-head h1 {
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  margin: 0;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1.3fr 0.9fr;
+  gap: 1.5rem;
+  padding-bottom: 4rem;
+}
+
+.detail-hero h1 {
+  font-family: var(--font-mono);
+  font-size: clamp(1.6rem, 3vw, 2.1rem);
+  margin: 0.2rem 0 0.75rem;
+}
+
+.ns-hero {
+  padding: 2.5rem 0 2rem;
+}
+
+.ns-hero h1 {
+  font-size: clamp(2.2rem, 5vw, 3.4rem);
+  margin: 0 0 0.75rem;
+  max-width: 14ch;
+}
+
+.ns-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin: 2rem 0 3rem;
+}
+
+.ns-grid article {
+  border-top: 2px solid color-mix(in oklab, var(--signal) 28%, transparent);
+  padding-top: 1rem;
+}
+
+.ns-grid h3 {
+  font-family: var(--font-display);
+  margin: 0 0 0.4rem;
+  color: var(--signal);
+}
+
+.ns-grid p {
+  margin: 0;
+  color: var(--fog);
+  font-size: 0.98rem;
+}
+
+.featured {
+  border-top-color: var(--brass);
+}
+
+
+/* ===== 7. Motion + responsive ===== */
+
 @media (max-width: 860px) {
   .detail-grid,
   .ns-grid {
     grid-template-columns: 1fr;
   }
 
-  .orb {
-    opacity: 0.4;
-    width: min(280px, 70vw);
-    top: 6%;
+  .orb-stage {
+    opacity: 0.45;
+    width: min(18rem, 72vw);
+    right: -8%;
+    bottom: auto;
+    top: 4%;
+  }
+
+  .constellation {
+    min-height: 320px;
   }
 
   .resolve-row,
   .lookup {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 861px) and (max-width: 1100px) {
+  .orb-stage {
+    width: min(24rem, 42vw);
+    right: -2%;
+    bottom: clamp(9rem, 30%, 14rem);
+  }
+}
+
+@media (min-width: 1400px) {
+  .orb-stage {
+    width: min(30rem, 34vw);
+    right: 0;
+    bottom: clamp(9rem, 26%, 15rem);
+  }
+}
+
+@media (min-height: 960px) {
+  .hero {
+    align-content: center;
+    padding-block: clamp(3rem, 7vh, 5.5rem) 4.5rem;
+  }
+
+  .orb-stage {
+    bottom: clamp(10rem, 32%, 16rem);
   }
 }
 
