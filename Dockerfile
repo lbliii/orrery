@@ -31,7 +31,9 @@ ARG GIT_REF=main
 ADD "https://api.github.com/repos/lbliii/chirp/commits/${GIT_REF}" /tmp/chirp-commit.json
 RUN uv pip install --python /opt/venv/bin/python \
     "bengal-chirp[skill,sessions] @ git+https://github.com/lbliii/chirp.git@${GIT_REF}" \
-    "itsdangerous>=2.2.0"
+    "itsdangerous>=2.2.0" \
+    "boto3>=1.42,<2" \
+    "psycopg[binary]>=3.3,<4"
 
 # The .dockerignore excludes local/editor artifacts while this copies every
 # runtime module, page, template, and static asset added to the repository.
