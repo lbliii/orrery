@@ -99,20 +99,18 @@ uv run python app.py
 Open `/` for the brand + live feed, browse `/gaze`, `/resolve`, `/stars`, `/constellations`, `/namespaces`, or point an MCP client at `/mcp`. Agent onboarding: `/connect`, `/llms.txt`, `/.well-known/mcp/server-card.json`. Host reliability ops: `/console` (footer **Ops · console**).
 
 ```bash
-# List tools (modern Streamable HTTP headers)
+# Standard MCP 2025-06-18 Streamable HTTP: protocol header + JSON-RPC body.
+# Orrery does not require private routing headers or _meta fields.
 curl -s http://localhost:8000/mcp \
   -H 'Content-Type: application/json' \
-  -H 'mcp-protocol-version: 2026-07-28' \
-  -H 'mcp-method: tools/list' \
-  -d '{"jsonrpc":"2.0","method":"tools/list","id":1,"params":{"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientCapabilities":{}}}}'
+  -H 'mcp-protocol-version: 2025-06-18' \
+  -d '{"jsonrpc":"2.0","method":"tools/list","id":1}'
 
 # Invoke gaze_match — watch `/` show the call
 curl -s http://localhost:8000/mcp \
   -H 'Content-Type: application/json' \
-  -H 'mcp-protocol-version: 2026-07-28' \
-  -H 'mcp-method: tools/call' \
-  -H 'mcp-name: gaze_match' \
-  -d '{"jsonrpc":"2.0","method":"tools/call","id":2,"params":{"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientCapabilities":{}},"name":"gaze_match","arguments":{"intent":"html pdf convert","node":"public"}}}'
+  -H 'mcp-protocol-version: 2025-06-18' \
+  -d '{"jsonrpc":"2.0","method":"tools/call","id":2,"params":{"name":"gaze_match","arguments":{"intent":"html pdf convert","node":"public"}}}'
 ```
 
 Boot runs freeze + smoke against the dogfood corpus so `/console` shows reliability scores. Every public star package must ship a non-empty `corpus.py` (`CORPUS`) or it is not `oracle_ok` (L1). Set `ORRERY_SKIP_PUBLISH=1` to skip the publish gate during local iteration. Eval layers: [`docs/design/star-eval.md`](./docs/design/star-eval.md).
