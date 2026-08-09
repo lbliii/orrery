@@ -1,0 +1,25 @@
+[star]
+name="orrery/pypi-release"
+version="0.1.0"
+description="Bounded current release metadata for named allowlisted PyPI packages"
+publisher="orrery"
+publisher_key_id_env="ORRERY_PYPI_RELEASE_KEY_ID"
+direct_mcp_path="/stars/pypi-release/mcp"
+tools=["get"]
+[pricing]
+unit="call"
+price_per_call="0.00"
+currency="USD"
+[runtime]
+python_package="stars.pypi_release"
+skill_factory="stars.pypi_release.skill:build_skill"
+[policy]
+allowed_egress=["https://pypi.org"]
+freshness="at_call"
+redirects="deny"
+max_response_bytes=1048576
+[receipt]
+schema_version="1"
+algorithm="Ed25519"
+[publish]
+corpus="stars.pypi_release.corpus:CORPUS"

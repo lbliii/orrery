@@ -10,6 +10,7 @@ from public_keys import public_key_set
 from stars.csv_url.skill import build_skill as build_csv
 from stars.html_to_pdf.skill import build_skill as build_pdf
 from stars.http_head.skill import build_skill as build_head
+from stars.pypi_release.skill import build_skill as build_pypi_release
 from stars.row_lookup.skill import build_skill as build_row_lookup
 from stars.row_validate.skill import build_skill as build_row_validate
 from stars.source_watch.skill import build_skill as build_watch
@@ -51,6 +52,7 @@ def test_global_public_star_key_is_stable_and_verifies_all_factory_envelopes(
     monkeypatch.setenv("ORRERY_SOURCE_WATCH_FIXTURES", '{"python-release-notes":"fixture"}')
     import stars.csv_url.skill as csv_module
     import stars.http_head.skill as head_module
+    import stars.pypi_release.skill as pypi_release_module
     import stars.row_lookup.skill as row_lookup_module
     import stars.row_validate.skill as row_validate_module
     import stars.spdx_license.skill as spdx_module
@@ -59,6 +61,7 @@ def test_global_public_star_key_is_stable_and_verifies_all_factory_envelopes(
 
     csv_module.get_dataset = lambda _dataset: {"dataset": "flights-airport"}
     head_module.observe_head = lambda _target: {"status": 200}
+    pypi_release_module.get_release = lambda _package: {"version": "1.0.0"}
     row_lookup_module.lookup_row = lambda _dataset, _key: {"row": {"count": 853}}
     row_validate_module.validate_row = lambda _profile, _row: {"valid": True}
     spdx_module.get_license = lambda _license_id: {"license_id": "MIT"}
@@ -95,6 +98,7 @@ def test_global_public_star_key_is_stable_and_verifies_all_factory_envelopes(
             },
         ),
         "orrery/table-fresh": (build_table_fresh, "run", {"baseline": {"rows": []}}),
+        "orrery/pypi-release": (build_pypi_release, "get", {}),
     }
     first = {name: factory() for name, (factory, _, _) in factories.items()}
     second = {name: factory() for name, (factory, _, _) in factories.items()}
@@ -132,6 +136,7 @@ def test_production_public_stars_fail_without_valid_config(
         "ORRERY_ROW_LOOKUP_PRIVATE_KEY",
         "ORRERY_ROW_VALIDATE_PRIVATE_KEY",
         "ORRERY_TABLE_FRESH_PRIVATE_KEY",
+        "ORRERY_PYPI_RELEASE_PRIVATE_KEY",
     ):
         monkeypatch.delenv(name, raising=False)
     if key is not None:
@@ -148,6 +153,7 @@ def test_production_public_stars_fail_without_valid_config(
         build_row_lookup,
         build_row_validate,
         build_table_fresh,
+        build_pypi_release,
     ):
         with pytest.raises((RuntimeError, ValueError)):
             factory()

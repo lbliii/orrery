@@ -23,6 +23,7 @@ BUILTIN_STAR_PACKAGES = (
     "stars.row_lookup",
     "stars.row_validate",
     "stars.table_fresh",
+    "stars.pypi_release",
     "stars.source_watch",
     "stars.world_time",
 )
