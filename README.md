@@ -65,9 +65,9 @@ Strategy ADRs (control plane, prepaid wallet, Stripe top-up, discovery):
 | [`docs/adr/0004-publisher-direct-call.md`](./docs/adr/0004-publisher-direct-call.md) | Agent → publisher MCP; Orrery is not a proxy |
 | [`docs/adr/0005-discovery-and-dual-trust.md`](./docs/adr/0005-discovery-and-dual-trust.md) | Agent-as-router, dual trust, thin harness; namespaces + facets |
 
-Strategy plan (vending-machine sky): [`docs/plan/vending-machine-sky.md`](./docs/plan/vending-machine-sky.md) · saga [#56](https://github.com/lbliii/orrery/issues/56).
-
 Strategy plan (vending-machine sky, discovery at scale, dual trust, thin harnesses): [`docs/plan/vending-machine-sky.md`](./docs/plan/vending-machine-sky.md) · saga [#56](https://github.com/lbliii/orrery/issues/56).
+
+Specimen sky (pattern-coverage tranche): [`docs/plan/specimen-sky.md`](./docs/plan/specimen-sky.md) · saga [#76](https://github.com/lbliii/orrery/issues/76). Scouting litmus + shapes: [`docs/design/scouting.md`](./docs/design/scouting.md). Product atlases (Pidge-style soft recommend): [`docs/design/atlas.md`](./docs/design/atlas.md).
 
 Design mocks (validated direction): [`design/`](./design/). Frozen favorite: [`design/v1-night-gold/`](./design/v1-night-gold/).
 
