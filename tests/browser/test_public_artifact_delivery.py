@@ -120,37 +120,41 @@ def test_public_pdf_delivery_in_a_disposable_headless_browser(tmp_path: Path) ->
                 )
                 assert resolved["name"] == "orrery/html-to-pdf"
 
-                called = page.request.post(
-                    f"{base_url}/stars/html-to-pdf/mcp",
-                    headers={
-                        "content-type": "application/json",
-                        "mcp-protocol-version": "2025-06-18",
-                    },
-                    data={
+                called = page.evaluate(
+                    """async payload => { const response = await fetch('/stars/html-to-pdf/mcp', {
+                    method: 'POST', headers: {'content-type': 'application/json',
+                    'mcp-protocol-version': '2025-06-18'}, body: JSON.stringify(payload)});
+                    return {status: response.status, body: await response.json()}; }""",
+                    {
                         "jsonrpc": "2.0",
                         "id": 142,
                         "method": "tools/call",
                         "params": {"name": "convert", "arguments": {"html": "<h1>Orrery</h1>"}},
                     },
                 )
-                assert called.status == 200
-                text = called.json()["result"]["content"][0]["text"]
+                assert called["status"] == 200
+                text = called["body"]["result"]["content"][0]["text"]
                 artifact_match, sha256_match = _ARTIFACT_URL.search(text), _SHA256.search(text)
                 assert artifact_match is not None and sha256_match is not None, text
                 artifact_url, expected_sha256 = artifact_match.group(1), sha256_match.group(1)
 
-                served = page.request.get(f"{base_url}{artifact_url}")
-                assert served.status == 200
-                assert served.headers["content-type"].startswith("application/pdf")
-                assert "attachment;" in served.headers["content-disposition"]
-                assert hashlib.sha256(served.body()).hexdigest() == expected_sha256.removeprefix(
-                    "sha256:"
+                served = page.evaluate(
+                    """async url => { const response = await fetch(url); return {
+                    status: response.status, contentType: response.headers.get('content-type'),
+                    disposition: response.headers.get('content-disposition'),
+                    bytes: Array.from(new Uint8Array(await response.arrayBuffer()))}; }""",
+                    artifact_url,
                 )
+                assert served["status"] == 200
+                assert served["contentType"].startswith("application/pdf")
+                assert "attachment;" in served["disposition"]
+                served_sha256 = hashlib.sha256(bytes(served["bytes"])).hexdigest()
+                assert served_sha256 == expected_sha256.removeprefix("sha256:")
 
                 with page.expect_download() as expected_download:
                     page.evaluate(
                         """url => { const link = document.createElement('a'); link.href = url;
-                        link.id = 'orrery-browser-download'; link.download = '';
+                        link.id = 'orrery-browser-download';
                         document.body.append(link); link.click(); }""",
                         artifact_url,
                     )
