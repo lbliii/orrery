@@ -10,6 +10,7 @@ from public_keys import public_key_set
 from stars.html_to_pdf.skill import build_skill as build_pdf
 from stars.http_head.skill import build_skill as build_head
 from stars.source_watch.skill import build_skill as build_watch
+from stars.spdx_license.skill import build_skill as build_spdx
 from stars.well_known.skill import build_skill as build_well_known
 from stars.world_time.skill import build_skill as build_time
 
@@ -44,14 +45,17 @@ def test_global_public_star_key_is_stable_and_verifies_all_factory_envelopes(
     monkeypatch.setenv("ORRERY_STAR_KEY_ID", "stars-2026-08")
     monkeypatch.setenv("ORRERY_SOURCE_WATCH_FIXTURES", '{"python-release-notes":"fixture"}')
     import stars.http_head.skill as head_module
+    import stars.spdx_license.skill as spdx_module
 
     head_module.observe_head = lambda _target: {"status": 200}
+    spdx_module.get_license = lambda _license_id: {"license_id": "MIT"}
     factories = {
         "orrery/html-to-pdf": (build_pdf, "health", {}),
         "orrery/world-time": (build_time, "fetch", {}),
         "orrery/source-watch": (build_watch, "observe", {}),
         "orrery/http-head": (build_head, "head", {}),
         "orrery/well-known": (build_well_known, "read", {}),
+        "orrery/spdx-license": (build_spdx, "get", {}),
     }
     first = {name: factory() for name, (factory, _, _) in factories.items()}
     second = {name: factory() for name, (factory, _, _) in factories.items()}
@@ -83,10 +87,11 @@ def test_production_public_stars_fail_without_valid_config(
         "ORRERY_SOURCE_WATCH_PRIVATE_KEY",
         "ORRERY_HTTP_HEAD_PRIVATE_KEY",
         "ORRERY_WELL_KNOWN_PRIVATE_KEY",
+        "ORRERY_SPDX_LICENSE_PRIVATE_KEY",
     ):
         monkeypatch.delenv(name, raising=False)
     if key is not None:
         monkeypatch.setenv("ORRERY_STAR_PRIVATE_KEY", key)
-    for factory in (build_pdf, build_time, build_watch, build_head, build_well_known):
+    for factory in (build_pdf, build_time, build_watch, build_head, build_well_known, build_spdx):
         with pytest.raises((RuntimeError, ValueError)):
             factory()
