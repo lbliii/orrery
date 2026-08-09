@@ -55,6 +55,17 @@ public owner-authentication route and fail closed.
 
 ## Verification and attestation boundary
 
+### Managed CPU signing identity
+
+CSV report and image-transform result Envelopes share one deployment signing
+identity. Production must configure `ORRERY_CPU_PRIVATE_KEY` as 32-byte
+Ed25519 private-key bytes encoded in hexadecimal and `ORRERY_CPU_KEY_ID` as
+the published rotation identifier. Startup/factory construction fails closed
+when the key is absent or malformed in production. Development and tests may
+generate an ephemeral key only when the variable is unset; such a key is not a
+portable production identity. Publish the matching JWK before changing the key
+ID, as described by the public Envelope key-set rotation contract.
+
 The managed run's terminal receipt records the opaque artifact ID, content
 metadata, and `sha256:<digest>`. The `result` MCP tool returns that terminal
 receipt inside Chirp's signed envelope. An agent should verify the envelope
