@@ -41,11 +41,25 @@ Resolve records point at a Star's direct MCP endpoint, where its natural tool na
 
 | Star | Direct MCP endpoint | Canonical tools |
 | --- | --- | --- |
-| `orrery/html-to-pdf` | `/stars/html-to-pdf/mcp` | `convert`, `health` |
+| `orrery/html-to-pdf` | `/stars/html-to-pdf/mcp` | `convert`, `submit`, `result`, `health` |
+| `orrery/csv-report` | `/stars/csv-report/mcp` | `submit`, `result` |
+| `orrery/image-transform` | `/stars/image-transform/mcp` | `submit`, `result` |
 | `orrery/world-time` | `/stars/world-time/mcp` | `fetch`, `get`, `answer` |
 | `orrery/source-watch` | `/stars/source-watch/mcp` | `observe`, `diff`, `answer` |
 
 `/mcp` remains an aggregate compatibility/control-plane surface. It prefixes Source Watch's aggregate `answer` as `source_watch_answer` because world-time already owns that flat tool name; the direct Source Watch endpoint always exposes the canonical `answer`.
+
+### Durable managed artifacts
+
+`submit` creates an asynchronous run; `result` returns `queued` until the
+private worker produces a terminal Chirp-signed receipt. The initial managed
+workloads are HTML→PDF, CSV report, and image transform. Their bytes live in
+Railway Bucket object storage, while Postgres holds lifecycle/receipt metadata
+and Redis coordinates queue leases, retries, and dead letters. See
+[`docs/architecture/managed-execution.md`](./docs/architecture/managed-execution.md)
+for the architecture and
+[`docs/operations/artifact-lifecycle.md`](./docs/operations/artifact-lifecycle.md)
+for the retention and agent-verification boundary.
 
 ### Source Watch star (`orrery/source-watch`)
 
@@ -115,7 +129,12 @@ Live: [https://orrery.lol](https://orrery.lol)
 
 Custom domain ``orrery.lol`` is the public HTTP host. Skill DNS resolve records use the same apex as ``mcp://orrery.lol/…`` (override with ``ORRERY_MCP_HOST``). Absolute discovery URLs use ``ORRERY_PUBLIC_ORIGIN`` (falls back to ``https://$RAILWAY_PUBLIC_DOMAIN``, then the request host).
 
-`Dockerfile` + `railway.toml` live at the repo root. The Railway service is connected to `lbliii/orrery`; merges to `main` rebuild and redeploy automatically (same as pidge). The image install layer re-fetches Chirp at `GIT_REF` because the Dockerfile cache-busts against GitHub's commits API.
+`Dockerfile` + `railway.toml` live at the repo root. The Railway project has a
+public API service, a private managed-worker service, Postgres, Redis, and a
+Railway Bucket. Merges to `main` rebuild and redeploy the API and worker from
+the same source; the worker receives `ORRERY_PROCESS_KIND=worker`. The image
+install layer re-fetches Chirp at `GIT_REF` because the Dockerfile cache-busts
+against GitHub's commits API.
 
 Manual / first deploy from this directory:
 
@@ -131,6 +150,12 @@ railway up --service orrery
 | `CHIRP_LOG_FORMAT` | `json` |
 | `GIT_REF` | `main` (Chirp git ref for the skill stack) |
 | `ORRERY_PUBLIC_ORIGIN` | `https://orrery.lol` |
+
+The API additionally needs `DATABASE_URL`, `REDIS_URL`, and the non-secret
+artifact configuration (`ORRERY_ARTIFACT_BACKEND=s3`, bucket, endpoint). The
+worker needs those same private service references plus the bucket credentials;
+set them in Railway, never in the repository. See the managed-execution doc for
+the service responsibility split.
 
 `AppConfig.from_env()` binds `0.0.0.0:$PORT` on Railway. Healthcheck targets `/health`. Public domain target port must match `$PORT` (8080 on Railway).
 
