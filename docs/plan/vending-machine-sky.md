@@ -1,10 +1,11 @@
 # Plan: Vending-machine sky (discovery, trust, thin harnesses)
 
-- **Status:** Draft (strategy freeze candidate) — **filed as [#56](https://github.com/lbliii/orrery/issues/56)**
+- **Status:** Draft (strategy freeze) — saga [#56](https://github.com/lbliii/orrery/issues/56); ADR [#62](https://github.com/lbliii/orrery/issues/62) Accepted
 - **Date:** 2026-08-09
 - **Parent product saga:** [#1](https://github.com/lbliii/orrery/issues/1)
 - **Strategy saga:** [#56](https://github.com/lbliii/orrery/issues/56)
 - **Depends on:** [ADR 0001](../adr/0001-control-plane-wallet.md), [ADR 0004](../adr/0004-publisher-direct-call.md)
+- **Accepted ADR:** [0005-discovery-and-dual-trust.md](../adr/0005-discovery-and-dual-trust.md) ([#62](https://github.com/lbliii/orrery/issues/62))
 - **Feeds:** Epics [#7](https://github.com/lbliii/orrery/issues/7) Namespaces, [#9](https://github.com/lbliii/orrery/issues/9) Trust & Commerce
 
 ## GitHub issue map
@@ -125,7 +126,7 @@ Wave alignment: Sprint 0–2 sit beside **Wave 0/1** product work and **Wave 2**
 
 ### Task 0.1 — ADR: discovery & dual trust
 
-Write `docs/adr/0005-discovery-and-dual-trust.md` covering:
+Landed: [ADR 0005](../adr/0005-discovery-and-dual-trust.md) ([#62](https://github.com/lbliii/orrery/issues/62)) covering:
 
 - Agent is semantic router; Orrery is shelf + DNS
 - Facets + namespaces; optional RAG is retrieval-only
@@ -133,7 +134,7 @@ Write `docs/adr/0005-discovery-and-dual-trust.md` covering:
 - Thin harness / distributed load principle
 - Explicit Not now (global embedding winner, free-text review marketplace, proxy-all)
 
-**Acceptance:** ADR merged or PR open; linked from saga #1 and README strategy table.
+**Acceptance:** ADR Accepted; linked from README strategy table and this plan.
 
 ### Task 0.2 — File GitHub issues under epics
 
@@ -268,6 +269,7 @@ Return candidate IDs only; agent still picks; resolve still exact.
 - **Saga #1** — This plan sharpens Waves 0–3 positioning; does not replace the wave table.
 - **ADR 0001 / 0002 / 0003** — Wallet and Stripe unchanged; satisfaction is not a payment signal.
 - **ADR 0004** — Reinforced: distribution requires publisher-direct calls.
+- **ADR 0005** — Accepted freeze of discovery + dual trust + thin harness ([0005](../adr/0005-discovery-and-dual-trust.md)).
 - **Epic #9** — Sprint 2 lands under Trust & Commerce Phase A adjacent / Phase B design.
 - **Epic #7 / #28 / #29 / #30** — Sprint 3 depends on tenant routing + allowlist decisions.
 - **DORI** — Remains process/guidance; Orrery must not absorb its catalog-router role.
@@ -284,5 +286,5 @@ Return candidate IDs only; agent still picks; resolve still exact.
 ## Next action
 
 1. Review this plan.  
-2. Sprint 0: land ADR 0005 + file issues.  
+2. Sprint 0: ADR 0005 Accepted — finish #63 + epic exit on #57.
 3. Keep coding Wave 0/1 pointing + reactive stars in parallel — do not wait on Sprint 2–4.
