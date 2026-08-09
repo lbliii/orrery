@@ -27,6 +27,8 @@ def test_dockerfile_tracks_chirp_main_and_copies_full_source() -> None:
         'git+https://github.com/lbliii/chirp.git@${GIT_REF}"' in dockerfile
     )
     assert '"itsdangerous>=2.2.0"' in dockerfile
+    assert '"boto3>=1.42,<2"' in dockerfile
+    assert '"psycopg[binary]>=3.3,<4"' in dockerfile
     assert "uv sync --frozen" not in dockerfile
     assert "uv.lock" not in dockerfile
     assert "COPY . /app/" in dockerfile
