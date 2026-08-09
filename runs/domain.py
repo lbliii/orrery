@@ -54,6 +54,10 @@ class RunRecord:
     idempotency_key: str
     budget: Mapping[str, Any]
     executor: str
+    # The worker must be able to resume a run without recovering request-local
+    # state.  This deliberately contains a serializable description, never a
+    # callable, credential, or open file handle.
+    job: Mapping[str, Any] | None = None
     state: RunState = RunState.ACCEPTED
     created_at: datetime | None = None
     updated_at: datetime | None = None
@@ -193,6 +197,7 @@ class PostgresRunRepository:
         idempotency_key TEXT NOT NULL,
         budget JSONB NOT NULL,
         executor TEXT NOT NULL,
+        job JSONB,
         state TEXT NOT NULL CHECK (state IN (
             'accepted', 'queued', 'running', 'uploading', 'succeeded', 'failed', 'cancelled'
         )),
@@ -207,6 +212,7 @@ class PostgresRunRepository:
         )
     );
     CREATE INDEX IF NOT EXISTS runs_state_idx ON runs (state, created_at);
+    ALTER TABLE runs ADD COLUMN IF NOT EXISTS job JSONB;
     """
 
     def __init__(self, connection_factory: Callable[[], Connection]) -> None:
@@ -222,17 +228,20 @@ class PostgresRunRepository:
         cursor = connection.cursor()
         try:
             cursor.execute(
-                """INSERT INTO runs (run_id, caller_id, idempotency_key, budget, executor, state)
-                   VALUES (%s, %s, %s, %s::jsonb, %s, %s)
+                """INSERT INTO runs (
+                       run_id, caller_id, idempotency_key, budget, executor, job, state
+                   )
+                   VALUES (%s, %s, %s, %s::jsonb, %s, %s::jsonb, %s)
                    ON CONFLICT (caller_id, idempotency_key) DO NOTHING
                    RETURNING run_id, caller_id, idempotency_key, budget, executor, state,
-                             created_at, updated_at, terminal_reason, terminal_receipt""",
+                             created_at, updated_at, terminal_reason, terminal_receipt, job""",
                 (
                     record.run_id,
                     record.caller_id,
                     record.idempotency_key,
                     json.dumps(dict(record.budget)),
                     record.executor,
+                    json.dumps(dict(record.job)) if record.job is not None else None,
                     record.state.value,
                 ),
             )
@@ -253,7 +262,7 @@ class PostgresRunRepository:
 
     _select_fields = (
         "run_id, caller_id, idempotency_key, budget, executor, state, created_at, updated_at, "
-        "terminal_reason, terminal_receipt"
+        "terminal_reason, terminal_receipt, job"
     )
     _select_by_replay_sql = (
         f"SELECT {_select_fields} FROM runs WHERE caller_id = %s AND idempotency_key = %s"
@@ -360,17 +369,20 @@ class PostgresRunRepository:
 
     @staticmethod
     def _record_from_row(row: tuple[Any, ...]) -> RunRecord:
-        budget, receipt = row[3], row[9]
+        budget, receipt, job = row[3], row[9], row[10]
         if isinstance(budget, str):
             budget = json.loads(budget)
         if isinstance(receipt, str):
             receipt = json.loads(receipt)
+        if isinstance(job, str):
+            job = json.loads(job)
         return RunRecord(
             run_id=row[0],
             caller_id=row[1],
             idempotency_key=row[2],
             budget=budget,
             executor=row[4],
+            job=job,
             state=RunState(row[5]),
             created_at=row[6],
             updated_at=row[7],

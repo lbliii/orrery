@@ -33,7 +33,8 @@ RUN uv pip install --python /opt/venv/bin/python \
     "bengal-chirp[skill,sessions] @ git+https://github.com/lbliii/chirp.git@${GIT_REF}" \
     "itsdangerous>=2.2.0" \
     "boto3>=1.42,<2" \
-    "psycopg[binary]>=3.3,<4"
+    "psycopg[binary]>=3.3,<4" \
+    "redis>=5.2,<7"
 
 # The .dockerignore excludes local/editor artifacts while this copies every
 # runtime module, page, template, and static asset added to the repository.

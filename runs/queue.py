@@ -120,6 +120,10 @@ class InMemoryQueueBackend:
         recovered = 0
         for job in list(self._jobs.values()):
             if job.get("expires_at") is not None and job["expires_at"] <= now:
+                if job["attempts"] >= max_attempts:
+                    self._dead_letter(job, "lease_expired_attempt_limit")
+                    recovered += 1
+                    continue
                 job.update(last_reason="lease_expired", available_at=now)
                 job.pop("token", None)
                 job.pop("expires_at", None)
@@ -245,11 +249,19 @@ class RedisQueueBackend:
               local encoded = redis.call('HGET', KEYS[1], run_id)
               if encoded then
                 local job = cjson.decode(encoded)
-                job.last_reason = 'lease_expired'
-                job.available_at_ms = tonumber(ARGV[1])
-                job.token, job.worker_id, job.expires_at_ms = nil, nil, nil
-                redis.call('HSET', KEYS[1], run_id, cjson.encode(job))
-                redis.call('ZADD', KEYS[2], job.available_at_ms, run_id)
+                if job.attempts >= tonumber(ARGV[2]) then
+                  job.terminal_reason = 'lease_expired_attempt_limit'
+                  job.dead_lettered_at_ms = tonumber(ARGV[1])
+                  job.token, job.worker_id, job.expires_at_ms = nil, nil, nil
+                  redis.call('LPUSH', KEYS[4], cjson.encode(job))
+                  redis.call('HDEL', KEYS[1], run_id)
+                else
+                  job.last_reason = 'lease_expired'
+                  job.available_at_ms = tonumber(ARGV[1])
+                  job.token, job.worker_id, job.expires_at_ms = nil, nil, nil
+                  redis.call('HSET', KEYS[1], run_id, cjson.encode(job))
+                  redis.call('ZADD', KEYS[2], job.available_at_ms, run_id)
+                end
               end
             end
             return tostring(#expired)
@@ -342,7 +354,7 @@ class RedisQueueBackend:
         return int(
             self._call(
                 "recover",
-                [self._key("jobs"), self._key("ready"), self._key("leases")],
+                [self._key("jobs"), self._key("ready"), self._key("leases"), self._key("dead")],
                 [str(self._millis()), str(max_attempts)],
             )
             or 0
