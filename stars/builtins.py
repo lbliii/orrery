@@ -14,6 +14,7 @@ BUILTIN_STAR_PACKAGES = (
     "stars.image_transform",
     "stars.http_head",
     "stars.well_known",
+    "stars.cert_expiry",
     "stars.source_watch",
     "stars.world_time",
 )
