@@ -243,3 +243,51 @@ class TestPublishOracleSurface:
         assert pdf.content_digest.startswith("sha256:")
         assert pdf.oracle_ok is True
         assert oracle_for(pdf).pill_text == "check · freeze · smoke"
+
+
+@pytest.mark.issue(52)
+class TestDirectStarMcpEndpoints:
+    async def test_direct_star_endpoints_expose_canonical_tool_names(self, example_app) -> None:
+        expected = {
+            "/stars/html-to-pdf/mcp": {"convert", "health"},
+            "/stars/world-time/mcp": {"fetch", "get", "answer"},
+            "/stars/source-watch/mcp": {"observe", "diff", "answer"},
+        }
+        async with TestClient(example_app) as client:
+            for path, names in expected.items():
+                response = await client.post(
+                    path,
+                    json={
+                        "jsonrpc": "2.0",
+                        "method": "tools/list",
+                        "id": 52,
+                        "params": _modern_mcp_params(),
+                    },
+                    headers=_modern_mcp_headers("tools/list"),
+                )
+                assert response.status == 200, path
+                body = json.loads(response.text)
+                assert {tool["name"] for tool in body["result"]["tools"]} == names
+
+    async def test_direct_source_watch_uses_unprefixed_answer(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            response = await client.post(
+                "/stars/source-watch/mcp",
+                json={
+                    "jsonrpc": "2.0",
+                    "method": "tools/call",
+                    "id": 53,
+                    "params": _modern_mcp_params(
+                        name="answer",
+                        arguments={
+                            "question": "What deployment guidance is current?",
+                            "source": "python-release-notes",
+                        },
+                    ),
+                },
+                headers=_modern_mcp_headers("tools/call", "answer"),
+            )
+            assert response.status == 200
+            text = json.loads(response.text)["result"]["content"][0]["text"]
+            assert "source-watch" in text
+            assert "live_at_call" in text

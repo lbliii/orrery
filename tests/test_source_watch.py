@@ -18,7 +18,7 @@ class TestSourceWatch:
     def test_observe_tracks_raw_and_normalized_digest_history(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        import source_watch
+        from stars.source_watch import service as source_watch
 
         source_watch._history.clear()
         monkeypatch.setenv("ORRERY_SOURCE_WATCH_FIXTURES", _fixture("Python 3.14\r\n"))
@@ -39,7 +39,7 @@ class TestSourceWatch:
     def test_diff_fetches_now_and_compares_a_known_observation(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        import source_watch
+        from stars.source_watch import service as source_watch
 
         source_watch._history.clear()
         monkeypatch.setenv("ORRERY_SOURCE_WATCH_FIXTURES", _fixture("Python 3.14.0 notes"))
@@ -55,7 +55,7 @@ class TestSourceWatch:
         assert changed["current_digest"] != prior["normalized_sha256"]
 
     def test_answer_is_bounded_extractive_evidence(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        import source_watch
+        from stars.source_watch import service as source_watch
 
         source_watch._history.clear()
         monkeypatch.setenv(
@@ -71,7 +71,7 @@ class TestSourceWatch:
         assert result["live_at_call"] is True
 
     def test_rejects_an_unallowlisted_source(self) -> None:
-        from source_watch import observe
+        from stars.source_watch.service import observe
 
         result = observe("https://example.com/not-a-source")
         assert result["error"] == "source_not_allowed"
@@ -147,7 +147,7 @@ class TestSourceWatch:
 
         record = CATALOG.resolve("orrery/source-watch")
         assert record is not None
-        assert record.endpoint == "mcp://orrery.dev/s/source-watch"
-        assert record.tools == ("observe", "diff", "source_watch_answer")
+        assert record.endpoint == "mcp://orrery.dev/stars/source-watch/mcp"
+        assert record.tools == ("observe", "diff", "answer")
         hits = CATALOG.match("official release notes", node="public")
         assert any(hit.name == "orrery/source-watch" for hit in hits)

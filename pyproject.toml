@@ -20,7 +20,7 @@ allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 # Application project — sync deps with uv; run from the repo root (not a wheel).
-only-include = ["dogfood.py", "catalog", "commerce"]
+only-include = ["dogfood.py", "catalog", "commerce", "stars"]
 
 [dependency-groups]
 dev = [

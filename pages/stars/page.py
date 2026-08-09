@@ -18,11 +18,11 @@ from catalog.console_links import PUBLISHER_DIRECT_NOTE, console_href_for
 from commerce import charge_on_verify, refund_on_forge
 from dogfood import (
     SMOKE_HTML,
-    WORLD_TIME_CLONE_WARNING,
     signed_convert_receipt,
     signed_source_watch_receipt,
     signed_world_time_receipt,
 )
+from stars.world_time.contract import CLONE_WARNING as WORLD_TIME_CLONE_WARNING
 from trust.oracle import oracle_for
 
 _DEFAULT = "orrery/html-to-pdf"

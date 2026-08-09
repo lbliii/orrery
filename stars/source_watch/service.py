@@ -1,4 +1,9 @@
-"""Bounded, allowlisted source observation primitives for Source Watch v1."""
+"""Framework-free Source Watch domain service.
+
+Only one source is admitted in v1.  Fetches are bounded, redirects are denied,
+and the process-local history exists solely to compare observations in one
+running service instance.
+"""
 
 from __future__ import annotations
 
@@ -11,17 +16,16 @@ from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import urlsplit
 
+from .contract import ANSWER_MAX_CHARS, DEFAULT_SOURCE
+
 SOURCES: dict[str, str] = {
-    "python-release-notes": "https://docs.python.org/3/whatsnew/3.14.html"
+    DEFAULT_SOURCE: "https://docs.python.org/3/whatsnew/3.14.html",
 }
 ALLOWED_HOSTS = frozenset({"docs.python.org"})
 TIMEOUT_SECONDS = 8
-# The official Python 3.14 release notes are currently ~536 KiB. Keep a hard
-# ceiling to bound a call while leaving headroom for a legitimate source update.
 MAX_BYTES = 1 * 1024 * 1024
-ANSWER_MAX_CHARS = 1_200
 
-# v1 history is intentionally process-local and non-durable.
+# V1 history is intentionally process-local and non-durable.
 _history: dict[str, list[dict[str, object]]] = {}
 
 
@@ -48,11 +52,6 @@ def _error(error: str, *, source: str, detail: str = "") -> dict[str, object]:
 
 
 def _fixture(source: str) -> str | None:
-    """Read deterministic ``ORRERY_SOURCE_WATCH_FIXTURES`` fixture data.
-
-    It is a JSON object keyed by source id. Values are either document strings,
-    or objects containing a string ``body``, ``document``, or ``text`` field.
-    """
     raw = os.environ.get("ORRERY_SOURCE_WATCH_FIXTURES", "").strip()
     if not raw:
         return None
@@ -124,7 +123,7 @@ def _fetch(source: str) -> dict[str, object]:
     }
 
 
-def observe(source: str = "python-release-notes") -> dict[str, object]:
+def observe(source: str = DEFAULT_SOURCE) -> dict[str, object]:
     """Capture a source and record raw and normalized content digests."""
     fetched = _fetch(source)
     if "error" in fetched:
@@ -133,12 +132,13 @@ def observe(source: str = "python-release-notes") -> dict[str, object]:
     normalised = _normalise(document)
     history = _history.setdefault(source, [])
     digest = _sha256(normalised)
-    if not history:
-        state = "new"
-    elif history[-1]["normalized_sha256"] == digest:
-        state = "unchanged"
-    else:
-        state = "changed"
+    state = (
+        "new"
+        if not history
+        else "unchanged"
+        if history[-1]["normalized_sha256"] == digest
+        else "changed"
+    )
     observation: dict[str, object] = {
         "source": source,
         "canonical_url": fetched["canonical_url"],
@@ -154,7 +154,7 @@ def observe(source: str = "python-release-notes") -> dict[str, object]:
     return {key: value for key, value in observation.items() if key != "document"}
 
 
-def diff(source: str = "python-release-notes", since_digest: str = "") -> dict[str, object]:
+def diff(source: str = DEFAULT_SOURCE, since_digest: str = "") -> dict[str, object]:
     """Fetch now, then summarize whether it differs from a known digest."""
     history = _history.get(source, [])
     prior_digest = str(history[-1]["normalized_sha256"]) if history else ""
@@ -187,11 +187,9 @@ def diff(source: str = "python-release-notes", since_digest: str = "") -> dict[s
         "current_digest": current,
         "evidence": evidence,
         "live_at_call": True,
-        "summary": (
-            "The normalized source is unchanged from the known digest."
-            if status == "unchanged"
-            else "The normalized source differs from the known digest."
-        ),
+        "summary": "The normalized source is unchanged from the known digest."
+        if status == "unchanged"
+        else "The normalized source differs from the known digest.",
     }
 
 
@@ -206,9 +204,7 @@ def _excerpt(document: str, question: str, *, limit: int) -> str:
 
 
 def answer(
-    question: str,
-    source: str = "python-release-notes",
-    max_chars: int = ANSWER_MAX_CHARS,
+    question: str, source: str = DEFAULT_SOURCE, max_chars: int = ANSWER_MAX_CHARS
 ) -> dict[str, object]:
     """Fetch now, then return a bounded extractive answer with evidence."""
     if max_chars < 1 or max_chars > ANSWER_MAX_CHARS:
