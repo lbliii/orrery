@@ -68,6 +68,8 @@ class Cursor(Protocol):
 
     def fetchone(self) -> Any: ...
 
+    def fetchall(self) -> list[Any]: ...
+
     def close(self) -> None: ...
 
 
@@ -175,6 +177,38 @@ class PostgresArtifactRepository:
             to_state=ArtifactState.DELETED,
         )
 
+    def claim_expired(
+        self, *, now: datetime, batch_size: int, retry_before: datetime
+    ) -> list[ArtifactRecord]:
+        """Atomically reserve expired work; failed deletes remain safely retryable."""
+        if batch_size < 1:
+            raise ValueError("batch_size must be positive")
+        connection = self._connection_factory()
+        cursor = connection.cursor()
+        try:
+            cursor.execute(
+                """WITH candidates AS (
+                       SELECT artifact_id FROM artifacts
+                       WHERE (expires_at <= %s AND state IN ('pending_upload', 'available'))
+                          OR (state = 'deleting' AND updated_at <= %s)
+                       ORDER BY expires_at FOR UPDATE SKIP LOCKED LIMIT %s
+                   ) UPDATE artifacts AS artifact SET state = 'deleting', updated_at = NOW()
+                   FROM candidates WHERE artifact.artifact_id = candidates.artifact_id
+                   RETURNING artifact.artifact_id, artifact.storage_key, artifact.sha256,
+                             artifact.byte_length, artifact.content_type, artifact.filename,
+                             artifact.expires_at, artifact.policy, artifact.state""",
+                (now, retry_before, batch_size),
+            )
+            rows = cursor.fetchall()
+            connection.commit()
+            return [self._record_from_row(row) for row in rows]
+        except Exception:
+            connection.rollback()
+            raise
+        finally:
+            cursor.close()
+            connection.close()
+
     def get(self, artifact_id: str) -> ArtifactRecord | None:
         """Load metadata only; delivery code gets bytes from object storage."""
         connection = self._connection_factory()
@@ -213,9 +247,15 @@ class PostgresArtifactRepository:
         if isinstance(policy, str):
             policy = json.loads(policy)
         return ArtifactRecord(
-            artifact_id=row[0], storage_key=row[1], sha256=row[2], byte_length=row[3],
-            content_type=row[4], filename=row[5], expires_at=row[6],
-            policy=ArtifactPolicy(**policy), state=ArtifactState(row[8]),
+            artifact_id=row[0],
+            storage_key=row[1],
+            sha256=row[2],
+            byte_length=row[3],
+            content_type=row[4],
+            filename=row[5],
+            expires_at=row[6],
+            policy=ArtifactPolicy(**policy),
+            state=ArtifactState(row[8]),
         )
 
 
