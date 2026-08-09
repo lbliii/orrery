@@ -12,6 +12,7 @@ BUILTIN_STAR_PACKAGES = (
     "stars.html_to_pdf",
     "stars.csv_report",
     "stars.image_transform",
+    "stars.http_head",
     "stars.source_watch",
     "stars.world_time",
 )
