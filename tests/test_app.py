@@ -103,6 +103,8 @@ class TestOrreryHostFoundation:
                 "gaze_list_constellations",
                 "resolve_name",
                 "convert",
+                "submit",
+                "result",
                 "health",
                 "fetch",
                 "get",
@@ -329,7 +331,9 @@ class TestPublishOracleSurface:
 class TestDirectStarMcpEndpoints:
     async def test_direct_star_endpoints_expose_canonical_tool_names(self, example_app) -> None:
         expected = {
-            "/stars/html-to-pdf/mcp": {"convert", "health"},
+            "/stars/html-to-pdf/mcp": {"convert", "submit", "result", "health"},
+            "/stars/csv-report/mcp": {"submit", "result"},
+            "/stars/image-transform/mcp": {"submit", "result"},
             "/stars/world-time/mcp": {"fetch", "get", "answer"},
             "/stars/source-watch/mcp": {"observe", "diff", "answer"},
         }

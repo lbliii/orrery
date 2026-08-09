@@ -1,0 +1,34 @@
+[star]
+name = "orrery/csv-report"
+version = "1.0.0"
+description = "Queue a durable CSV report on Orrery's managed CPU worker"
+publisher = "orrery"
+publisher_key_id_env = "ORRERY_CPU_KEY_ID"
+direct_mcp_path = "/stars/csv-report/mcp"
+tools = ["submit", "result"]
+[pricing]
+unit = "call"
+price_per_call = "0.00"
+currency = "USD"
+[runtime]
+python_package = "stars.csv_report"
+skill_factory = "stars.csv_report.skill:build_skill"
+execution_mode = "managed-cpu"
+[managed_cpu]
+image_digest = "sha256:a7fb1e634c4a578f9e0bd6327f11a3cde11b7a9395f48e24360c0988bcc5c2bc"
+command = ["orrery-csv-report"]
+cpu_millicores = 250
+memory_bytes = 134217728
+wall_time_seconds = 30
+max_input_bytes = 1048576
+max_output_bytes = 1048576
+[policy]
+allowed_egress = []
+freshness = "at_call"
+redirects = "deny"
+max_response_bytes = 1048576
+[receipt]
+schema_version = "1"
+algorithm = "Ed25519"
+[publish]
+corpus = "stars.csv_report.corpus:CORPUS"

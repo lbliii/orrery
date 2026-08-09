@@ -9,6 +9,8 @@ from typing import Any
 from chirp.skill import Skill
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
+from stars.managed_api import ManagedStarService, configured_managed_service
+
 from .artifacts import get_pdf_artifacts
 from .contract import STAR_VERSION
 from .service import convert as convert_html
@@ -24,7 +26,9 @@ def _private_key(private_key: Any | None) -> Ed25519PrivateKey:
     return Ed25519PrivateKey.generate()
 
 
-def build_skill(*, private_key: Any | None = None) -> Skill:
+def build_skill(
+    *, private_key: Any | None = None, managed_service: ManagedStarService | None = None
+) -> Skill:
     """Build the direct-endpoint html-to-pdf skill with canonical tool names."""
     private = _private_key(private_key)
     skill = Skill(
@@ -46,6 +50,21 @@ def build_skill(*, private_key: Any | None = None) -> Skill:
         result["artifact_url"] = f"/artifacts/{artifact.artifact_id}"
         result["sha256"] = artifact.sha256
         return result
+
+    @skill.tool(
+        "submit",
+        description="Queue HTML-to-PDF on the managed worker and return a run ID, not a PDF",
+    )
+    def submit(html: str, idempotency_key: str) -> dict[str, object]:
+        managed = managed_service or configured_managed_service()
+        return managed.submit(
+            kind="html-to-pdf", input={"html": html}, idempotency_key=idempotency_key
+        )
+
+    @skill.tool("result", description="Get a queued PDF run or its signed final receipt")
+    def result(run_id: str) -> dict[str, object]:
+        managed = managed_service or configured_managed_service()
+        return managed.result(run_id)
 
     @skill.tool("health", description="html-to-pdf readiness probe")
     def health() -> dict[str, str]:

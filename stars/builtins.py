@@ -10,6 +10,8 @@ from ._core import StarRegistry
 
 BUILTIN_STAR_PACKAGES = (
     "stars.html_to_pdf",
+    "stars.csv_report",
+    "stars.image_transform",
     "stars.source_watch",
     "stars.world_time",
 )

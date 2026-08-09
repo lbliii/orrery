@@ -598,7 +598,7 @@ class TestGazeCatalog:
 
         described = CATALOG.describe("orrery/html-to-pdf")
         assert described["status"] == "ok"
-        assert described["tools"] == ["convert", "health"]
+        assert described["tools"] == ["convert", "submit", "result", "health"]
         assert described["price_per_call"] is None
         assert described["content_digest"].startswith("sha256:")
 

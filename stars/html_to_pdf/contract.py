@@ -25,6 +25,22 @@ TOOL_SCHEMAS: Final = {
         "description": "html-to-pdf readiness probe.",
         "inputSchema": {"type": "object", "properties": {}},
     },
+    "submit": {
+        "description": "Queue a managed PDF run and return its run ID.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {"html": {"type": "string"}, "idempotency_key": {"type": "string"}},
+            "required": ["html", "idempotency_key"],
+        },
+    },
+    "result": {
+        "description": "Return queued state or the signed final receipt for a managed run.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {"run_id": {"type": "string"}},
+            "required": ["run_id"],
+        },
+    },
 }
 
 

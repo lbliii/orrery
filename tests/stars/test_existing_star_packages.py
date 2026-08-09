@@ -74,9 +74,14 @@ class TestExistingStarPackages:
             "skill": "html-to-pdf",
             "artifact_delivery": "durable",
         }
-        assert set(pdf_tool_schemas()) == {"convert", "health"}
+        assert set(pdf_tool_schemas()) == {"convert", "submit", "result", "health"}
         skill = build_pdf_skill()
-        assert {pending.name for pending in skill._pending} == {"convert", "health"}
+        assert {pending.name for pending in skill._pending} == {
+            "convert",
+            "submit",
+            "result",
+            "health",
+        }
         envelope = next(pending for pending in skill._pending if pending.name == "convert").handler(
             html="<p>Download me</p>"
         )
