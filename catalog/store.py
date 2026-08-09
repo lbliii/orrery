@@ -9,6 +9,7 @@ reads the same index — one seed list, two product surfaces.
 
 from __future__ import annotations
 
+from .dns import mcp_url
 from .fixtures import CONSTELLATION_SEEDS
 from .gaze import (
     GAZE_NODE_TOOLS,
@@ -139,32 +140,25 @@ class Catalog:
                 payload["policy_digest"] = record.content_digest
                 payload["policy_nodes"] = [n.id for n in graph.nodes]
                 payload["policy_edges"] = [
-                    {"source": e.source, "target": e.target, "kind": e.kind}
-                    for e in graph.edges
+                    {"source": e.source, "target": e.target, "kind": e.kind} for e in graph.edges
                 ]
         return payload
 
     def list_constellations(self, *, node: str | None = None) -> tuple[GazeHit, ...]:
         """Constellation-kind records (optionally scoped to a gaze node)."""
         pool = self.records_for_node(node) if node else self._records
-        return tuple(
-            hit_from_record(r) for r in pool if r.kind == "constellation"
-        )
+        return tuple(hit_from_record(r) for r in pool if r.kind == "constellation")
 
     def gaze_nodes(self) -> tuple[GazeNode, ...]:
         """Console node tabs: public sky, namespace, then a constellation node."""
         namespaces = sorted(
-            {
-                r.namespace
-                for r in self._records
-                if r.namespace and r.visibility == "private"
-            }
+            {r.namespace for r in self._records if r.namespace and r.visibility == "private"}
         )
         nodes: list[GazeNode] = [
             GazeNode(
                 id="public",
                 label="Public sky",
-                url="mcp://orrery.dev/gaze",
+                url=mcp_url("/gaze"),
                 scope="orrery/*",
                 tools=GAZE_NODE_TOOLS,
             )
@@ -174,7 +168,7 @@ class Catalog:
                 GazeNode(
                     id=ns,
                     label=f"{ns} namespace",
-                    url=f"mcp://{ns}.orrery.dev/gaze",
+                    url=mcp_url("/gaze", namespace=ns),
                     scope=f"{ns}/*",
                     tools=GAZE_NODE_TOOLS,
                 )

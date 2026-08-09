@@ -98,7 +98,7 @@ MCP / HTTP error shape (no Stripe call):
   "price_per_call_cents": 2,
   "balance": "$1.00",
   "balance_cents": 100,
-  "top_up_url": "https://orrery.dev/wallet/top-up"
+  "top_up_url": "https://orrery.lol/wallet/top-up"
 }
 ```
 

@@ -13,7 +13,7 @@ reverse proxy that executes everyone’s tools.
 
 Dogfood stars on this host (`html-to-pdf`, `world-time`) mount on the same
 process for demo convenience. Product resolve records still advertise
-publisher-shaped endpoints (`mcp://orrery.dev/s/…`) so the agent loop matches
+publisher-shaped endpoints (`mcp://orrery.lol/s/…`) so the agent loop matches
 production.
 
 ## Decision
