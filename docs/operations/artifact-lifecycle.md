@@ -45,12 +45,13 @@ expired ID returns `404`. The opaque ID is the practical bearer capability in
 the current route; callers should not put it in public logs or URLs that they
 do not intend to share.
 
-The live route is currently PDF-oriented: it emits `application/pdf` and a
-`.pdf` attachment name. The managed CSV and image workloads can persist their
-correct object metadata and bytes, but they do **not** yet have a content-type
-correct public delivery endpoint. They are demonstrable through their managed
-run receipt and storage adapter tests, not a complete public CSV/image download
-surface.
+The route serves the stored content type and a sanitized stored attachment
+filename for supported PDF, CSV, and PNG artifacts. It proxies bytes rather
+than exposing a storage capability URL, adds `Cache-Control: no-store` and
+`X-Content-Type-Options: nosniff`, and emits a download audit event containing
+only artifact ID, outcome, and content type. The public route treats the opaque
+ID as the current receipt-holder capability; `private` policy artifacts have no
+public owner-authentication route and fail closed.
 
 ## Verification and attestation boundary
 
