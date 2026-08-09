@@ -41,6 +41,8 @@ Strategy ADRs (control plane, prepaid wallet, Stripe top-up):
 
 Design mocks (validated direction): [`design/`](./design/). Frozen favorite: [`design/v1-night-gold/`](./design/v1-night-gold/).
 
+Design language (identity + system inventory): [`docs/design/identity.md`](./docs/design/identity.md) · [`docs/design/system.md`](./docs/design/system.md).
+
 ## Run locally
 
 ```bash
