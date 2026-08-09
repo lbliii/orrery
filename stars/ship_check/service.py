@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from datetime import UTC, datetime
 
 from stars.npm_release.service import get as npm_get
 from stars.pypi_release.service import get as pypi_get
 from stars.source_watch.service import diff as source_diff
+from stars.world_time.service import fetch_live_utc
 
 PYPI = frozenset({"httpx", "pydantic"})
 NPM = frozenset({"zod", "@modelcontextprotocol/sdk"})
@@ -17,7 +17,7 @@ def run(
     *,
     package_provider: Callable[[str], dict[str, object]] | None = None,
     source_provider: Callable[[str], dict[str, object]] | None = None,
-    clock: Callable[[], datetime] | None = None,
+    world_time_provider: Callable[[], dict[str, object]] | None = None,
 ) -> dict[str, object]:
     if package not in PYPI | NPM:
         return {"error": "package_not_allowed", "package": package, "live_at_call": True}
@@ -25,8 +25,8 @@ def run(
     source_result = (
         source_provider or (lambda digest: source_diff("python-release-notes", digest))
     )(source_digest)
-    utc = (clock or (lambda: datetime.now(UTC)))().isoformat()
-    complete = "error" not in package_result and "error" not in source_result
+    utc = (world_time_provider or fetch_live_utc)()
+    complete = all("error" not in result for result in (package_result, source_result, utc))
     return {
         "constellation": "orrery/ship-check",
         "verdict": "ready_to_reason" if complete else "incomplete",
@@ -42,7 +42,7 @@ def run(
         ],
         "package": package_result,
         "source_watch": source_result,
-        "utc": {"datetime": utc, "live_at_call": True},
+        "utc": utc,
         "live_at_call": True,
     }
 

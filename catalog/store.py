@@ -18,6 +18,7 @@ from .gaze import (
     _tokens,
     clamp_gaze_limit,
     hit_from_record,
+    is_reactive_record,
     score_record,
     tool_hit,
 )
@@ -227,7 +228,11 @@ class Catalog:
         if intent.strip():
             return self.match(intent, node=key, limit=limit)
         cap = clamp_gaze_limit(limit)
-        return tuple(hit_from_record(r) for r in self.records_for_node(key)[:cap])
+        records = self.records_for_node(key)
+        ordered = tuple(
+            sorted(records, key=lambda record: (not is_reactive_record(record), record.name))
+        )
+        return tuple(hit_from_record(r) for r in ordered[:cap])
 
 
 #: Process-wide catalog; refreshed from live manifests after publish-oracle.

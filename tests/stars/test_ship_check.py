@@ -1,5 +1,3 @@
-from datetime import UTC, datetime
-
 from catalog.constellation import policy_for
 from stars.builtins import builtin_registry
 from stars.ship_check.service import run
@@ -12,7 +10,7 @@ def test_complete_and_incomplete_component_paths() -> None:
         "sha256:old",
         package_provider=lambda _: {"version": "1", "source_digest": "sha256:p"},
         source_provider=lambda _: {"status": "unchanged", "current_digest": "sha256:s"},
-        clock=lambda: datetime(2026, 1, 1, tzinfo=UTC),
+        world_time_provider=lambda: {"datetime": "2026-01-01T00:00:00Z", "source": "fixture"},
     )
     assert ok["verdict"] == "ready_to_reason" and ok["source_watch"]["status"] == "unchanged"
     bad = run(
@@ -21,6 +19,13 @@ def test_complete_and_incomplete_component_paths() -> None:
         source_provider=lambda _: {"status": "changed"},
     )
     assert bad["verdict"] == "incomplete"
+    time_bad = run(
+        "httpx",
+        package_provider=lambda _: {},
+        source_provider=lambda _: {},
+        world_time_provider=lambda: {"error": "offline"},
+    )
+    assert time_bad["verdict"] == "incomplete" and time_bad["utc"]["error"] == "offline"
 
 
 def test_registry_constellation_and_skill() -> None:
