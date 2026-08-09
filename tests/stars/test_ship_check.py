@@ -1,5 +1,6 @@
 from datetime import UTC, datetime
 
+from catalog.constellation import policy_for
 from stars.builtins import builtin_registry
 from stars.ship_check.service import run
 from stars.ship_check.skill import build_skill
@@ -29,3 +30,4 @@ def test_registry_constellation_and_skill() -> None:
         and definition.direct_mcp_path == "/constellations/ship-check/mcp"
     )
     assert {item.name for item in build_skill()._pending} == {"run"}
+    assert policy_for("orrery/ship-check") is not None
