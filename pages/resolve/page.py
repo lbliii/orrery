@@ -12,6 +12,8 @@ from __future__ import annotations
 from chirp import JSONResponse, Page, Request
 
 from catalog import CATALOG
+from catalog.console_links import console_href_for
+from trust.oracle import oracle_for
 
 
 def _wants_json(request: Request) -> bool:
@@ -38,13 +40,16 @@ def get(request: Request) -> Page | JSONResponse:
 
     q = (request.query.get("q") or "").strip()
     matched = CATALOG.resolve(q) if q else None
+    records = CATALOG.public_records()
     return Page(
         "resolve/page.html",
         "content",
         page_block_name="content",
         page_title="Resolve — Orrery",
         footer_note="Resolver console",
-        records=CATALOG.public_records(),
+        records=records,
+        oracle_by_name={r.name: oracle_for(r) for r in records},
+        console_by_name={r.name: console_href_for(r) for r in records},
         q=q,
         matched=matched,
         matched_name=matched.name if matched else "",

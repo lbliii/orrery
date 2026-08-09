@@ -642,6 +642,15 @@ a:hover {
   color: var(--brass);
 }
 
+.pill-free {
+  color: var(--phosphor);
+  opacity: 0.85;
+}
+
+.pill-fail {
+  color: #f07178;
+}
+
 .pill-priv {
   color: var(--fog);
 }

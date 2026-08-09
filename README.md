@@ -37,6 +37,7 @@ Strategy ADRs (control plane, prepaid wallet, Stripe top-up):
 | [`docs/adr/0001-control-plane-wallet.md`](./docs/adr/0001-control-plane-wallet.md) | Control vs data plane, reactive stars, prepaid wallet, Not now |
 | [`docs/adr/0002-prepaid-wallet-ledger.md`](./docs/adr/0002-prepaid-wallet-ledger.md) | Ledger schema, hold/capture, insufficient-balance |
 | [`docs/adr/0003-stripe-topup.md`](./docs/adr/0003-stripe-topup.md) | Checkout + webhook credit (design only) |
+| [`docs/adr/0004-publisher-direct-call.md`](./docs/adr/0004-publisher-direct-call.md) | Agent → publisher MCP; Orrery is not a proxy |
 
 Design mocks (validated direction): [`design/`](./design/). Frozen favorite: [`design/v1-night-gold/`](./design/v1-night-gold/).
 

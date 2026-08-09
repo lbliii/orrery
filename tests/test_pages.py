@@ -18,30 +18,30 @@ from catalog import CATALOG, Catalog, ResolveRecord
 class TestResolveSchema:
     """Resolve record schema + lookup (Skill DNS)."""
 
-    def test_seed_catalog_has_expected_records(self) -> None:
+    def test_seed_catalog_has_expected_records(self, example_app) -> None:
         names = {r.name for r in CATALOG.all()}
         assert {
             "orrery/html-to-pdf",
             "orrery/world-time",
-            "orrery/md-linkcheck",
             "acme/release-gate",
+            "acme/launch-gate",
         } <= names
 
-    def test_resolve_by_full_name(self) -> None:
+    def test_resolve_by_full_name(self, example_app) -> None:
         rec = CATALOG.resolve("orrery/html-to-pdf")
         assert rec is not None
         assert rec.endpoint == "mcp://orrery.dev/s/html-to-pdf"
         assert rec.kind == "star"
 
-    def test_resolve_by_bare_and_versioned_name(self) -> None:
+    def test_resolve_by_bare_and_versioned_name(self, example_app) -> None:
         assert CATALOG.resolve("html-to-pdf").name == "orrery/html-to-pdf"
         assert CATALOG.resolve("orrery/html-to-pdf@1.2.0").name == "orrery/html-to-pdf"
 
-    def test_resolve_miss_returns_none(self) -> None:
+    def test_resolve_miss_returns_none(self, example_app) -> None:
         assert CATALOG.resolve("does-not-exist") is None
         assert CATALOG.resolve("") is None
 
-    def test_record_serialization_contract(self) -> None:
+    def test_record_serialization_contract(self, example_app) -> None:
         payload = CATALOG.get("orrery/html-to-pdf").as_dict()
         assert set(payload) >= {
             "name",
@@ -51,6 +51,7 @@ class TestResolveSchema:
             "price_per_call",
             "alg",
         }
+        assert payload["content_digest"].startswith("sha256:")
 
     def test_href_routes_by_kind(self) -> None:
         star = ResolveRecord(name="a/b", endpoint="mcp://x", content_digest="sha256:0")
@@ -109,6 +110,7 @@ class TestBrandChrome:
                 r = await client.get(path)
                 assert r.status == 200, path
                 assert 'class="topbar"' in r.text, path
+                assert 'href="/console"' in r.text, path
                 assert 'class="cosmos"' in r.text, path
                 assert "/static/styles.css" in r.text, path
                 assert "fonts.googleapis.com" in r.text, path
@@ -119,6 +121,9 @@ class TestBrandChrome:
             assert 'href="/gaze" aria-current="page"' in gaze.text
             resolve = await client.get("/resolve")
             assert 'href="/resolve" aria-current="page"' in resolve.text
+            console = await client.get("/console")
+            assert "Skill console" in console.text
+            assert "/console/html-to-pdf" in console.text
 
 
 @pytest.mark.issue(21)
@@ -129,13 +134,14 @@ class TestResolveConsole:
             assert r.status == 200
             assert "data-resolve-table" in r.text
             assert "orrery/html-to-pdf" in r.text
-            assert "orrery/md-linkcheck" in r.text
+            assert "/console/html-to-pdf" in r.text
+            assert "orrery/world-time" in r.text
 
     async def test_lookup_highlights_resolved_row(self, example_app) -> None:
         async with TestClient(example_app) as client:
-            r = await client.get("/resolve?q=md-linkcheck")
+            r = await client.get("/resolve?q=world-time")
             assert "row-resolved" in r.text
-            assert "Resolved · md-linkcheck" in r.text
+            assert "Resolved · world-time" in r.text
 
 
 @pytest.mark.issue(25)
@@ -157,13 +163,16 @@ class TestStarDetail:
             assert "signature" in r.text
             assert "orrery-pdf-1" in r.text
             assert "convert" in r.text
+            assert "/console/html-to-pdf" in r.text
+            assert "not a reverse proxy" in r.text
 
     async def test_named_star_switches_record(self, example_app) -> None:
         async with TestClient(example_app) as client:
-            r = await client.get("/stars?name=orrery/md-linkcheck")
+            r = await client.get("/stars?name=orrery/world-time")
             assert r.status == 200
-            assert "orrery/md-linkcheck" in r.text
-            assert "$0.01" in r.text
+            assert "orrery/world-time" in r.text
+            assert "Free" in r.text
+            assert "unscored" in r.text
 
     async def test_unknown_star_name_is_404(self, example_app) -> None:
         async with TestClient(example_app) as client:
@@ -182,7 +191,8 @@ class TestStarDetail:
             assert "orrery/world-time@0.1.0" in r.text
             assert "Live at call time" in r.text
             assert "Offline clones cannot mint" in r.text
-            assert "$0.03" in r.text
+            assert "Free" in r.text
+            assert "/ verified call" in r.text
             assert "fetch" in r.text
             assert "Verified · not forged" in r.text
             assert "orrery-world-time-1" in r.text
@@ -219,23 +229,24 @@ class TestReactiveWorldTimeStar:
         assert "clone_warning" in receipt["payload"]
         assert verify_receipt(receipt) is True
 
-    def test_gaze_match_world_time_has_price_no_payload(self) -> None:
+    def test_gaze_match_world_time_has_price_no_payload(self, example_app) -> None:
         hits = CATALOG.match("live utc clock now", node="public")
         names = [h.name for h in hits]
         assert "orrery/world-time" in names
         assert names[0] == "orrery/world-time"
         hit = next(h for h in hits if h.name == "orrery/world-time")
         wire = hit.as_dict()
-        assert hit.price == "$0.03"
+        assert hit.price is None
+        assert "Free" in hit.blurb
         assert "Live UTC" in hit.blurb or "call time" in hit.blurb.lower()
         assert "payload" not in wire
         assert "datetime" not in wire
         assert "clone_warning" not in wire
 
-    def test_resolve_world_time_returns_price(self) -> None:
+    def test_resolve_world_time_returns_price(self, example_app) -> None:
         rec = CATALOG.resolve("orrery/world-time")
         assert rec is not None
-        assert rec.price_per_call == "$0.03"
+        assert rec.price_per_call is None
         assert rec.tools == ("fetch", "get", "answer")
         assert "payload" not in rec.as_dict()
 
@@ -245,7 +256,7 @@ class TestReactiveWorldTimeStar:
             assert r.status == 200
             body = json.loads(r.text)
             assert body["name"] == "orrery/world-time"
-            assert body["price_per_call"] == "$0.03"
+            assert body["price_per_call"] is None
             assert body["endpoint"] == "mcp://orrery.dev/s/world-time"
             assert "payload" not in body
 
@@ -307,7 +318,7 @@ class TestReactiveWorldTimeStar:
             )
             assert described.status == 200
             text = json.loads(described.text)["result"]["content"][0]["text"]
-            assert "$0.03" in text
+            assert "price_per_call': None" in text or "'price_per_call': null" in text
             assert "fetch" in text
             assert "live_at_call" not in text
             assert "clone_warning" not in text
@@ -326,7 +337,7 @@ class TestEnvelopeVerifyAndPdfStub:
         assert receipt["key_id"] == "orrery-pdf-1"
         assert receipt["payload"]["content_type"] == "application/pdf"
         assert receipt["payment_id"]
-        assert receipt["price_per_call"] == "$0.02"
+        assert receipt["price_per_call"] is None
         assert verify_receipt(receipt) is True
 
     def test_tampered_receipt_fails_closed(self) -> None:
@@ -350,7 +361,7 @@ class TestEnvelopeVerifyAndPdfStub:
             ok_body = json.loads(ok.text)
             assert ok_body["verified"] is True
             assert ok_body["payment_id"] == receipt["payment_id"]
-            assert ok_body["price_per_call"] == "$0.02"
+            assert ok_body["price_per_call"] is None
             assert ok_body["commerce"]["action"] == "charge"
             assert ok_body["commerce"]["stub"] is True
             assert "commerce.charge_stub" in caplog.text
@@ -432,21 +443,24 @@ class TestCommerceStubs:
             assert r.status == 200
             assert "payment_id" in r.text
             assert "price_per_call" in r.text
-            assert "$0.02" in r.text
+            assert "Free" in r.text
+            assert "/ verified call" in r.text
+            assert "$0.02" not in r.text
             assert "commerce.charge_stub" in caplog.text
 
     async def test_resolve_and_gaze_include_price(self, example_app) -> None:
         async with TestClient(example_app) as client:
             resolve = await client.get("/api/resolve?name=html-to-pdf")
             assert resolve.status == 200
-            assert json.loads(resolve.text)["price_per_call"] == "$0.02"
+            assert json.loads(resolve.text)["price_per_call"] is None
 
             gaze = await client.get("/api/gaze/match?intent=html+pdf")
             assert gaze.status == 200
             hits = json.loads(gaze.text)["hits"]
             pdf_hits = [h for h in hits if h["name"] == "orrery/html-to-pdf"]
             assert pdf_hits
-            assert pdf_hits[0]["price"] == "$0.02"
+            assert pdf_hits[0]["price"] is None
+            assert "Free" in pdf_hits[0]["blurb"]
 
 
 @pytest.mark.issue(19)
@@ -531,7 +545,7 @@ class TestResolveHttpAndMcp:
 
 @pytest.mark.issue(22)
 class TestGazeCatalog:
-    def test_match_ranks_html_pdf_intent(self) -> None:
+    def test_match_ranks_html_pdf_intent(self, example_app) -> None:
         hits = CATALOG.match("html pdf convert", node="public")
         names = [h.name for h in hits]
         assert "orrery/html-to-pdf" in names
@@ -542,25 +556,37 @@ class TestGazeCatalog:
         assert "payload" not in hit.as_dict()
         assert "tools" not in hit.as_dict()
 
-    def test_match_namespace_node_scopes_acme(self) -> None:
+    def test_match_namespace_node_scopes_acme(self, example_app) -> None:
         hits = CATALOG.match("ship gate", node="acme")
         assert hits
         assert all(h.name.startswith("acme/") for h in hits)
 
-    def test_search_and_describe_and_list_constellations(self) -> None:
-        searched = CATALOG.search("linkcheck")
-        assert any(h.name == "orrery/md-linkcheck" for h in searched)
+    def test_search_and_describe_and_list_constellations(self, example_app) -> None:
+        searched = CATALOG.search("world-time")
+        assert any(h.name == "orrery/world-time" for h in searched)
 
         described = CATALOG.describe("orrery/html-to-pdf")
         assert described["status"] == "ok"
         assert described["tools"] == ["convert", "health"]
-        assert described["price_per_call"] == "$0.02"
+        assert described["price_per_call"] is None
+        assert described["content_digest"].startswith("sha256:")
 
         consts = CATALOG.list_constellations()
         assert {h.name for h in consts} >= {"acme/release-gate", "acme/launch-gate"}
         assert all(h.kind == "constellation" for h in consts)
 
-    def test_describe_miss(self) -> None:
+        launch = CATALOG.describe("acme/launch-gate")
+        assert launch["kind"] == "constellation"
+        assert launch["policy_nodes"] == [
+            "secret-scan",
+            "license",
+            "html-to-pdf",
+            "human-approve",
+            "release",
+        ]
+        assert any(e["kind"] == "repair_loop" for e in launch["policy_edges"])
+
+    def test_describe_miss(self, example_app) -> None:
         assert CATALOG.describe("nope")["error"] == "not_found"
 
 
@@ -685,7 +711,6 @@ class TestGazeConsole:
             assert "mcp://orrery.dev/gaze" in r.text
             assert "orrery/html-to-pdf" in r.text
             assert "orrery/world-time" in r.text
-            assert "orrery/md-linkcheck" in r.text
             assert "acme/launch-gate" in r.text
             assert "look_at" not in r.text
             assert "gaze_match" in r.text
@@ -723,12 +748,12 @@ class TestGazeConsole:
 
     async def test_api_gaze_match(self, example_app) -> None:
         async with TestClient(example_app) as client:
-            r = await client.get("/api/gaze/match?intent=link+docs&node=public")
+            r = await client.get("/api/gaze/match?intent=live+utc&node=public")
             assert r.status == 200
             body = json.loads(r.text)
             assert body["status"] == "ok"
             names = [h["name"] for h in body["hits"]]
-            assert "orrery/md-linkcheck" in names
+            assert "orrery/world-time" in names
 
 
 @pytest.mark.issue(32)
@@ -740,7 +765,24 @@ class TestConstellation:
             assert "data-constellation" in r.text
             assert "<svg" in r.text
             assert "acme/launch-gate" in r.text
+            assert "secret-scan" in r.text
+            assert "html-to-pdf*" in r.text
             assert "Composite receipt" in r.text
+            assert "Reliability console" in r.text
+
+
+@pytest.mark.issue(31)
+class TestConstellationPolicyModel:
+    def test_launch_gate_policy_fixture(self, example_app) -> None:
+        from catalog.constellation import LAUNCH_GATE_POLICY, policy_for
+
+        graph = policy_for("acme/launch-gate")
+        assert graph is LAUNCH_GATE_POLICY
+        assert len(graph.nodes) == 5
+        assert any(n.star_ref == "orrery/html-to-pdf" for n in graph.nodes)
+        assert graph.repair_loop_max == 3
+        assert any(e.kind == "repair_loop" for e in graph.edges)
+        assert len(graph.composite_chain) == 4
 
 
 @pytest.mark.issue(29)

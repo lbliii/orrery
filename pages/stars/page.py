@@ -14,6 +14,8 @@ import json
 from chirp import NotFound, Page, Request
 
 from catalog import CATALOG
+from catalog.console_links import PUBLISHER_DIRECT_NOTE, console_href_for
+from trust.oracle import oracle_for
 from commerce import charge_on_verify, refund_on_forge
 from dogfood import (
     SMOKE_HTML,
@@ -89,9 +91,12 @@ def get(request: Request) -> Page:
         "content",
         page_block_name="content",
         rec=rec,
+        oracle=oracle_for(rec),
+        console_href=console_href_for(rec),
+        publisher_note=PUBLISHER_DIRECT_NOTE,
         page_title=f"{rec.name} — Orrery",
         footer_note="Star detail",
-        footer_meta="pay → result → receipt",
+        footer_meta="call → verify → receipt",
         resolved_via=name,
         envelope=envelope,
         envelope_json=envelope_json,

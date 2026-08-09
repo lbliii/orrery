@@ -40,6 +40,10 @@ class GazeHit:
     price: str | None = None
     href: str = ""
 
+    @property
+    def pricing_label(self) -> str:
+        return self.price if self.price else "Free"
+
     def as_dict(self) -> dict[str, object]:
         """Serialize for MCP / ``/api/gaze/*`` — no tool payloads."""
         return {
@@ -83,12 +87,12 @@ GAZE_NODE_TOOLS: tuple[str, ...] = (
 
 def hit_from_record(record: ResolveRecord) -> GazeHit:
     """Build a gaze hit from a resolve record (descriptions + prices only)."""
+    toll = record.pricing_label
     blurb = record.description or record.short_name
-    if record.price_per_call:
-        if record.description:
-            blurb = f"{blurb} · {record.price_per_call}"
-        else:
-            blurb = record.price_per_call
+    if record.description:
+        blurb = f"{blurb} · {toll}"
+    else:
+        blurb = toll
     return GazeHit(
         name=record.name,
         kind=record.kind,

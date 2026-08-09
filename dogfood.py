@@ -327,6 +327,7 @@ def signed_world_time_receipt(
     verified = verify_envelope(envelope, sk.public_key)
     receipt = envelope.to_wire()
     receipt["payment_id"] = "pay_world_time"
+    receipt["price_per_call"] = _price_for_skill(str(receipt.get("skill", sk.name)))
     return receipt, verified
 
 

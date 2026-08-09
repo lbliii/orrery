@@ -13,12 +13,16 @@
         if (!list || !data.hits) return;
         list.innerHTML = data.hits.map(hit => {
           const pill = hit.kind === 'constellation' ? 'pill-pay' : hit.kind === 'tool' ? 'pill-priv' : 'pill-ok';
+          const tollPill = hit.price
+            ? '<span class=&quot;pill pill-pay&quot;>' + hit.price + '</span>'
+            : '<span class=&quot;pill pill-free&quot;>free</span>';
           const href = hit.href || '#';
           const name = hit.name || '';
           const blurb = hit.blurb || '';
           const kind = hit.kind || '';
           return '<li><a href=&quot;' + href + '&quot;>'
             + '<span class=&quot;pill ' + pill + '&quot;>' + kind + '</span>'
+            + tollPill
             + '<strong class=&quot;mono&quot;>' + name + '</strong>'
             + '<span class=&quot;muted&quot;>' + blurb + '</span>'
             + '</a></li>';
@@ -136,6 +140,11 @@ tools/call resolve_name
           <li>
             <a href="{{ hit.href }}">
               <span class="pill {% if hit.kind == 'constellation' %}pill-pay{% elif hit.kind == 'tool' %}pill-priv{% else %}pill-ok{% end %}">{{ hit.kind }}</span>
+              {% if hit.price %}
+              <span class="pill pill-pay">{{ hit.price }}</span>
+              {% else %}
+              <span class="pill pill-free">free</span>
+              {% end %}
               <strong class="mono">{{ hit.name }}</strong>
               <span class="muted">{{ hit.blurb }}</span>
             </a>
