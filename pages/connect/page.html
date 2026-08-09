@@ -1,0 +1,83 @@
+{% block content %}
+<header class="console-head">
+  <div>
+    <p class="kicker">For agents</p>
+    <h1>Point at Orrery</h1>
+  </div>
+</header>
+
+<p class="lede">
+  Skills you point at, not install. Discovery is public; the dogfood MCP host
+  needs no bearer. Gaze → resolve → call the publisher → seal the Envelope.
+</p>
+
+<section class="panel" style="margin-bottom: 1.5rem">
+  <p class="kicker" style="margin-bottom: 0.5rem">1. MCP endpoint</p>
+  <pre class="mono" style="margin: 0; white-space: pre-wrap">{{ mcp_url }}</pre>
+  <p class="lede" style="margin: 0.75rem 0 0; font-size: 0.95rem">
+    Streamable HTTP. No Authorization header on the public host.
+  </p>
+</section>
+
+<section class="panel" style="margin-bottom: 1.5rem">
+  <p class="kicker" style="margin-bottom: 0.5rem">2. Cursor snippet</p>
+  <pre class="mono" style="margin: 0; white-space: pre-wrap">{
+  "mcpServers": {
+    "orrery": {
+      "url": "{{ mcp_url }}"
+    }
+  }
+}</pre>
+</section>
+
+<section class="panel" style="margin-bottom: 1.5rem">
+  <p class="kicker" style="margin-bottom: 0.5rem">3. Smoke test</p>
+  <pre class="mono" style="margin: 0; white-space: pre-wrap">curl -sS "{{ mcp_url }}" \
+  -H 'Content-Type: application/json' \
+  -H 'mcp-protocol-version: 2025-06-18' \
+  -H 'mcp-method: tools/list' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'</pre>
+  <p class="lede" style="margin: 0.75rem 0 0; font-size: 0.95rem">
+    Then try <code class="mono">gaze_match</code> with intent
+    <code class="mono">html pdf convert</code> — watch invocations on
+    <a href="/">/</a>.
+  </p>
+</section>
+
+<section class="panel" style="margin-bottom: 1.5rem">
+  <p class="kicker" style="margin-bottom: 0.75rem">Machine-readable</p>
+  <ul class="meta-list">
+    <li><span>Brief</span><a class="mono" href="/llms.txt">/llms.txt</a></li>
+    <li><span>Full</span><a class="mono" href="/llms-full.txt">/llms-full.txt</a></li>
+    <li>
+      <span>Server card</span>
+      <a class="mono" href="/.well-known/mcp/server-card.json"
+        >/.well-known/mcp/server-card.json</a
+      >
+    </li>
+    <li><span>Manifest</span><a class="mono" href="/.well-known/mcp">/.well-known/mcp</a></li>
+    <li><span>Skills</span><a class="mono" href="/skills">/skills</a></li>
+  </ul>
+</section>
+
+<section class="panel" style="margin-bottom: 1.5rem">
+  <p class="kicker" style="margin-bottom: 0.75rem">Product consoles</p>
+  <ul class="meta-list">
+    <li><span>Gaze</span><a class="mono" href="/gaze">/gaze</a></li>
+    <li><span>Resolve</span><a class="mono" href="/resolve">/resolve</a></li>
+    <li><span>Stars</span><a class="mono" href="/stars">/stars</a></li>
+  </ul>
+</section>
+
+<section class="panel" style="margin-bottom: 3rem">
+  <p class="kicker" style="margin-bottom: 0.75rem">Aggregate tools</p>
+  <ul class="meta-list">
+    {% for t in tools %}
+    <li>
+      <span class="mono">{{ t.name }}</span>
+      <span>{{ t.description }}</span>
+    </li>
+    {% end %}
+  </ul>
+</section>
+{% end %}

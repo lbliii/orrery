@@ -17,8 +17,8 @@ Run locally::
     uv run python app.py
 
 Point an MCP client at ``/mcp``. Open ``/`` for the brand + live feed,
-``/resolve`` for the resolver console, or footer **Ops · console** for host
-reliability scores.
+``/resolve`` for the resolver console, ``/connect`` for agent onboarding,
+or footer **Ops · console** for host reliability scores.
 """
 
 from __future__ import annotations
@@ -36,6 +36,7 @@ from chirp import (
     Request,
     secure_stack,
 )
+from chirp.http.response import Response
 from chirp.middleware.csrf import CSRFConfig
 from chirp.middleware.security_headers import SecurityHeadersConfig
 from chirp.skill import (
@@ -49,6 +50,21 @@ from chirp.skill.smoke import render_faithful_answer
 from catalog import CATALOG
 from catalog.sync import refresh_catalog
 from commerce import charge_on_verify, refund_on_forge
+from discovery import (
+    DISCOVERY_CACHE_CONTROL,
+    DISCOVERY_CORS,
+    configured_public_origin,
+    llms_full_txt,
+    llms_txt,
+    mcp_manifest,
+    resolve_public_origin,
+    robots_txt,
+    security_txt,
+    server_card,
+)
+from discovery import (
+    dumps as discovery_dumps,
+)
 from dogfood import DOGFOOD_CORPUS, build_dogfood_skills, verify_receipt
 from stars._core.direct_mcp import mount_direct_mcp
 from stars.builtins import build_direct_skills, builtin_registry
@@ -132,6 +148,87 @@ for _definition in star_registry:
 # ---------------------------------------------------------------------------
 
 app.mount_pages(str(PAGES_DIR))
+
+
+# ---------------------------------------------------------------------------
+# Public agent discovery (llms.txt, MCP well-known, robots, security)
+# ---------------------------------------------------------------------------
+
+
+def _orrery_origin(request: Request) -> str:
+    return resolve_public_origin(configured_public_origin(), request.url)
+
+
+def _discovery_json(payload: dict) -> Response:
+    return Response(
+        discovery_dumps(payload),
+        content_type="application/json; charset=utf-8",
+        headers=(
+            ("Cache-Control", DISCOVERY_CACHE_CONTROL),
+            ("Access-Control-Allow-Origin", DISCOVERY_CORS),
+            ("X-Content-Type-Options", "nosniff"),
+        ),
+    )
+
+
+def _discovery_text(body: str, *, content_type: str) -> Response:
+    return Response(
+        body if body.endswith("\n") else f"{body}\n",
+        content_type=content_type,
+        headers=(
+            ("Cache-Control", DISCOVERY_CACHE_CONTROL),
+            ("Access-Control-Allow-Origin", DISCOVERY_CORS),
+            ("X-Content-Type-Options", "nosniff"),
+        ),
+    )
+
+
+@app.route("/.well-known/mcp/server-card.json")
+def mcp_server_card(request: Request) -> Response:
+    return _discovery_json(server_card(_orrery_origin(request)))
+
+
+@app.route("/.well-known/mcp")
+def mcp_well_known_manifest(request: Request) -> Response:
+    return _discovery_json(mcp_manifest(_orrery_origin(request)))
+
+
+@app.route("/.well-known/mcp.json")
+def mcp_well_known_manifest_alias(request: Request) -> Response:
+    # Early clients sometimes probe .json; same body as /.well-known/mcp.
+    return _discovery_json(mcp_manifest(_orrery_origin(request)))
+
+
+@app.route("/.well-known/security.txt")
+def well_known_security(request: Request) -> Response:
+    return _discovery_text(
+        security_txt(_orrery_origin(request)),
+        content_type="text/plain; charset=utf-8",
+    )
+
+
+@app.route("/llms.txt")
+def llms_document(request: Request) -> Response:
+    return _discovery_text(
+        llms_txt(_orrery_origin(request)),
+        content_type="text/plain; charset=utf-8",
+    )
+
+
+@app.route("/llms-full.txt")
+def llms_full_document(request: Request) -> Response:
+    return _discovery_text(
+        llms_full_txt(_orrery_origin(request)),
+        content_type="text/plain; charset=utf-8",
+    )
+
+
+@app.route("/robots.txt")
+def robots_document(request: Request) -> Response:
+    return _discovery_text(
+        robots_txt(_orrery_origin(request)),
+        content_type="text/plain; charset=utf-8",
+    )
 
 
 @app.template_filter("format_args")
