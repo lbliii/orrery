@@ -9,8 +9,14 @@ from pathlib import Path
 
 import pytest
 
+from artifacts.storage import InMemoryObjectStorage
 from stars.html_to_pdf import convert, health
-from stars.html_to_pdf.artifacts import artifact_store
+from stars.html_to_pdf.artifacts import (
+    DurablePdfArtifactService,
+    InMemoryPdfArtifactRepository,
+    configure_pdf_artifacts,
+    get_pdf_artifacts,
+)
 from stars.html_to_pdf.contract import tool_schemas as pdf_tool_schemas
 from stars.html_to_pdf.skill import build_skill as build_pdf_skill
 from stars.world_time import answer, fetch
@@ -50,6 +56,9 @@ class TestExistingStarPackages:
         assert manifest["publish"]["corpus"].endswith(".corpus:CORPUS")
 
     def test_html_to_pdf_framework_free_service_and_adapter(self) -> None:
+        configure_pdf_artifacts(
+            DurablePdfArtifactService(InMemoryPdfArtifactRepository(), InMemoryObjectStorage())
+        )
         result = convert("<h1>Orrery</h1><p>Release evidence</p>")
         pdf = base64.b64decode(result["artifact_base64"])
 
@@ -60,7 +69,11 @@ class TestExistingStarPackages:
         assert result["content_type"] == "application/pdf"
         assert b"<h1>" not in pdf
         assert b"Orrery" in pdf
-        assert health() == {"status": "ok", "skill": "html-to-pdf"}
+        assert health() == {
+            "status": "ok",
+            "skill": "html-to-pdf",
+            "artifact_delivery": "durable",
+        }
         assert set(pdf_tool_schemas()) == {"convert", "health"}
         skill = build_pdf_skill()
         assert {pending.name for pending in skill._pending} == {"convert", "health"}
@@ -69,10 +82,11 @@ class TestExistingStarPackages:
         )
         payload = envelope.payload
         artifact_id = str(payload["artifact_url"]).rsplit("/", maxsplit=1)[-1]
-        artifact = artifact_store.get(artifact_id)
-        assert artifact is not None
-        assert payload["sha256"] == artifact.sha256
-        assert artifact.data.startswith(b"%PDF-")
+        delivered = get_pdf_artifacts().download(artifact_id)
+        assert delivered is not None
+        artifact, data = delivered
+        assert payload["sha256"] == f"sha256:{artifact.sha256}"
+        assert data.startswith(b"%PDF-")
 
     def test_world_time_framework_free_service_and_adapter(
         self, monkeypatch: pytest.MonkeyPatch

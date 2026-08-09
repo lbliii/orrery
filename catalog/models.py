@@ -10,6 +10,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from .provider import ProviderCard
+
 #: A public star, or a private/constellation entry.
 Kind = str  # "star" | "constellation"
 Visibility = str  # "public" | "private"
@@ -37,6 +39,7 @@ class ResolveRecord:
     price_per_call: str | None = None
     oracle_ok: bool = True
     tools: tuple[str, ...] = field(default_factory=tuple)
+    provider_card: ProviderCard | None = None
 
     @property
     def short_name(self) -> str:
@@ -91,4 +94,5 @@ class ResolveRecord:
             "price_per_call": self.price_per_call,
             "oracle_ok": self.oracle_ok,
             "tools": list(self.tools),
+            "provider_card": self.provider_card.as_dict() if self.provider_card else None,
         }

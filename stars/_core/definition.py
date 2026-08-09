@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
+from .execution import ManagedCPUExecutionPolicy, ManagedCPUExecutionPolicyError, ManagedCPUWorkload
+
 
 class StarManifestError(ValueError):
     """A ``star.toml`` document does not satisfy the Star manifest contract."""
@@ -32,6 +34,8 @@ class StarDefinition:
     price_currency: str
     python_package: str
     skill_factory: str
+    execution_mode: str
+    managed_cpu_workload: ManagedCPUWorkload | None
     allowed_egress: tuple[str, ...]
     freshness: str
     redirects: str
@@ -55,6 +59,12 @@ class StarDefinition:
         policy = _require_table(manifest, "policy")
         receipt = _require_table(manifest, "receipt")
         publish = _require_table(manifest, "publish")
+        execution_mode = _optional_nonempty_string(
+            runtime, "runtime", "execution_mode", "direct-mcp"
+        )
+        if execution_mode not in {"direct-mcp", "managed-cpu"}:
+            raise StarManifestError("runtime.execution_mode must be direct-mcp or managed-cpu")
+        allowed_egress = _require_string_list(policy, "policy", "allowed_egress")
 
         definition = cls(
             name=_require_nonempty_string(star, "star", "name"),
@@ -68,7 +78,9 @@ class StarDefinition:
             price_currency=_require_nonempty_string(pricing, "pricing", "currency"),
             python_package=_require_module_reference(runtime, "runtime", "python_package"),
             skill_factory=_require_attribute_reference(runtime, "runtime", "skill_factory"),
-            allowed_egress=_require_string_list(policy, "policy", "allowed_egress"),
+            execution_mode=execution_mode,
+            managed_cpu_workload=_managed_cpu_workload(manifest, execution_mode, allowed_egress),
+            allowed_egress=allowed_egress,
             freshness=_require_nonempty_string(policy, "policy", "freshness"),
             redirects=_require_nonempty_string(policy, "policy", "redirects"),
             max_response_bytes=_require_positive_integer(policy, "max_response_bytes"),
@@ -98,6 +110,14 @@ def _require_nonempty_string(values: Mapping[str, Any], table: str, field: str) 
     if not isinstance(value, str) or not value.strip():
         raise StarManifestError(f"{table}.{field} must be a non-empty string")
     return value
+
+
+def _optional_nonempty_string(
+    values: Mapping[str, Any], table: str, field: str, default: str
+) -> str:
+    if field not in values:
+        return default
+    return _require_nonempty_string(values, table, field)
 
 
 def _require_direct_mcp_path(values: Mapping[str, Any]) -> str:
@@ -154,6 +174,34 @@ def _optional_string_list(values: Mapping[str, Any], table: str, field: str) -> 
     if field not in values:
         return ()
     return _require_string_list(values, table, field)
+
+
+def _managed_cpu_workload(
+    manifest: Mapping[str, Any], execution_mode: str, allowed_egress: tuple[str, ...]
+) -> ManagedCPUWorkload | None:
+    configured = manifest.get("managed_cpu")
+    if execution_mode != "managed-cpu":
+        if configured is not None:
+            raise StarManifestError("[managed_cpu] requires runtime.execution_mode = managed-cpu")
+        return None
+    if not isinstance(configured, Mapping):
+        raise StarManifestError("managed-cpu Stars must contain a [managed_cpu] table")
+    try:
+        policy = ManagedCPUExecutionPolicy(
+            cpu_millicores=_require_positive_integer(configured, "cpu_millicores"),
+            memory_bytes=_require_positive_integer(configured, "memory_bytes"),
+            wall_time_seconds=_require_positive_integer(configured, "wall_time_seconds"),
+            max_input_bytes=_require_positive_integer(configured, "max_input_bytes"),
+            max_output_bytes=_require_positive_integer(configured, "max_output_bytes"),
+            allowed_egress=allowed_egress,
+        )
+        return ManagedCPUWorkload(
+            image_digest=_require_nonempty_string(configured, "managed_cpu", "image_digest"),
+            command=_require_string_list(configured, "managed_cpu", "command"),
+            policy=policy,
+        )
+    except ManagedCPUExecutionPolicyError as error:
+        raise StarManifestError(f"invalid managed_cpu policy: {error}") from error
 
 
 def _validate_unique(values: tuple[str, ...], field: str) -> None:

@@ -39,6 +39,7 @@ class GazeHit:
     endpoint: str | None = None
     price: str | None = None
     href: str = ""
+    provider_card: dict[str, object] | None = None
 
     @property
     def pricing_label(self) -> str:
@@ -53,6 +54,7 @@ class GazeHit:
             "endpoint": self.endpoint,
             "price": self.price,
             "href": self.href,
+            "provider_card": self.provider_card,
         }
 
 
@@ -96,6 +98,7 @@ def hit_from_record(record: ResolveRecord) -> GazeHit:
         endpoint=record.endpoint,
         price=record.price_per_call,
         href=record.href,
+        provider_card=record.provider_card.as_dict() if record.provider_card else None,
     )
 
 

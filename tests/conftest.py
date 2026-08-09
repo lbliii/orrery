@@ -38,6 +38,18 @@ def example_app(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("CHIRP_SECRET_KEY", "test-secret-not-for-production")
     monkeypatch.setenv("ORRERY_WORLD_TIME_JSON", json.dumps(_WORLD_TIME_FIXTURE))
     monkeypatch.setenv("ORRERY_SOURCE_WATCH_FIXTURES", json.dumps(_SOURCE_WATCH_FIXTURE))
+    # An explicit test-only backend keeps app tests independent of Railway while
+    # production remains fail-closed without durable artifact configuration.
+    from artifacts.storage import InMemoryObjectStorage
+    from stars.html_to_pdf.artifacts import (
+        DurablePdfArtifactService,
+        InMemoryPdfArtifactRepository,
+        configure_pdf_artifacts,
+    )
+
+    configure_pdf_artifacts(
+        DurablePdfArtifactService(InMemoryPdfArtifactRepository(), InMemoryObjectStorage())
+    )
 
     module_name = "orrery_app_under_test"
     app_path = ROOT / "app.py"
