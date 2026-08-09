@@ -1,11 +1,12 @@
 """Temporary dogfood skills for the Orrery host — N wrapped ``chirp.skill`` apps.
 
-Gaze / Resolve / html-to-pdf / world-time share one aggregated ``/mcp`` with
+Gaze / Resolve / html-to-pdf / world-time / source-watch share one aggregated ``/mcp`` with
 unique tool names. Gaze discovers skills (``gaze_match`` / ``gaze_search`` /
 ``gaze_describe`` / ``gaze_list_constellations``); Resolve returns Skill DNS
 via ``resolve_name``; html-to-pdf is the Call / Envelope plumbing demo (issues
 #25-#27); world-time is the Wave 1 reactive expertise spike (#37) — live UTC
-payload sealed at call time.
+payload sealed at call time. Source Watch observes an allowlisted official
+source and seals current evidence or a bounded answer at call time (#51).
 
 Each skill has a golden corpus entry that passes the publish oracle
 (``run_publish_gate`` / smoke harness).
@@ -25,9 +26,13 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from catalog import CATALOG
 from catalog.constellation_run import explain_policy, run_constellation, status_for_run
+from source_watch import ANSWER_MAX_CHARS
+from source_watch import answer as source_watch_answer
+from source_watch import diff as source_watch_diff
+from source_watch import observe as source_watch_observe
 
-#: How many dogfood skills this host mounts (Foundation epic #2 + Wave 1 + #33).
-N_DOGFOOD_SKILLS = 5
+#: How many dogfood skills this host mounts (Foundation epic #2 + Waves 1/2).
+N_DOGFOOD_SKILLS = 6
 
 #: Smoke HTML used by the star detail receipt and corpus.
 SMOKE_HTML = "<!doctype html><html><body><h1>Orrery</h1></body></html>"
@@ -43,7 +48,7 @@ WORLD_TIME_CLONE_WARNING = (
 
 _html_to_pdf_skill: Skill | None = None
 _world_time_skill: Skill | None = None
-
+_source_watch_skill: Skill | None = None
 
 def _load_or_generate_key(env_name: str) -> Ed25519PrivateKey:
     raw = os.environ.get(env_name, "").strip()
@@ -267,6 +272,45 @@ def build_world_time_skill(*, private_key: Any | None = None) -> Skill:
     return skill
 
 
+def build_source_watch_skill(*, private_key: Any | None = None) -> Skill:
+    """source-watch — evidence-backed monitoring of an allowlisted source."""
+    private = private_key or _load_or_generate_key("ORRERY_SOURCE_WATCH_PRIVATE_KEY")
+    public = private.public_key().public_bytes_raw()
+    skill = Skill(
+        "source-watch",
+        version="0.1.0",
+        private_key=private,
+        key_id=os.environ.get("ORRERY_SOURCE_WATCH_KEY_ID", "orrery-source-watch-1"),
+        public_key=public,
+    )
+
+    @skill.tool(
+        "observe",
+        description="Fetch an allowlisted source and record signed digest evidence",
+    )
+    def observe(source: str = "python-release-notes") -> dict[str, object]:
+        return source_watch_observe(source)
+
+    @skill.tool("diff", description="Fetch now and compare normalized content to a known digest")
+    def diff(source: str = "python-release-notes", since_digest: str = "") -> dict[str, object]:
+        return source_watch_diff(source, since_digest)
+
+    # ``answer`` is already owned by world-time on the aggregated MCP host.
+    # Keep Source Watch's verb explicit while retaining the skill-local contract.
+    @skill.tool(
+        "source_watch_answer",
+        description="Answer from a freshly fetched official source with bounded evidence",
+    )
+    def answer(
+        question: str,
+        source: str = "python-release-notes",
+        max_chars: int = ANSWER_MAX_CHARS,
+    ) -> dict[str, object]:
+        return source_watch_answer(question, source, max_chars)
+
+    return skill
+
+
 def build_launch_gate_skill(*, private_key: Any | None = None) -> Skill:
     """launch-gate — constellation orchestration (run / status / explain_policy, #33)."""
     private = private_key or _load_or_generate_key("ORRERY_LAUNCH_GATE_PRIVATE_KEY")
@@ -336,6 +380,14 @@ def get_world_time_skill() -> Skill:
     return _world_time_skill
 
 
+def get_source_watch_skill() -> Skill:
+    """Return the shared Source Watch skill without mounting it implicitly."""
+    global _source_watch_skill
+    if _source_watch_skill is None:
+        _source_watch_skill = build_source_watch_skill()
+    return _source_watch_skill
+
+
 def _tool_handler(skill: Skill, name: str) -> Any:
     for pending in skill._pending:
         if pending.name == name:
@@ -385,6 +437,21 @@ def signed_world_time_receipt(
     return receipt, verified
 
 
+def signed_source_watch_receipt(
+    *,
+    source: str = "python-release-notes",
+    skill: Skill | None = None,
+) -> tuple[dict[str, Any], bool]:
+    """Observe an allowlisted source and return its signed receipt."""
+    sk = skill or get_source_watch_skill()
+    envelope: Envelope = _tool_handler(sk, "observe")(source=source)
+    verified = verify_envelope(envelope, sk.public_key)
+    receipt = envelope.to_wire()
+    receipt["payment_id"] = "pay_source_watch"
+    receipt["price_per_call"] = _price_for_skill(str(receipt.get("skill", sk.name)))
+    return receipt, verified
+
+
 def envelope_from_wire(data: dict[str, Any]) -> Envelope:
     """Rebuild an :class:`Envelope` from a wire / receipt dict (fails closed)."""
     return Envelope(
@@ -407,6 +474,8 @@ def skill_for_receipt(data: dict[str, Any]) -> Skill | None:
         return get_html_to_pdf_skill()
     if name == "world-time":
         return get_world_time_skill()
+    if name == "source-watch":
+        return get_source_watch_skill()
     return None
 
 
@@ -435,6 +504,7 @@ def build_dogfood_skills() -> tuple[Skill, ...]:
         build_resolve_skill(),
         get_html_to_pdf_skill(),
         get_world_time_skill(),
+        get_source_watch_skill(),
         build_launch_gate_skill(),
     )
     assert len(skills) == N_DOGFOOD_SKILLS
@@ -479,6 +549,18 @@ DOGFOOD_CORPUS: tuple[CorpusPrompt, ...] = (
             "live_at_call",
             "clone_warning",
             "answer",
+        ),
+    ),
+    CorpusPrompt(
+        id="source-watch-observe-smoke",
+        prompt="Observe the allowlisted Python release notes source.",
+        tool="observe",
+        arguments={"source": "python-release-notes"},
+        required_facts=(
+            "python-release-notes",
+            "canonical_url",
+            "normalized_sha256",
+            "live_at_call",
         ),
     ),
     CorpusPrompt(

@@ -28,6 +28,11 @@ PUBLIC_STAR_META: dict[str, dict[str, object]] = {
         "description": "Live UTC at call time — offline clones are stale",
         "endpoint": "mcp://orrery.dev/s/world-time",
     },
+    "source-watch": {
+        "catalog_name": "orrery/source-watch",
+        "description": "Live official-source evidence, digest comparison, and bounded answers",
+        "endpoint": "mcp://orrery.dev/s/source-watch",
+    },
 }
 
 

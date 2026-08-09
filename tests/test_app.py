@@ -16,7 +16,7 @@ from chirp.skill.publish import run_publish_gate
 from chirp.testing import TestClient
 
 _META_PROTOCOL_VERSION = "io.modelcontextprotocol/protocolVersion"
-N_DOGFOOD_SKILLS = 5
+N_DOGFOOD_SKILLS = 6
 
 
 def _modern_mcp_params(**extra: Any) -> dict[str, Any]:
@@ -45,7 +45,7 @@ def _modern_mcp_headers(method: str, name: str | None = None) -> dict[str, str]:
 @pytest.mark.issue(11)
 class TestOrreryHostFoundation:
     async def test_host_mounts_n_skills_and_surfaces(self, example_app) -> None:
-        assert N_DOGFOOD_SKILLS == 5
+        assert N_DOGFOOD_SKILLS == 6
         async with TestClient(example_app) as client:
             home = await client.get("/")
             assert home.status == 200
@@ -65,7 +65,14 @@ class TestOrreryHostFoundation:
             assert discovery.status == 200
             body = json.loads(discovery.text)
             names = {entry["name"] for entry in body["skills"]}
-            assert names == {"gaze", "resolve", "html-to-pdf", "world-time", "launch-gate"}
+            assert names == {
+                "gaze",
+                "resolve",
+                "html-to-pdf",
+                "world-time",
+                "source-watch",
+                "launch-gate",
+            }
 
             console = await client.get("/console")
             assert console.status == 200
@@ -100,6 +107,9 @@ class TestOrreryHostFoundation:
                 "fetch",
                 "get",
                 "answer",
+                "observe",
+                "diff",
+                "source_watch_answer",
                 "run",
                 "status",
                 "explain_policy",

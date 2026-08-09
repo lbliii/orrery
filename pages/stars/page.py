@@ -4,7 +4,7 @@ Resolves ``?name=`` against the catalog (defaults to the demo star). Unknown or
 non-star names 404 instead of silently falling back, so live resolve and the
 detail page share one contract. Demo stars invoke tools server-side so the
 receipt is a real signed Envelope (html-to-pdf plumbing #25-#27; world-time
-reactive spike #37).
+reactive spike #37; source-watch evidence #51).
 """
 
 from __future__ import annotations
@@ -15,18 +15,20 @@ from chirp import NotFound, Page, Request
 
 from catalog import CATALOG
 from catalog.console_links import PUBLISHER_DIRECT_NOTE, console_href_for
-from trust.oracle import oracle_for
 from commerce import charge_on_verify, refund_on_forge
 from dogfood import (
     SMOKE_HTML,
     WORLD_TIME_CLONE_WARNING,
     signed_convert_receipt,
+    signed_source_watch_receipt,
     signed_world_time_receipt,
 )
+from trust.oracle import oracle_for
 
 _DEFAULT = "orrery/html-to-pdf"
 _PDF_STAR = "orrery/html-to-pdf"
 _WORLD_TIME_STAR = "orrery/world-time"
+_SOURCE_WATCH_STAR = "orrery/source-watch"
 
 
 def get(request: Request) -> Page:
@@ -44,6 +46,8 @@ def get(request: Request) -> Page:
         envelope, verified = signed_convert_receipt(SMOKE_HTML)
     elif rec.name == _WORLD_TIME_STAR:
         envelope, verified = signed_world_time_receipt()
+    elif rec.name == _SOURCE_WATCH_STAR:
+        envelope, verified = signed_source_watch_receipt()
 
     if envelope is not None:
         # Star-page verify path: same loud stubs as ``/api/envelope/verify``.

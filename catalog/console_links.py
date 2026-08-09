@@ -8,6 +8,7 @@ from .models import ResolveRecord
 RECORD_CONSOLE_SKILL: dict[str, str] = {
     "orrery/html-to-pdf": "html-to-pdf",
     "orrery/world-time": "world-time",
+    "orrery/source-watch": "source-watch",
     "gaze": "gaze",
     "resolve": "resolve",
 }

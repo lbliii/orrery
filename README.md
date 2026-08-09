@@ -20,13 +20,19 @@ The product surfaces are implemented as Chirp filesystem-routed pages in [`pages
 | `/namespaces` | Private tenancy pitch |
 | `/api/resolve?name=` | JSON resolve record (Skill DNS) |
 
-The same process is also a dogfood MCP host ([#964](https://github.com/lbliii/chirp/issues/964) / [#985](https://github.com/lbliii/chirp/issues/985)): aggregated `/mcp`, discovery at `/skills`, a reliability `/console`, four dogfood skills (gaze, resolve, html-to-pdf plumbing stub, world-time reactive spike), and publish-oracle smoke. Resolve records are seeded from the design mocks in [`catalog/`](./catalog/) until the live registry feeds them.
+The same process is also a dogfood MCP host ([#964](https://github.com/lbliii/chirp/issues/964) / [#985](https://github.com/lbliii/chirp/issues/985)): aggregated `/mcp`, discovery at `/skills`, a reliability `/console`, six dogfood skills (gaze, resolve, html-to-pdf plumbing stub, world-time reactive spike, source-watch), and publish-oracle smoke. Resolve records are synchronized from the live registry after the publish gate.
 
 ### Reactive star (`orrery/world-time`)
 
 Wave 1 spike ([#37](https://github.com/lbliii/orrery/issues/37)): tools `fetch` / `get` / `answer` pull a **live UTC** reading from a public clock API at call time and seal it in a signed Chirp Envelope. Gaze/resolve show price + blurb only — never the live payload.
 
 **Why cloning fails the value test:** an offline copy of the tool code cannot mint a fresh UTC instant from the upstream clock. Any baked-in datetime is stale by definition; the product is live truth at call time, not a distributable package. (html-to-pdf remains alongside as the Envelope plumbing demo.)
+
+### Source Watch star (`orrery/source-watch`)
+
+Source Watch ([#51](https://github.com/lbliii/orrery/issues/51)) fetches an allowlisted official source at call time. Its `observe`, `diff`, and `source_watch_answer` tools produce an attributable canonical URL, content digests, bounded change summaries, or extractive evidence in the signed Envelope payload. V1 admits the Python release notes only; it intentionally rejects arbitrary URLs. (`answer` remains the existing world-time tool on the aggregated MCP host.)
+
+Use it for deployment checks that depend on current upstream guidance: resolve `orrery/source-watch`, call `observe(source="python-release-notes")`, then retain the digest and call `diff` before a later deployment. An offline clone cannot establish whether the official page changed after it was copied.
 
 Remaining product work (live MCP wiring, provisioning, commerce) is tracked in **[Saga #1](https://github.com/lbliii/orrery/issues/1)**.
 
