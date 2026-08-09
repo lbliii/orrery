@@ -1,0 +1,25 @@
+[star]
+name = "orrery/rfc-section"
+version = "0.1.0"
+description = "Bounded sections from named allowlisted RFC Editor documents"
+publisher = "orrery"
+publisher_key_id_env = "ORRERY_RFC_SECTION_KEY_ID"
+direct_mcp_path = "/stars/rfc-section/mcp"
+tools = ["get"]
+[pricing]
+unit = "call"
+price_per_call = "0.00"
+currency = "USD"
+[runtime]
+python_package = "stars.rfc_section"
+skill_factory = "stars.rfc_section.skill:build_skill"
+[policy]
+allowed_egress = ["https://www.rfc-editor.org"]
+freshness = "at_call"
+redirects = "deny"
+max_response_bytes = 524288
+[receipt]
+schema_version = "1"
+algorithm = "Ed25519"
+[publish]
+corpus = "stars.rfc_section.corpus:CORPUS"
