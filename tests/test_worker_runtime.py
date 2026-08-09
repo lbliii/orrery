@@ -6,6 +6,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
+from artifacts.cleanup import CleanupResult
 from runs import (
     InMemoryQueueBackend,
     InMemoryRunRepository,
@@ -17,15 +18,14 @@ from runs import (
     WorkerConfigurationError,
     WorkerSettings,
 )
+from runs.worker import _build_artifact_cleanup
 
 
 def _runtime(
     job: dict[str, object] | None, *, max_attempts: int = 3
 ) -> tuple[RunWorkerRuntime, InMemoryRunRepository, InMemoryQueueBackend, JobHandlerRegistry]:
     repository = InMemoryRunRepository(clock=lambda: datetime(2026, 8, 9, tzinfo=UTC))
-    repository.create_or_get(
-        RunRecord("run-1", "agent:a", "request-1", {}, "managed-cpu", job=job)
-    )
+    repository.create_or_get(RunRecord("run-1", "agent:a", "request-1", {}, "managed-cpu", job=job))
     queue = InMemoryQueueBackend(clock=lambda: datetime(2026, 8, 9, tzinfo=UTC))
     worker = ManagedRunWorker(
         repository,
@@ -132,3 +132,84 @@ def test_settings_require_both_durable_backends_and_safe_values() -> None:
         {"DATABASE_URL": "postgres://example", "REDIS_URL": "redis://example"}
     )
     assert settings.worker_id
+
+
+def test_durable_artifact_cleanup_requires_bucket_and_wires_s3(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    settings = WorkerSettings("postgres://example", "redis://example", "worker")
+    monkeypatch.setenv("ORRERY_ARTIFACT_BACKEND", "railway-bucket")
+    monkeypatch.delenv("ORRERY_ARTIFACT_BUCKET", raising=False)
+    with pytest.raises(WorkerConfigurationError, match="ORRERY_ARTIFACT_BUCKET"):
+        _build_artifact_cleanup(settings, _FakePsycopg())
+
+    monkeypatch.setenv("ORRERY_ARTIFACT_BUCKET", "orrery-artifacts")
+    monkeypatch.setitem(__import__("sys").modules, "boto3", _FakeBoto3())
+    cleanup = _build_artifact_cleanup(settings, _FakePsycopg())
+    assert cleanup is not None
+
+
+def test_runtime_runs_bounded_cleanup_on_startup_and_interval() -> None:
+    runtime, _, _, _ = _runtime(None)
+    clock = _MonotonicClock()
+    cleanup = _Cleanup()
+    runtime._artifact_cleanup = cleanup
+    runtime._monotonic = clock
+
+    runtime.process_once()
+    clock.now = 299
+    runtime.process_once()
+    clock.now = 300
+    runtime.process_once()
+
+    assert cleanup.batch_sizes == [100, 100]
+
+
+class _FakePsycopg:
+    @staticmethod
+    def connect(_url: str) -> object:
+        return _SchemaConnection()
+
+
+class _FakeBoto3:
+    @staticmethod
+    def client(_kind: str, **_kwargs: object) -> object:
+        return object()
+
+
+class _MonotonicClock:
+    now = 0.0
+
+    def __call__(self) -> float:
+        return self.now
+
+
+class _Cleanup:
+    def __init__(self) -> None:
+        self.batch_sizes: list[int] = []
+
+    def cleanup_once(self, *, batch_size: int = 100) -> CleanupResult:
+        self.batch_sizes.append(batch_size)
+        return CleanupResult()
+
+
+class _SchemaCursor:
+    def execute(self, *_args: object) -> None:
+        pass
+
+    def close(self) -> None:
+        pass
+
+
+class _SchemaConnection:
+    def cursor(self) -> _SchemaCursor:
+        return _SchemaCursor()
+
+    def commit(self) -> None:
+        pass
+
+    def rollback(self) -> None:
+        pass
+
+    def close(self) -> None:
+        pass

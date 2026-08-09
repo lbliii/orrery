@@ -11,6 +11,7 @@ from .capabilities import (
     ObjectCapability,
     UploadIntent,
 )
+from .cleanup import ArtifactCleanupService, CleanupResult
 from .domain import (
     ArtifactPolicy,
     ArtifactRecord,
@@ -23,10 +24,12 @@ from .storage import ArtifactStorage, InMemoryObjectStorage, S3ObjectStorage
 __all__ = [
     "ArtifactCapabilityService",
     "ArtifactCapabilitySettings",
+    "ArtifactCleanupService",
     "ArtifactPolicy",
     "ArtifactRecord",
     "ArtifactState",
     "ArtifactStorage",
+    "CleanupResult",
     "InMemoryObjectStorage",
     "ObjectCapability",
     "PostgresArtifactRepository",

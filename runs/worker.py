@@ -40,6 +40,10 @@ class JobHandler(Protocol):
     def __call__(self, record: RunRecord) -> Mapping[str, Any]: ...
 
 
+class ArtifactCleanup(Protocol):
+    def cleanup_once(self, *, batch_size: int = 100) -> Any: ...
+
+
 class JobHandlerRegistry:
     """A closed registry; stored job kinds never resolve via dynamic imports."""
 
@@ -77,6 +81,8 @@ class WorkerSettings:
     lease_seconds: int = 120
     retry_seconds: int = 5
     poll_seconds: float = 1.0
+    artifact_cleanup_interval_seconds: int = 300
+    artifact_cleanup_batch_size: int = 100
 
     @classmethod
     def from_env(cls, environ: Mapping[str, str] | None = None) -> WorkerSettings:
@@ -92,9 +98,19 @@ class WorkerSettings:
             lease_seconds = int(values.get("ORRERY_WORKER_LEASE_SECONDS", "120"))
             retry_seconds = int(values.get("ORRERY_WORKER_RETRY_SECONDS", "5"))
             poll_seconds = float(values.get("ORRERY_WORKER_POLL_SECONDS", "1"))
+            cleanup_interval = int(values.get("ORRERY_ARTIFACT_CLEANUP_INTERVAL_SECONDS", "300"))
+            cleanup_batch = int(values.get("ORRERY_ARTIFACT_CLEANUP_BATCH_SIZE", "100"))
         except ValueError as error:
             raise WorkerConfigurationError("worker timing settings must be numeric") from error
-        if max_attempts < 1 or lease_seconds < 3 or retry_seconds < 0 or poll_seconds <= 0:
+        if (
+            max_attempts < 1
+            or lease_seconds < 3
+            or retry_seconds < 0
+            or poll_seconds <= 0
+            or cleanup_interval < 30
+            or cleanup_batch < 1
+            or cleanup_batch > 1000
+        ):
             raise WorkerConfigurationError("worker settings are outside safe bounds")
         return cls(
             database_url=database_url,
@@ -107,6 +123,8 @@ class WorkerSettings:
             lease_seconds=lease_seconds,
             retry_seconds=retry_seconds,
             poll_seconds=poll_seconds,
+            artifact_cleanup_interval_seconds=cleanup_interval,
+            artifact_cleanup_batch_size=cleanup_batch,
         )
 
 
@@ -114,13 +132,22 @@ class RunWorkerRuntime:
     """Consumes one durable queue at a time with recovery and lease heartbeats."""
 
     def __init__(
-        self, worker: ManagedRunWorker, registry: JobHandlerRegistry, settings: WorkerSettings
+        self,
+        worker: ManagedRunWorker,
+        registry: JobHandlerRegistry,
+        settings: WorkerSettings,
+        *,
+        artifact_cleanup: ArtifactCleanup | None = None,
+        monotonic: Any = time.monotonic,
     ) -> None:
         self._worker = worker
         self._registry = registry
         self._settings = settings
+        self._artifact_cleanup, self._monotonic = artifact_cleanup, monotonic
+        self._next_artifact_cleanup = 0.0
 
     def process_once(self) -> bool:
+        self._cleanup_artifacts_if_due()
         recovered = self._worker.queue.recover_expired(max_attempts=self._settings.max_attempts)
         if recovered:
             logger.warning("recovered expired run leases", extra={"recovered": recovered})
@@ -135,6 +162,18 @@ class RunWorkerRuntime:
             self._dead_letter(lease, "run_not_found")
             return True
         return self._execute(lease, record)
+
+    def _cleanup_artifacts_if_due(self) -> None:
+        if self._artifact_cleanup is None or self._monotonic() < self._next_artifact_cleanup:
+            return
+        self._next_artifact_cleanup = (
+            self._monotonic() + self._settings.artifact_cleanup_interval_seconds
+        )
+        result = self._artifact_cleanup.cleanup_once(
+            batch_size=self._settings.artifact_cleanup_batch_size
+        )
+        if result.failed:
+            logger.warning("artifact cleanup deferred failures", extra={"failed": result.failed})
 
     def run_forever(self) -> None:
         logger.info("run worker started", extra={"worker_id": self._settings.worker_id})
@@ -266,13 +305,54 @@ def build_runtime(
         lease_for=timedelta(seconds=settings.lease_seconds),
         retry_after=timedelta(seconds=settings.retry_seconds),
     )
+    artifact_cleanup = _build_artifact_cleanup(settings, psycopg)
     if registry is None:
         # Import here so the worker runtime remains infrastructure-only until
         # startup, while production always gets the closed built-in allowlist.
         from stars.cpu_workloads import build_registry
 
         registry = build_registry()
-    return RunWorkerRuntime(worker, registry, settings)
+    return RunWorkerRuntime(worker, registry, settings, artifact_cleanup=artifact_cleanup)
+
+
+def _build_artifact_cleanup(settings: WorkerSettings, psycopg: Any) -> ArtifactCleanup | None:
+    """Wire the same durable bucket and Postgres metadata into the worker.
+
+    Local/test runs without an artifact backend retain their existing behavior.
+    A declared durable backend must be complete: silently starting without its
+    reaper would turn the configured retention promise into a leak.
+    """
+    backend = os.environ.get("ORRERY_ARTIFACT_BACKEND", "").strip().lower()
+    if backend in {"", "memory"}:
+        return None
+    if backend not in {"s3", "railway-bucket"}:
+        raise WorkerConfigurationError("ORRERY_ARTIFACT_BACKEND must be s3 or railway-bucket")
+    bucket = os.environ.get("ORRERY_ARTIFACT_BUCKET", "").strip()
+    if not bucket:
+        raise WorkerConfigurationError(
+            "ORRERY_ARTIFACT_BUCKET is required for durable artifact cleanup"
+        )
+    try:
+        import boto3
+
+        from artifacts.cleanup import ArtifactCleanupService
+        from artifacts.domain import PostgresArtifactRepository
+        from artifacts.storage import S3ObjectStorage
+
+        artifact_repository = PostgresArtifactRepository(
+            lambda: psycopg.connect(settings.database_url)
+        )
+        artifact_repository.initialize()
+        client = boto3.client(
+            "s3",
+            endpoint_url=os.environ.get("ORRERY_ARTIFACT_ENDPOINT") or None,
+            region_name=os.environ.get("AWS_REGION") or None,
+        )
+        return ArtifactCleanupService(artifact_repository, S3ObjectStorage(client, bucket=bucket))
+    except WorkerConfigurationError:
+        raise
+    except Exception as error:
+        raise WorkerConfigurationError(f"durable artifact cleanup unavailable: {error}") from error
 
 
 def main(argv: list[str] | None = None) -> int:

@@ -10,11 +10,16 @@ artifact is `available` and before that expiry, the application can retrieve
 its object by opaque artifact ID. After expiry, the application treats it as
 unavailable and returns `404` from the artifact route.
 
-This is an **access TTL**, not physical retention. No scheduled reaper and no
-bucket lifecycle deletion rule are currently deployed. Artifact bytes can
-therefore remain in object storage after the 15-minute access window, and the
-metadata record can also remain in Postgres. Do not promise deletion, data
-minimization, or a retention deadline beyond access expiry.
+Physical retention is enforced by the managed worker's bounded cleanup tick.
+It atomically claims expired `pending_upload` or `available` records, moves
+them to `deleting`, deletes the exact object key, and leaves a `deleted`
+metadata tombstone. Storage failures remain `deleting` (never downloadable)
+and retry after a safe window. The worker starts a pass immediately, then runs
+every five minutes by default, with a maximum batch of 100 records. Railway
+Buckets do not currently support native lifecycle configuration, so this
+durable reaper is the enforcement mechanism in production. Do not promise a
+tighter deletion deadline than worker interval, batch capacity, and storage
+retry behavior.
 
 ## States and publication failures
 
@@ -24,15 +29,13 @@ Artifact metadata uses the following state machine:
 | --- | --- |
 | `pending_upload` | Metadata intent was persisted before the object upload. |
 | `available` | Upload completed and the metadata was marked available. |
-| `deleting` | Reserved for a future deletion worker after it claims a pending or available artifact. |
-| `deleted` | Reserved for a future deletion worker after object deletion. |
+| `deleting` | Claimed by cleanup; unavailable and safely retried after storage failure. |
+| `deleted` | Object deletion completed; retained as a metadata tombstone. |
 
 On synchronous publication failure after intent creation, the publisher calls
 object-storage delete and does not mark the record `available`. This is best
-effort cleanup, not a durable deletion workflow: a process or storage failure
-can still leave a `pending_upload` record or object behind. The `deleting` and
-`deleted` transitions exist in the repository contract but are not presently
-driven by a scheduled worker.
+effort cleanup. Any resulting expired `pending_upload` object is covered by
+the same durable cleanup worker.
 
 ## Live download API limits
 
@@ -65,19 +68,14 @@ no observation channel for an agent's local filesystem or downstream tools,
 and must not attest that local-copy claim without a new archive/acknowledgement
 protocol.
 
-## Planned: cleanup and local-copy acknowledgement
+## Remaining delivery work and local-copy acknowledgement
 
 The following is a proposal, not deployed behavior.
 
-1. Run a durable expiry reaper that selects expired `pending_upload` and
-   `available` records, transitions them atomically to `deleting`, deletes the
-   exact object key, then records `deleted`. It must retry idempotently,
-   report orphan cleanup metrics, and be paired with a bucket lifecycle rule
-   as a second safety net.
-2. Add an artifact delivery endpoint that authorizes a receipt holder and
+1. Add an artifact delivery endpoint that authorizes a receipt holder and
    emits the stored content type, filename, and integrity headers for every
    supported output type.
-3. Define a signed `archive_ack` protocol: an agent signs a statement binding
+2. Define a signed `archive_ack` protocol: an agent signs a statement binding
    its agent identity, run ID, artifact ID, receipt digest, local digest,
    timestamp, and retention claim. Orrery verifies and stores that statement
    as an **agent assertion**, never as independent proof of the agent's local
