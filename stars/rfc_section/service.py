@@ -109,9 +109,14 @@ def get(
 
 
 def _section(text: str, section: str) -> str | None:
-    start = re.compile(rf"^\s*{re.escape(section)}\.\s+.+$", re.MULTILINE).search(text)
-    if start is None:
+    heading = re.compile(rf"^\s*{re.escape(section)}\.\s+.+$", re.MULTILINE)
+    # RFC plain text repeats section headings in the table of contents before
+    # the paginated body. The final occurrence is the body heading; selecting
+    # the first returns only a TOC label in real RFC Editor documents.
+    candidates = list(heading.finditer(text))
+    if not candidates:
         return None
+    start = candidates[-1]
     remainder = text[start.start() :]
     headings = re.compile(r"^\s*\d+(?:\.\d+)*\.\s+.+$", re.MULTILINE)
     next_heading = next(
