@@ -380,13 +380,14 @@ def artifact_download(artifact_id: str) -> Response:
             "Artifact delivery is temporarily unavailable.",
             status=503,
             content_type="text/plain; charset=utf-8",
-            headers=(("Cache-Control", "no-store"),),
+            headers=(("Cache-Control", "no-store"), ("X-Content-Type-Options", "nosniff")),
         )
     if delivered is None:
         return Response(
             "Artifact not found, expired, or not authorized.",
             status=404,
             content_type="text/plain; charset=utf-8",
+            headers=(("Cache-Control", "no-store"), ("X-Content-Type-Options", "nosniff")),
         )
     artifact, data = delivered
     return Response(

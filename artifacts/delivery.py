@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import re
 from dataclasses import dataclass
+from hashlib import sha256
 from typing import Protocol
 
 from .domain import ArtifactRecord
@@ -31,11 +32,16 @@ class LoggingDownloadAudit:
         _LOG.info(
             "artifact_download",
             extra={
-                "artifact_id": event.artifact_id,
+                "artifact_ref": event.artifact_id,
                 "outcome": event.outcome,
                 "content_type": event.content_type,
             },
         )
+
+
+def audit_artifact_ref(value: str) -> str:
+    """Return a non-reversible audit reference; never log caller-supplied IDs."""
+    return f"sha256:{sha256(value.encode('utf-8', 'surrogatepass')).hexdigest()[:16]}"
 
 
 def policy_allows(record: ArtifactRecord, *, receipt_holder: bool, owner_id: str | None) -> bool:

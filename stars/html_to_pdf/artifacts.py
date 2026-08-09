@@ -18,6 +18,7 @@ from artifacts.delivery import (
     DownloadAuditEvent,
     DownloadAuditSink,
     LoggingDownloadAudit,
+    audit_artifact_ref,
     policy_allows,
 )
 from artifacts.domain import artifact_storage_key, new_artifact_id
@@ -107,20 +108,26 @@ class DurablePdfArtifactService:
             or record.state is not ArtifactState.AVAILABLE
             or record.expires_at <= self._clock()
         ):
-            self._audit.record(DownloadAuditEvent(artifact_id, "not_available"))
+            self._audit.record(DownloadAuditEvent(audit_artifact_ref(artifact_id), "not_available"))
             return None
         if not policy_allows(record, receipt_holder=receipt_holder, owner_id=owner_id):
-            self._audit.record(DownloadAuditEvent(artifact_id, "denied", record.content_type))
+            self._audit.record(
+                DownloadAuditEvent(audit_artifact_ref(artifact_id), "denied", record.content_type)
+            )
             return None
         data = self._storage.get(key=record.storage_key)
         if data is None:
             self._audit.record(
-                DownloadAuditEvent(artifact_id, "object_missing", record.content_type)
+                DownloadAuditEvent(
+                    audit_artifact_ref(artifact_id), "object_missing", record.content_type
+                )
             )
             return None
         if len(data) != record.byte_length or hashlib.sha256(data).hexdigest() != record.sha256:
             raise ArtifactDeliveryUnavailable("artifact integrity check failed")
-        self._audit.record(DownloadAuditEvent(artifact_id, "served", record.content_type))
+        self._audit.record(
+            DownloadAuditEvent(audit_artifact_ref(artifact_id), "served", record.content_type)
+        )
         return record, data
 
     def health(self) -> dict[str, str]:

@@ -13,6 +13,7 @@ from artifacts.storage import InMemoryObjectStorage
 from stars.html_to_pdf.artifacts import (
     DurablePdfArtifactService,
     InMemoryPdfArtifactRepository,
+    UnconfiguredPdfArtifactService,
     configure_pdf_artifacts,
 )
 
@@ -64,6 +65,30 @@ async def test_proxy_serves_stored_pdf_csv_and_png_metadata(example_app) -> None
     assert [event.outcome for event in audit.events] == ["served", "served", "served"]
 
 
+@pytest.mark.asyncio
+async def test_proxy_rejections_are_no_store_and_hostile_filename_is_safe(example_app) -> None:
+    audit = _Audit()
+    service = DurablePdfArtifactService(
+        InMemoryPdfArtifactRepository(), InMemoryObjectStorage(), audit=audit
+    )
+    configure_pdf_artifacts(service)
+    artifact = service.publish(
+        b"name,count\n", content_type="text/csv", filename="../report\r\nX-Injected: yes.csv"
+    )
+    async with TestClient(example_app) as client:
+        served = await client.get(f"/artifacts/{artifact.artifact_id}")
+        missing = await client.get("/artifacts/not-a-real-artifact")
+        configure_pdf_artifacts(UnconfiguredPdfArtifactService("test unavailable"))
+        unavailable = await client.get("/artifacts/any")
+    header = served.header("Content-Disposition") or ""
+    assert "\r" not in header and "\n" not in header and ":" not in header
+    assert 'filename="report_X-Injected_yes.csv"' in header
+    for response, status in ((missing, 404), (unavailable, 503)):
+        assert response.status == status
+        assert response.header("Cache-Control") == "no-store"
+        assert response.header("X-Content-Type-Options") == "nosniff"
+
+
 def test_private_policy_and_expiry_are_rejected_and_audit_is_url_free() -> None:
     audit = _Audit()
     repository, storage = InMemoryPdfArtifactRepository(), InMemoryObjectStorage()
@@ -88,3 +113,7 @@ def test_private_policy_and_expiry_are_rejected_and_audit_is_url_free() -> None:
     assert service.download(expired.artifact_id, owner_id="agent:a") is None
     assert [event.outcome for event in audit.events] == ["denied", "not_available"]
     assert all("url" not in event.__dict__ for event in audit.events)
+    leaked = "https://capability.example/download?sig=secret"
+    assert service.download(leaked) is None
+    assert audit.events[-1].artifact_id.startswith("sha256:")
+    assert leaked not in audit.events[-1].artifact_id
