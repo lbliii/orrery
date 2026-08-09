@@ -71,7 +71,8 @@ async def test_llms_txt_is_public(discovery_app) -> None:
         assert "Teaching trio" in response.text
         for star in TEACHING_TRIO:
             assert star["star"] in response.text
-            assert star["job"].split("—")[0].strip() in response.text or star["job"] in response.text
+            job_prefix = star["job"].split("—")[0].strip()
+            assert job_prefix in response.text or star["job"] in response.text
         assert "Do not install or clone for live truth" in response.text
         assert "orrery/stale-proof" in response.text
 
