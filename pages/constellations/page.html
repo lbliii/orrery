@@ -4,9 +4,13 @@
     <p class="kicker">Drawn policy · not a folder</p>
     <h1>{{ rec.name }}{% if rec.version %}@{{ rec.version }}{% end %}</h1>
     <p class="lede" style="margin-bottom: 0">
+      {% if rec.description %}
+      {{ rec.description }}
+      {% else %}
       A constellation is chalk lines across stars: gates, a repair loop,
       fan-in to a composite Envelope. Agents run the graph; humans read
       the receipt.
+      {% end %}
     </p>
   </div>
 </header>
@@ -100,6 +104,20 @@ chain:
 {% end %}release: {{ policy.release_digest }}  signed {{ policy.release_key_id }}</pre>
   </div>
   <div class="panel">
+    {% if rec.name == "orrery/stale-proof" %}
+    <p class="kicker">Why cloning fails</p>
+    <p class="muted" style="margin: 0.4rem 0 1rem">
+      Offline copies cannot mint a fresh UTC instant or re-observe an official
+      source after they were copied. Point at
+      <span class="mono">world-time</span> +
+      <span class="mono">source-watch</span>, optionally faucet a PDF receipt,
+      and seal one composite Envelope — ≤ 3 steps.
+    </p>
+    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem">
+      <a class="btn" href="/connect">Teaching trio</a>
+      <a class="btn btn-ghost" href="/stars?name=orrery/world-time">world-time</a>
+    </div>
+    {% else %}
     <p class="kicker">Why this isn't CI YAML</p>
     <p class="muted" style="margin: 0.4rem 0 1rem">
       Same graph from any harness. Stars can live in different namespaces.
@@ -109,6 +127,7 @@ chain:
       <a class="btn" href="/namespaces">Run under acme/*</a>
       <a class="btn btn-ghost" href="/console">Reliability console</a>
     </div>
+    {% end %}
   </div>
 </div>
 {% end %}

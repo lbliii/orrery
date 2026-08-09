@@ -102,6 +102,25 @@ DIRECT_STAR_ENDPOINTS: tuple[dict[str, str], ...] = (
     },
 )
 
+#: Cohort A teaching trio — point-don't-clone parable (#87 / epic #78).
+TEACHING_TRIO: tuple[dict[str, str], ...] = (
+    {
+        "star": "orrery/world-time",
+        "job": "Live truth — seal a fresh UTC instant at call time",
+        "href": "/stars?name=orrery/world-time",
+    },
+    {
+        "star": "orrery/source-watch",
+        "job": "Observe/diff — re-check an allowlisted official source",
+        "href": "/stars?name=orrery/source-watch",
+    },
+    {
+        "star": "orrery/html-to-pdf",
+        "job": "Faucet + Envelope — tangible convert with a signed receipt",
+        "href": "/stars?name=orrery/html-to-pdf",
+    },
+)
+
 DISCOVERY_CACHE_CONTROL = "public, max-age=3600"
 DISCOVERY_CORS = "*"
 GITHUB_REPO = "https://github.com/lbliii/orrery"
@@ -215,12 +234,16 @@ def mcp_manifest(origin: str) -> dict[str, Any]:
 def llms_txt(origin: str) -> str:
     """Compact llms.txt for crawlers and agents (llmstxt.org-style)."""
     endpoint = mcp_endpoint(origin)
+    trio_lines = [
+        f"- [`{t['star']}`]({origin}{t['href']}): {t['job']}" for t in TEACHING_TRIO
+    ]
     lines = [
         "# Orrery",
         "",
         "> Skills you point at, not install.",
         "> Gaze to discover, resolve to lock the record, call for a verified result.",
         "> Public discovery and aggregated MCP — no bearer mint on the dogfood host.",
+        "> Do not install or clone for live truth — point at the teaching trio below.",
         "",
         "## Connect",
         "",
@@ -228,6 +251,14 @@ def llms_txt(origin: str) -> str:
         f"- [MCP endpoint]({endpoint}): streamable HTTP; no Authorization header",
         f"- [Skill discovery]({origin}/skills): Chirp JSON skill list",
         f"- [Health]({origin}/health): liveness probe",
+        "",
+        "## Teaching trio (cohort A)",
+        "",
+        "Point — don't clone. Offline copies cannot mint fresh UTC or re-observe upstream.",
+        "",
+        *trio_lines,
+        f"- [`orrery/stale-proof`]({origin}/constellations?name=orrery/stale-proof): "
+        "composite that seals now + observe/diff (+ optional PDF receipt)",
         "",
         "## Discovery",
         "",
@@ -313,7 +344,8 @@ def llms_full_txt(origin: str) -> str:
         "",
         "- Treat Orrery as a proxy — Call goes agent → publisher MCP (ADR 0004)",
         "- Expect a bearer mint on the public dogfood host",
-        "- Install a clone when you need live reactive stars (world-time, source-watch)",
+        "- Install or clone for live truth — resolve `orrery/world-time` / "
+        "`orrery/source-watch` and call; offline clones go stale by definition",
         "",
     ]
     return "\n".join(body)

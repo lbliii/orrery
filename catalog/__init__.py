@@ -1,7 +1,7 @@
 """Orrery resolve catalog — Skill DNS records and Gaze discovery."""
 
 from .console_links import console_href_for
-from .constellation import LAUNCH_GATE_POLICY, policy_for
+from .constellation import LAUNCH_GATE_POLICY, STALE_PROOF_POLICY, policy_for
 from .dns import DEFAULT_MCP_HOST, mcp_host, mcp_url
 from .gaze import GazeHit, GazeNode
 from .models import ResolveRecord
@@ -11,6 +11,7 @@ __all__ = [
     "CATALOG",
     "DEFAULT_MCP_HOST",
     "LAUNCH_GATE_POLICY",
+    "STALE_PROOF_POLICY",
     "Catalog",
     "GazeHit",
     "GazeNode",
