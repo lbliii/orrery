@@ -28,6 +28,7 @@ only-include = ["dogfood.py", "catalog", "commerce", "creator_callbacks", "runs"
 
 [dependency-groups]
 dev = [
+  "playwright>=1.55,<2",
   "pytest>=9.0",
   "pytest-asyncio>=1.0",
   "ruff>=0.15",
@@ -38,6 +39,7 @@ asyncio_mode = "auto"
 pythonpath = ["."]
 testpaths = ["tests"]
 markers = [
+  "browser: launches a disposable headless browser against a local Orrery host",
   "issue(n): traces coverage to GitHub issue #n",
 ]
 

@@ -21,3 +21,21 @@ jobs:
         env:
           ORRERY_SKIP_PUBLISH: "1"
         run: uv run pytest -q
+
+  browser-acceptance:
+    # Keep Chromium installation and the real HTTP/download check out of the
+    # fast unit-test lane while making the optional local harness mandatory in CI.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.14"
+      - name: Install
+        run: uv sync --group dev
+      - name: Install Playwright Chromium
+        run: uv run playwright install --with-deps chromium
+      - name: Browser artifact delivery acceptance
+        env:
+          ORRERY_BROWSER_ACCEPTANCE: "1"
+        run: uv run pytest -m browser -q
