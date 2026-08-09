@@ -166,17 +166,23 @@ Default `gaze_match` / `gaze_search` max results (e.g. 20); document that agents
 **Files:** `catalog/gaze.py`, gaze MCP tools, `/gaze` UI, tests  
 **Acceptance:** `uv run pytest` green; API never returns >cap without explicit `limit`; gaze payloads still lack tool bodies (`rg` / tests assert keys).
 
+**Status:** Implemented (`GAZE_DEFAULT_LIMIT=20`, `GAZE_MAX_LIMIT=100`; agent is the semantic router).
+
 ### Task 1.2 — Facet fields on hits
 
 Add structured facets on `GazeHit` / resolve-derived hits: `kind`, `reactive` (bool), `price_band` or raw price, `oracle_ok`, namespace prefix.
 
 **Acceptance:** MCP JSON and `/api/gaze/*` expose facets; UI can filter without new card chrome.
 
+**Status:** Implemented on `GazeHit.as_dict()` + `/gaze` client-side facet filters.
+
 ### Task 1.3 — Trust pills (oracle only)
 
 Surface existing publish-oracle status on gaze hits (reuse `trust.oracle`).
 
 **Acceptance:** Gaze hit includes oracle pill parity with resolve/star; deep-link to `/console/{skill}` where applicable.
+
+**Status:** Implemented via `trust.oracle` + console deep-link on gaze hits.
 
 ---
 

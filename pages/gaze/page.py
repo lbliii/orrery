@@ -1,9 +1,13 @@
 """Gaze — MCP browse/route across public sky and namespace nodes.
 
 Server-renders nodes + hits from the shared catalog; Alpine keeps the node
-switcher. ``?intent=`` / ``?node=`` refresh results via ``match``. Optional
-``GET /api/gaze/match`` powers live updates from the Gaze button.
-Backs GitHub epic #3 / issues #22-#24.
+switcher and client-side facet filters. ``?intent=`` / ``?node=`` refresh
+results via ``match``. Optional ``GET /api/gaze/match`` powers live updates
+from the Gaze button. Backs GitHub epic #3 / issues #22-#24 and shelf epic
+#58 (#64-#66).
+
+Agent is the semantic router: Gaze returns a bounded shortlist with facets
+and supply-side oracle pills — never a forced winner or tool payload.
 """
 
 from __future__ import annotations
@@ -13,7 +17,7 @@ from dataclasses import dataclass
 from chirp import Page, Request
 from chirp.server.alpine import alpine_json_config
 
-from catalog import CATALOG, GazeHit
+from catalog import CATALOG, GAZE_DEFAULT_LIMIT, GazeHit
 
 
 @dataclass(frozen=True, slots=True)
@@ -63,6 +67,7 @@ def get(request: Request) -> Page:
         node_panels=node_panels,
         active_node=node,
         intent=display_intent,
+        gaze_default_limit=GAZE_DEFAULT_LIMIT,
         # Chirp helper: JSON lives in a <script type="application/json"> tag,
         # not inside the quoted x-data attribute (avoids attribute breakout).
         gaze_cfg=alpine_json_config(

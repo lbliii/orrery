@@ -158,6 +158,17 @@ class OracleView:
             return f"smoke fail · {self.reliability_label}"
         return "unscored"
 
+    def as_dict(self) -> dict[str, object]:
+        """Serialize for MCP / gaze ``trust.oracle`` (supply-side pill)."""
+        return {
+            "ok": self.ok,
+            "pill_text": self.pill_text,
+            "pill_class": self.pill_class,
+            "host_ok": self.host_ok,
+            "skill_ok": self.skill_ok,
+            "reliability_label": self.reliability_label,
+        }
+
 
 def _stage_rows(receipt: PublishReceipt | None) -> tuple[tuple[str, bool, str], ...]:
     if receipt is None:

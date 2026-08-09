@@ -20,11 +20,17 @@ SERVER_VERSION = "0.1.0"
 MCP_TOOLS: tuple[dict[str, str], ...] = (
     {
         "name": "gaze_match",
-        "description": "Rank skills that match an intent against a gaze node.",
+        "description": (
+            "Bounded shortlist for an intent (≤20 default; agent ranks). "
+            "Facets + oracle pills; no tool payloads."
+        ),
     },
     {
         "name": "gaze_search",
-        "description": "Search the public sky / namespace for skills by query.",
+        "description": (
+            "Search the public sky / namespace by query (bounded shortlist). "
+            "Agent is the semantic router."
+        ),
     },
     {
         "name": "gaze_describe",
