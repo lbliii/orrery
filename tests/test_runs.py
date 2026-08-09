@@ -90,6 +90,7 @@ def test_postgres_repository_uses_unique_replay_key_and_guarded_transition() -> 
                 None,
                 None,
                 None,
+                None,
             ),
             (
                 "run-a",
@@ -98,6 +99,7 @@ def test_postgres_repository_uses_unique_replay_key_and_guarded_transition() -> 
                 {"max_cents": 25},
                 "managed-cpu",
                 "queued",
+                None,
                 None,
                 None,
                 None,

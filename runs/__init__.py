@@ -16,11 +16,20 @@ from .queue import (
     QueueLease,
     RedisQueueBackend,
 )
+from .worker import (
+    JobHandlerRegistry,
+    RunWorkerRuntime,
+    UnknownJobError,
+    WorkerConfigurationError,
+    WorkerSettings,
+    build_runtime,
+)
 
 __all__ = [
     "FailureDisposition",
     "InMemoryQueueBackend",
     "InMemoryRunRepository",
+    "JobHandlerRegistry",
     "ManagedRunWorker",
     "PostgresRunRepository",
     "QueueLease",
@@ -29,5 +38,10 @@ __all__ = [
     "RunRecord",
     "RunState",
     "RunTransitionError",
+    "RunWorkerRuntime",
+    "UnknownJobError",
+    "WorkerConfigurationError",
+    "WorkerSettings",
+    "build_runtime",
     "new_run_id",
 ]
