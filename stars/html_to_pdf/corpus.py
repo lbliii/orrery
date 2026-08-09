@@ -12,6 +12,6 @@ CORPUS: tuple[CorpusPrompt, ...] = (
         prompt="Convert a short HTML document to PDF.",
         tool="convert",
         arguments={"html": SMOKE_HTML},
-        required_facts=("application/pdf", "pages", "bytes_hint"),
+        required_facts=("application/pdf", "page_count", "byte_length", "artifact_url", "sha256"),
     ),
 )

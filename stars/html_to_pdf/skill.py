@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import base64
 import os
 from typing import Any
 
 from chirp.skill import Skill
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
+from .artifacts import artifact_store
 from .contract import STAR_VERSION
 from .service import convert as convert_html
 from .service import health as health_check
@@ -33,9 +35,17 @@ def build_skill(*, private_key: Any | None = None) -> Skill:
         public_key=private.public_key().public_bytes_raw(),
     )
 
-    @skill.tool("convert", description="Convert HTML to PDF (stub; real Envelope)")
+    @skill.tool(
+        "convert",
+        description="Render simple HTML to a short-lived PDF artifact with verifiable metadata",
+    )
     def convert(html: str) -> dict[str, object]:
-        return convert_html(html)
+        result = convert_html(html)
+        encoded = str(result.pop("artifact_base64"))
+        artifact = artifact_store.put(base64.b64decode(encoded, validate=True))
+        result["artifact_url"] = f"/artifacts/{artifact.artifact_id}"
+        result["sha256"] = artifact.sha256
+        return result
 
     @skill.tool("health", description="html-to-pdf readiness probe")
     def health() -> dict[str, str]:

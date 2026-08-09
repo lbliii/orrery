@@ -6,6 +6,7 @@ Constellation, and Namespace pages ported from ``design/`` into ``pages/``.
 
 from __future__ import annotations
 
+import hashlib
 import json
 
 import pytest
@@ -335,7 +336,7 @@ class TestReactiveWorldTimeStar:
 @pytest.mark.issue(26)
 @pytest.mark.issue(27)
 @pytest.mark.issue(35)
-class TestEnvelopeVerifyAndPdfStub:
+class TestEnvelopeVerifyAndPdfArtifact:
     def test_signed_convert_receipt_verifies(self) -> None:
         from dogfood import signed_convert_receipt, verify_receipt
 
@@ -353,8 +354,30 @@ class TestEnvelopeVerifyAndPdfStub:
 
         receipt, _ = signed_convert_receipt()
         forged = dict(receipt)
-        forged["payload"] = {"pages": 999, "bytes_hint": 1, "content_type": "application/pdf"}
+        forged["payload"] = {
+            "page_count": 999,
+            "byte_length": 1,
+            "content_type": "application/pdf",
+        }
         assert verify_receipt(forged) is False
+
+    async def test_pdf_artifact_download_matches_signed_checksum(self, example_app) -> None:
+        from dogfood import signed_convert_receipt
+
+        receipt, verified = signed_convert_receipt("<h1>Release evidence</h1><p>Ready.</p>")
+        assert verified is True
+        payload = receipt["payload"]
+
+        async with TestClient(example_app) as client:
+            downloaded = await client.get(str(payload["artifact_url"]))
+            missing = await client.get("/artifacts/not-a-real-artifact")
+
+        assert downloaded.status == 200
+        assert downloaded.body_bytes.startswith(b"%PDF-")
+        assert downloaded.header("Content-Disposition") is not None
+        assert downloaded.header("Cache-Control") == "no-store"
+        assert payload["sha256"] == f"sha256:{hashlib.sha256(downloaded.body_bytes).hexdigest()}"
+        assert missing.status == 404
 
     async def test_api_verify_ok_and_forge_fail(self, example_app, caplog) -> None:
         import logging
