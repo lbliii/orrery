@@ -78,7 +78,7 @@ transform · attest · gate**.
 
 | Name | Graph | Story |
 | --- | --- | --- |
-| `orrery/stale-proof` | time + source-watch (+ optional pdf) | Clone fails; buy truth |
+| `orrery/stale-proof` | time + source-watch | Clone fails; fresh live evidence |
 | `orrery/ship-check` | pypi/npm + source-watch + time | CI without harness bloat |
 | `orrery/table-fresh` | csv-url + table-diff | Spreadsheet rim |
 | `orrery/invite-ready` | time + flight + geocode/hours | Pidge atlas bait |

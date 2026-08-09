@@ -825,17 +825,15 @@ class TestConstellationPolicyModel:
 
         graph = policy_for("orrery/stale-proof")
         assert graph is STALE_PROOF_POLICY
-        assert len(graph.nodes) == 4
+        assert len(graph.nodes) == 3
         refs = {n.star_ref for n in graph.nodes if n.star_ref}
         assert refs == {
             "orrery/world-time",
             "orrery/source-watch",
-            "orrery/html-to-pdf",
         }
         assert graph.repair_loop_max is None
-        assert len(graph.composite_chain) == 3
-        assert any(s.note == "optional" for s in graph.composite_chain)
-        assert "≤ 3" in graph.footnote
+        assert len(graph.composite_chain) == 2
+        assert "separate managed Star" in graph.footnote
 
 
 @pytest.mark.issue(33)
@@ -955,7 +953,7 @@ class TestConstellationMCP:
             assert "orrery/stale-proof" in body
             assert "world-time" in body
             assert "source-watch" in body
-            assert "html-to-pdf" in body
+            assert "html-to-pdf" not in body
             assert "run_id" in body
 
             explained = await client.post(
@@ -974,7 +972,7 @@ class TestConstellationMCP:
             text = json.loads(explained.text)["result"]["content"][0]["text"]
             assert "Parable" in text or "parable" in text.lower()
             assert "clone" in text.lower()
-            assert "≤ 3" in text or "3 gates" in text
+            assert "separate managed Star" in text
 
 
 @pytest.mark.issue(88)
