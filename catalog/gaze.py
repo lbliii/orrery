@@ -148,4 +148,8 @@ def score_record(record: ResolveRecord, tokens: tuple[str, ...]) -> int:
             "gate" in name or record.kind == "constellation"
         ):
             score += 2
+        if token in {"stale", "proof", "parable", "clone", "fresh"} and (
+            "stale" in name or "proof" in name or "stale" in desc or "clone" in desc
+        ):
+            score += 2
     return score

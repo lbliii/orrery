@@ -9,7 +9,25 @@
 <p class="lede">
   Skills you point at, not install. Discovery is public; the dogfood MCP host
   needs no bearer. Gaze → resolve → call the publisher → seal the Envelope.
+  Do not install or clone for live truth — point at the teaching trio.
 </p>
+
+<section class="panel" style="margin-bottom: 1.5rem">
+  <p class="kicker" style="margin-bottom: 0.75rem">Teaching trio · cohort A</p>
+  <p class="lede" style="margin: 0 0 0.75rem; font-size: 0.95rem">
+    Point — don’t clone. Offline copies cannot mint fresh UTC or re-observe
+    upstream. Compose them as
+    <a class="mono" href="/constellations?name=orrery/stale-proof">orrery/stale-proof</a>.
+  </p>
+  <ul class="meta-list">
+    {% for t in teaching_trio %}
+    <li>
+      <a class="mono" href="{{ t.href }}">{{ t.star }}</a>
+      <span>{{ t.job }}</span>
+    </li>
+    {% end %}
+  </ul>
+</section>
 
 <section class="panel" style="margin-bottom: 1.5rem">
   <p class="kicker" style="margin-bottom: 0.5rem">1. MCP endpoint</p>

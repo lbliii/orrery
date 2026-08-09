@@ -113,10 +113,20 @@ def explain_policy(name: str = "acme/launch-gate") -> dict[str, Any]:
         if edge.kind == "fan_in":
             fan_in.setdefault(edge.target, []).append(edge.source)
 
+    terminal = next(
+        (n.label for n in graph.nodes if n.node_kind == "composite"),
+        "release",
+    )
     narrative: list[str] = [
-        f"Constellation {name} evaluates {len(gate_nodes)} gates before release.",
-        "Gate order: " + " → ".join(n.label for n in gate_nodes) + " → release.",
+        f"Constellation {name} evaluates {len(gate_nodes)} gates before {terminal}.",
+        "Gate order: " + " → ".join(n.label for n in gate_nodes) + f" → {terminal}.",
     ]
+    if name == "orrery/stale-proof":
+        narrative.append(
+            "Parable: seal live now + upstream observe/diff "
+            "(+ optional PDF receipt); do not install or clone for live truth."
+        )
+        narrative.append("Step budget: ≤ 3 gates.")
     if graph.repair_loop_max and repair is not None:
         narrative.append(
             f"Repair loop: {repair.source} may retry {repair.target} "

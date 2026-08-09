@@ -35,6 +35,22 @@ CONSTELLATION_SEEDS: tuple[ResolveRecord, ...] = (
         oracle_ok=False,
         tools=("run", "status", "explain_policy"),
     ),
+    ResolveRecord(
+        name="orrery/stale-proof",
+        version="1",
+        kind="constellation",
+        visibility="public",
+        description=(
+            "Parable seal: live UTC now + upstream observe/diff "
+            "(+ optional PDF receipt). Don't install or clone for live truth — point."
+        ),
+        endpoint=mcp_url("/constellations/stale-proof"),
+        key_id="orrery-stale-proof-1",
+        content_digest="sha256:stale…",
+        price_per_call=None,
+        oracle_ok=True,
+        tools=("run", "status", "explain_policy"),
+    ),
 )
 
 #: Back-compat alias — prefer :data:`CONSTELLATION_SEEDS` or live sync output.

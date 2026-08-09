@@ -603,7 +603,11 @@ class TestGazeCatalog:
         assert described["content_digest"].startswith("sha256:")
 
         consts = CATALOG.list_constellations()
-        assert {h.name for h in consts} >= {"acme/release-gate", "acme/launch-gate"}
+        assert {h.name for h in consts} >= {
+            "acme/release-gate",
+            "acme/launch-gate",
+            "orrery/stale-proof",
+        }
         assert all(h.kind == "constellation" for h in consts)
 
         launch = CATALOG.describe("acme/launch-gate")
@@ -815,6 +819,23 @@ class TestConstellationPolicyModel:
         assert any(e.kind == "repair_loop" for e in graph.edges)
         assert len(graph.composite_chain) == 4
 
+    def test_stale_proof_policy_fixture(self, example_app) -> None:
+        from catalog.constellation import STALE_PROOF_POLICY, policy_for
+
+        graph = policy_for("orrery/stale-proof")
+        assert graph is STALE_PROOF_POLICY
+        assert len(graph.nodes) == 4
+        refs = {n.star_ref for n in graph.nodes if n.star_ref}
+        assert refs == {
+            "orrery/world-time",
+            "orrery/source-watch",
+            "orrery/html-to-pdf",
+        }
+        assert graph.repair_loop_max is None
+        assert len(graph.composite_chain) == 3
+        assert any(s.note == "optional" for s in graph.composite_chain)
+        assert "≤ 3" in graph.footnote
+
 
 @pytest.mark.issue(33)
 class TestConstellationMCP:
@@ -909,6 +930,78 @@ class TestConstellationMCP:
             assert "secret-scan" in text
             assert "repair" in text.lower()
             assert "fan" in text.lower()
+
+    async def test_stale_proof_run_and_explain(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            called = await client.post(
+                "/mcp",
+                json={
+                    "jsonrpc": "2.0",
+                    "method": "tools/call",
+                    "id": 6,
+                    "params": _modern_mcp_params(
+                        name="run",
+                        arguments={
+                            "pages": ["README.md"],
+                            "constellation": "orrery/stale-proof",
+                        },
+                    ),
+                },
+                headers=_modern_mcp_headers("tools/call", "run"),
+            )
+            assert called.status == 200
+            body = json.loads(called.text)["result"]["content"][0]["text"]
+            assert "orrery/stale-proof" in body
+            assert "world-time" in body
+            assert "source-watch" in body
+            assert "html-to-pdf" in body
+            assert "run_id" in body
+
+            explained = await client.post(
+                "/mcp",
+                json={
+                    "jsonrpc": "2.0",
+                    "method": "tools/call",
+                    "id": 7,
+                    "params": _modern_mcp_params(
+                        name="explain_policy",
+                        arguments={"name": "orrery/stale-proof"},
+                    ),
+                },
+                headers=_modern_mcp_headers("tools/call", "explain_policy"),
+            )
+            text = json.loads(explained.text)["result"]["content"][0]["text"]
+            assert "Parable" in text or "parable" in text.lower()
+            assert "clone" in text.lower()
+            assert "≤ 3" in text or "3 gates" in text
+
+
+@pytest.mark.issue(88)
+class TestStaleProofConstellation:
+    def test_resolve_and_gaze_blurb(self, example_app) -> None:
+        from catalog import CATALOG
+
+        rec = CATALOG.resolve("orrery/stale-proof")
+        assert rec is not None
+        assert rec.kind == "constellation"
+        assert rec.visibility == "public"
+        assert "clone" in (rec.description or "").lower()
+        described = CATALOG.describe("orrery/stale-proof")
+        assert described["kind"] == "constellation"
+        blurbs = CATALOG.match("stale proof clone", node="public")
+        assert any(h.name == "orrery/stale-proof" for h in blurbs)
+        hit = next(h for h in blurbs if h.name == "orrery/stale-proof")
+        assert "clone" in hit.blurb.lower() or "live" in hit.blurb.lower()
+
+    async def test_constellation_page_explains_parable(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/constellations?name=orrery/stale-proof")
+            assert r.status == 200
+            assert "orrery/stale-proof" in r.text
+            assert "world-time" in r.text
+            assert "source-watch" in r.text
+            assert "Why cloning fails" in r.text
+            assert "Teaching trio" in r.text
 
 
 @pytest.mark.issue(29)

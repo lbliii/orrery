@@ -9,6 +9,7 @@ from chirp.testing import TestClient
 
 from discovery import (
     MCP_TOOLS,
+    TEACHING_TRIO,
     configured_public_origin,
     mcp_endpoint,
     resolve_public_origin,
@@ -67,6 +68,13 @@ async def test_llms_txt_is_public(discovery_app) -> None:
         assert "https://orrery.lol/mcp" in response.text
         assert "/connect" in response.text
         assert "/skills" in response.text
+        assert "Teaching trio" in response.text
+        for star in TEACHING_TRIO:
+            assert star["star"] in response.text
+            job_prefix = star["job"].split("—")[0].strip()
+            assert job_prefix in response.text or star["job"] in response.text
+        assert "Do not install or clone for live truth" in response.text
+        assert "orrery/stale-proof" in response.text
 
 
 @pytest.mark.asyncio
@@ -79,6 +87,7 @@ async def test_llms_full_lists_tools(discovery_app) -> None:
         assert "tools/list" in response.text
         assert "/stars/html-to-pdf/mcp" in response.text
         assert "gaze_match" in response.text
+        assert "Install or clone for live truth" in response.text
 
 
 @pytest.mark.asyncio
@@ -133,6 +142,12 @@ async def test_connect_page_is_public(discovery_app) -> None:
         assert "gaze_match" in page.text
         assert 'href="/llms.txt"' in page.text
         assert 'href="/skills"' in page.text
+        assert "Teaching trio" in page.text
+        assert "Do not install or clone for live truth" in page.text
+        for star in TEACHING_TRIO:
+            assert star["star"] in page.text
+            assert star["href"] in page.text
+        assert "orrery/stale-proof" in page.text
 
 
 @pytest.mark.asyncio
