@@ -198,7 +198,7 @@ LAUNCH_GATE_POLICY = PolicyGraph(
     release_key_id="acme-release-1",
 )
 
-#: Cohort A parable — seal "now" + upstream observe/diff (+ optional PDF) (#88).
+#: Cohort A parable — seal fresh UTC and fixed-source digest evidence (#88).
 STALE_PROOF_POLICY = PolicyGraph(
     nodes=(
         PolicyNode(
@@ -222,71 +222,34 @@ STALE_PROOF_POLICY = PolicyGraph(
             status_label="observe",
         ),
         PolicyNode(
-            id="html-to-pdf",
-            label="html-to-pdf*",
-            node_kind="gate",
-            star_ref="orrery/html-to-pdf",
-            x=660,
-            y=200,
-            step=2,
-            status_label="optional",
-        ),
-        PolicyNode(
             id="seal",
             label="seal",
             node_kind="composite",
-            x=840,
+            x=650,
             y=360,
-            step=3,
+            step=2,
             status_label="composite",
             r=18,
         ),
     ),
     edges=(
         PolicyEdge(
-            id="sp1",
-            source="world-time",
-            target="source-watch",
-            kind="gate",
-            path_d="M180 200 C260 200, 300 200, 360 200",
-            step=1,
-        ),
-        PolicyEdge(
-            id="sp2",
-            source="source-watch",
-            target="html-to-pdf",
-            kind="gate",
-            path_d="M480 200 C540 200, 580 200, 600 200",
-            step=2,
-        ),
-        PolicyEdge(
             id="sp3a",
-            source="html-to-pdf",
+            source="source-watch",
             target="seal",
             kind="fan_in",
-            path_d="M720 240 C780 300, 800 320, 820 340",
-            step=3,
+            path_d="M420 240 C480 300, 560 320, 630 340",
+            step=2,
             stroke="#9aafc2",
             stroke_width=1.4,
-        ),
-        PolicyEdge(
-            id="sp3b",
-            source="source-watch",
-            target="seal",
-            kind="fan_in",
-            path_d="M420 240 C420 320, 620 360, 780 360",
-            step=3,
-            stroke="#9aafc2",
-            stroke_width=1.3,
-            opacity=0.75,
         ),
         PolicyEdge(
             id="sp3c",
             source="world-time",
             target="seal",
             kind="fan_in",
-            path_d="M180 240 C180 340, 500 380, 780 360",
-            step=3,
+            path_d="M180 240 C180 340, 400 380, 590 360",
+            step=2,
             stroke="#9aafc2",
             stroke_width=1.2,
             opacity=0.55,
@@ -294,13 +257,12 @@ STALE_PROOF_POLICY = PolicyGraph(
     ),
     repair_loop_max=None,
     footnote=(
-        "* optional PDF receipt · ≤ 3 steps · clone fails: offline copies cannot "
-        "mint fresh UTC or re-observe upstream"
+        "Two live components · clone fails: offline copies cannot mint fresh UTC "
+        "or re-observe the official source. Optional PDF is a separate managed Star."
     ),
     composite_chain=(
         CompositeStep(1, "world-time", "Envelope ✓", "now"),
         CompositeStep(2, "source-watch", "Envelope ✓", "observe/diff"),
-        CompositeStep(3, "html-to-pdf", "Envelope ✓", "optional"),
     ),
     release_digest="sha256:stale…",
     release_key_id="orrery-stale-proof-1",

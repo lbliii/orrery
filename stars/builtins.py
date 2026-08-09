@@ -29,6 +29,7 @@ BUILTIN_STAR_PACKAGES = (
     "stars.gh_release_notes",
     "stars.ship_check",
     "stars.source_watch",
+    "stars.stale_proof",
     "stars.world_time",
 )
 

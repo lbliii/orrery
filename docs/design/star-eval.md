@@ -76,6 +76,14 @@ Rules:
 
 Loader: [`stars/_core/corpus.py`](../../stars/_core/corpus.py).
 
+## L4 implemented smoke: stale-proof
+
+`orrery/stale-proof` has deterministic component-success and component-failure
+tests. Its direct `run` envelope contains the complete World Time and Source
+Watch evidence, and produces `fresh_proof` only when both are present;
+otherwise it is explicitly `incomplete`. This is a bounded composition smoke,
+not a claim that Orrery deployed anything or persisted an agent baseline.
+
 ## Copy-paste acceptance (every new public star)
 
 ```markdown

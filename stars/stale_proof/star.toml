@@ -1,0 +1,26 @@
+[star]
+name="orrery/stale-proof"
+kind="constellation"
+version="0.1.0"
+description="Fresh UTC plus official Python release-note digest evidence; clones cannot mint live truth"
+publisher="orrery"
+publisher_key_id_env="ORRERY_STALE_PROOF_KEY_ID"
+direct_mcp_path="/constellations/stale-proof/mcp"
+tools=["run"]
+[pricing]
+unit="call"
+price_per_call="0.00"
+currency="USD"
+[runtime]
+python_package="stars.stale_proof"
+skill_factory="stars.stale_proof.skill:build_skill"
+[policy]
+allowed_egress=["https://timeapi.io","https://www.google.com","https://docs.python.org"]
+freshness="at_call"
+redirects="deny"
+max_response_bytes=1048576
+[receipt]
+schema_version="1"
+algorithm="Ed25519"
+[publish]
+corpus="stars.stale_proof.corpus:CORPUS"
