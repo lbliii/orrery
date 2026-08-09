@@ -1,0 +1,25 @@
+[star]
+name="orrery/gh-release-notes"
+version="0.1.0"
+description="Bounded latest release notes for named allowlisted GitHub repositories"
+publisher="orrery"
+publisher_key_id_env="ORRERY_GH_RELEASE_NOTES_KEY_ID"
+direct_mcp_path="/stars/gh-release-notes/mcp"
+tools=["observe"]
+[pricing]
+unit="call"
+price_per_call="0.00"
+currency="USD"
+[runtime]
+python_package="stars.gh_release_notes"
+skill_factory="stars.gh_release_notes.skill:build_skill"
+[policy]
+allowed_egress=["https://api.github.com"]
+freshness="at_call"
+redirects="deny"
+max_response_bytes=524288
+[receipt]
+schema_version="1"
+algorithm="Ed25519"
+[publish]
+corpus="stars.gh_release_notes.corpus:CORPUS"

@@ -9,6 +9,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey,
 from public_keys import public_key_set
 from stars.csv_url.skill import build_skill as build_csv
 from stars.gh_file_at_ref.skill import build_skill as build_gh_file
+from stars.gh_release_notes.skill import build_skill as build_gh_release_notes
 from stars.html_to_pdf.skill import build_skill as build_pdf
 from stars.http_head.skill import build_skill as build_head
 from stars.npm_release.skill import build_skill as build_npm_release
@@ -54,6 +55,7 @@ def test_global_public_star_key_is_stable_and_verifies_all_factory_envelopes(
     monkeypatch.setenv("ORRERY_SOURCE_WATCH_FIXTURES", '{"python-release-notes":"fixture"}')
     import stars.csv_url.skill as csv_module
     import stars.gh_file_at_ref.skill as gh_file_module
+    import stars.gh_release_notes.skill as gh_release_notes_module
     import stars.http_head.skill as head_module
     import stars.npm_release.skill as npm_release_module
     import stars.pypi_release.skill as pypi_release_module
@@ -66,6 +68,7 @@ def test_global_public_star_key_is_stable_and_verifies_all_factory_envelopes(
     csv_module.get_dataset = lambda _dataset: {"dataset": "flights-airport"}
     head_module.observe_head = lambda _target: {"status": 200}
     gh_file_module.get_file = lambda _target, _ref: {"blob_sha": "fixture"}
+    gh_release_notes_module.observe_release = lambda _target, _prior: {"tag": "v1"}
     npm_release_module.get_release = lambda _package: {"version": "1.0.0"}
     pypi_release_module.get_release = lambda _package: {"version": "1.0.0"}
     row_lookup_module.lookup_row = lambda _dataset, _key: {"row": {"count": 853}}
@@ -111,6 +114,7 @@ def test_global_public_star_key_is_stable_and_verifies_all_factory_envelopes(
             "get",
             {"target": "orrery-readme", "ref": "0" * 40},
         ),
+        "orrery/gh-release-notes": (build_gh_release_notes, "observe", {}),
     }
     first = {name: factory() for name, (factory, _, _) in factories.items()}
     second = {name: factory() for name, (factory, _, _) in factories.items()}
@@ -151,6 +155,7 @@ def test_production_public_stars_fail_without_valid_config(
         "ORRERY_PYPI_RELEASE_PRIVATE_KEY",
         "ORRERY_NPM_RELEASE_PRIVATE_KEY",
         "ORRERY_GH_FILE_AT_REF_PRIVATE_KEY",
+        "ORRERY_GH_RELEASE_NOTES_PRIVATE_KEY",
     ):
         monkeypatch.delenv(name, raising=False)
     if key is not None:
@@ -170,6 +175,7 @@ def test_production_public_stars_fail_without_valid_config(
         build_pypi_release,
         build_npm_release,
         build_gh_file,
+        build_gh_release_notes,
     ):
         with pytest.raises((RuntimeError, ValueError)):
             factory()
