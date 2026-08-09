@@ -15,7 +15,7 @@ currency="USD"
 python_package="stars.stale_proof"
 skill_factory="stars.stale_proof.skill:build_skill"
 [policy]
-allowed_egress=["https://worldtimeapi.org","https://docs.python.org"]
+allowed_egress=["https://timeapi.io","https://www.google.com","https://docs.python.org"]
 freshness="at_call"
 redirects="deny"
 max_response_bytes=1048576
