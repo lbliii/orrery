@@ -41,6 +41,14 @@ def _modern_mcp_headers(method: str, name: str | None = None) -> dict[str, str]:
     return headers
 
 
+def _standard_mcp_headers() -> dict[str, str]:
+    """MCP 2025-06-18 sends no Orrery/Chirp routing headers."""
+    return {
+        "content-type": "application/json",
+        "mcp-protocol-version": "2025-06-18",
+    }
+
+
 @pytest.mark.issue(10)
 @pytest.mark.issue(11)
 class TestOrreryHostFoundation:
@@ -133,6 +141,58 @@ class TestOrreryHostFoundation:
             assert called.status == 200
             text = json.loads(called.text)["result"]["content"][0]["text"]
             assert "orrery/html-to-pdf" in text
+
+    async def test_standard_2025_streamable_http_header_needs_no_body_meta_or_routing_headers(
+        self, example_app
+    ) -> None:
+        """A deployment smoke test using the public connect-page wire shape (#150)."""
+        async with TestClient(example_app) as client:
+            initialized = await client.post(
+                "/mcp",
+                json={
+                    "jsonrpc": "2.0",
+                    "method": "initialize",
+                    "id": 149,
+                    "params": {
+                        "protocolVersion": "2025-06-18",
+                        "capabilities": {},
+                        "clientInfo": {"name": "orrery-smoke", "version": "1"},
+                    },
+                },
+                headers=_standard_mcp_headers(),
+            )
+            assert initialized.status == 200
+            assert json.loads(initialized.text)["id"] == 149
+
+            listed = await client.post(
+                "/mcp",
+                json={
+                    "jsonrpc": "2.0",
+                    "method": "tools/list",
+                    "id": 150,
+                },
+                headers=_standard_mcp_headers(),
+            )
+            assert listed.status == 200
+            body = json.loads(listed.text)
+            assert body["id"] == 150
+            assert {tool["name"] for tool in body["result"]["tools"]} >= {"gaze_match", "convert"}
+
+            called = await client.post(
+                "/mcp",
+                json={
+                    "jsonrpc": "2.0",
+                    "method": "tools/call",
+                    "id": 151,
+                    "params": {
+                        "name": "gaze_match",
+                        "arguments": {"intent": "html pdf convert", "node": "public"},
+                    },
+                },
+                headers=_standard_mcp_headers(),
+            )
+            assert called.status == 200
+            assert "orrery/html-to-pdf" in json.loads(called.text)["result"]["content"][0]["text"]
 
     async def test_agent_invocation_streams_on_home_feed(self, example_app) -> None:
         async with TestClient(example_app) as client:
