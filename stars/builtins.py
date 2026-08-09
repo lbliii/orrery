@@ -22,6 +22,7 @@ BUILTIN_STAR_PACKAGES = (
     "stars.table_diff",
     "stars.row_lookup",
     "stars.row_validate",
+    "stars.table_fresh",
     "stars.source_watch",
     "stars.world_time",
 )

@@ -15,6 +15,7 @@ from stars.row_validate.skill import build_skill as build_row_validate
 from stars.source_watch.skill import build_skill as build_watch
 from stars.spdx_license.skill import build_skill as build_spdx
 from stars.table_diff.skill import build_skill as build_table_diff
+from stars.table_fresh.skill import build_skill as build_table_fresh
 from stars.well_known.skill import build_skill as build_well_known
 from stars.world_time.skill import build_skill as build_time
 
@@ -54,6 +55,7 @@ def test_global_public_star_key_is_stable_and_verifies_all_factory_envelopes(
     import stars.row_validate.skill as row_validate_module
     import stars.spdx_license.skill as spdx_module
     import stars.table_diff.skill as table_diff_module
+    import stars.table_fresh.skill as table_fresh_module
 
     csv_module.get_dataset = lambda _dataset: {"dataset": "flights-airport"}
     head_module.observe_head = lambda _target: {"status": 200}
@@ -61,6 +63,7 @@ def test_global_public_star_key_is_stable_and_verifies_all_factory_envelopes(
     row_validate_module.validate_row = lambda _profile, _row: {"valid": True}
     spdx_module.get_license = lambda _license_id: {"license_id": "MIT"}
     table_diff_module.diff_tables = lambda _left, _right, _key: {"changed_count": 0}
+    table_fresh_module.run_fresh = lambda _baseline: {"scope": "bounded_sample"}
     factories = {
         "orrery/html-to-pdf": (build_pdf, "health", {}),
         "orrery/world-time": (build_time, "fetch", {}),
@@ -91,6 +94,7 @@ def test_global_public_star_key_is_stable_and_verifies_all_factory_envelopes(
                 "row": {"origin": "ABE", "destination": "ATL", "count": 853},
             },
         ),
+        "orrery/table-fresh": (build_table_fresh, "run", {"baseline": {"rows": []}}),
     }
     first = {name: factory() for name, (factory, _, _) in factories.items()}
     second = {name: factory() for name, (factory, _, _) in factories.items()}
@@ -127,6 +131,7 @@ def test_production_public_stars_fail_without_valid_config(
         "ORRERY_TABLE_DIFF_PRIVATE_KEY",
         "ORRERY_ROW_LOOKUP_PRIVATE_KEY",
         "ORRERY_ROW_VALIDATE_PRIVATE_KEY",
+        "ORRERY_TABLE_FRESH_PRIVATE_KEY",
     ):
         monkeypatch.delenv(name, raising=False)
     if key is not None:
@@ -142,6 +147,7 @@ def test_production_public_stars_fail_without_valid_config(
         build_table_diff,
         build_row_lookup,
         build_row_validate,
+        build_table_fresh,
     ):
         with pytest.raises((RuntimeError, ValueError)):
             factory()
