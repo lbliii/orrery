@@ -27,6 +27,7 @@ BUILTIN_STAR_PACKAGES = (
     "stars.npm_release",
     "stars.gh_file_at_ref",
     "stars.gh_release_notes",
+    "stars.ship_check",
     "stars.source_watch",
     "stars.world_time",
 )
