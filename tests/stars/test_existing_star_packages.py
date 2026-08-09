@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import base64
+import hashlib
 import tomllib
 from pathlib import Path
 
 import pytest
 
 from stars.html_to_pdf import convert, health
+from stars.html_to_pdf.artifacts import artifact_store
 from stars.html_to_pdf.contract import tool_schemas as pdf_tool_schemas
 from stars.html_to_pdf.skill import build_skill as build_pdf_skill
 from stars.world_time import answer, fetch
@@ -47,14 +50,29 @@ class TestExistingStarPackages:
         assert manifest["publish"]["corpus"].endswith(".corpus:CORPUS")
 
     def test_html_to_pdf_framework_free_service_and_adapter(self) -> None:
-        assert convert("x" * 1_501) == {
-            "pages": 2,
-            "bytes_hint": 2_525,
-            "content_type": "application/pdf",
-        }
+        result = convert("<h1>Orrery</h1><p>Release evidence</p>")
+        pdf = base64.b64decode(result["artifact_base64"])
+
+        assert pdf.startswith(b"%PDF-")
+        assert result["sha256"] == hashlib.sha256(pdf).hexdigest()
+        assert result["byte_length"] == len(pdf)
+        assert result["page_count"] == 1
+        assert result["content_type"] == "application/pdf"
+        assert b"<h1>" not in pdf
+        assert b"Orrery" in pdf
         assert health() == {"status": "ok", "skill": "html-to-pdf"}
         assert set(pdf_tool_schemas()) == {"convert", "health"}
-        assert {pending.name for pending in build_pdf_skill()._pending} == {"convert", "health"}
+        skill = build_pdf_skill()
+        assert {pending.name for pending in skill._pending} == {"convert", "health"}
+        envelope = next(pending for pending in skill._pending if pending.name == "convert").handler(
+            html="<p>Download me</p>"
+        )
+        payload = envelope.payload
+        artifact_id = str(payload["artifact_url"]).rsplit("/", maxsplit=1)[-1]
+        artifact = artifact_store.get(artifact_id)
+        assert artifact is not None
+        assert payload["sha256"] == artifact.sha256
+        assert artifact.data.startswith(b"%PDF-")
 
     def test_world_time_framework_free_service_and_adapter(
         self, monkeypatch: pytest.MonkeyPatch

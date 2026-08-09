@@ -31,7 +31,7 @@ The same process is also a dogfood MCP host ([#964](https://github.com/lbliii/ch
 
 Wave 1 spike ([#37](https://github.com/lbliii/orrery/issues/37)): tools `fetch` / `get` / `answer` pull a **live UTC** reading from a public clock API at call time and seal it in a signed Chirp Envelope. Gaze/resolve show price + blurb only — never the live payload.
 
-**Why cloning fails the value test:** an offline copy of the tool code cannot mint a fresh UTC instant from the upstream clock. Any baked-in datetime is stale by definition; the product is live truth at call time, not a distributable package. (html-to-pdf remains alongside as the Envelope plumbing demo.)
+**Why cloning fails the value test:** an offline copy of the tool code cannot mint a fresh UTC instant from the upstream clock. Any baked-in datetime is stale by definition; the product is live truth at call time, not a distributable package. `html-to-pdf` now provides the complementary tangible demo: simple HTML becomes a short-lived downloadable PDF whose checksum is sealed in the signed receipt.
 
 ### Star packages and direct MCP
 

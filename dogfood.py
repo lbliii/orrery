@@ -379,7 +379,7 @@ DOGFOOD_CORPUS: tuple[CorpusPrompt, ...] = (
         prompt="Convert a short HTML document to PDF via html-to-pdf.",
         tool="convert",
         arguments={"html": SMOKE_HTML},
-        required_facts=("application/pdf", "pages", "bytes_hint"),
+        required_facts=("application/pdf", "page_count", "byte_length", "artifact_url", "sha256"),
     ),
     CorpusPrompt(
         id="world-time-answer-smoke",

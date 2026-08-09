@@ -68,6 +68,7 @@ from discovery import (
 from dogfood import DOGFOOD_CORPUS, build_dogfood_skills, verify_receipt
 from stars._core.direct_mcp import mount_direct_mcp
 from stars.builtins import build_direct_skills, builtin_registry
+from stars.html_to_pdf.artifacts import artifact_store
 from trust.oracle import configure_oracle, record_skill_scores_from_registry
 
 _ROOT = Path(__file__).parent
@@ -287,6 +288,27 @@ def api_gaze_match(request: Request) -> JSONResponse:
             "hits": [h.as_dict() for h in hits],
             "status": "ok",
         }
+    )
+
+
+@app.route("/artifacts/{artifact_id}", referenced=True)
+def pdf_artifact(artifact_id: str) -> Response:
+    """Download a short-lived PDF emitted by the html-to-pdf Star."""
+    artifact = artifact_store.get(artifact_id)
+    if artifact is None:
+        return Response(
+            "PDF artifact not found or expired.",
+            status=404,
+            content_type="text/plain; charset=utf-8",
+        )
+    return Response(
+        artifact.data,
+        content_type="application/pdf",
+        headers=(
+            ("Content-Disposition", f'attachment; filename="{artifact.artifact_id}.pdf"'),
+            ("Cache-Control", "no-store"),
+            ("X-Content-Type-Options", "nosniff"),
+        ),
     )
 
 

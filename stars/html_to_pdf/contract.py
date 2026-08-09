@@ -14,7 +14,7 @@ class ConvertInput(TypedDict):
 
 TOOL_SCHEMAS: Final = {
     "convert": {
-        "description": "Convert HTML to PDF (stub; real Envelope).",
+        "description": "Render simple HTML to a short-lived downloadable PDF with checksums.",
         "inputSchema": {
             "type": "object",
             "properties": {"html": {"type": "string"}},
