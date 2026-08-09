@@ -7,6 +7,7 @@ from typing import Final
 STAR_NAME: Final = "orrery/world-time"
 STAR_VERSION: Final = "0.1.0"
 WORLD_TIME_URL: Final = "https://timeapi.io/api/Time/current/zone?timeZone=UTC"
+FALLBACK_TIME_URL: Final = "https://www.google.com/generate_204"
 CLONE_WARNING: Final = (
     "Offline clones cannot mint a fresh UTC instant from the public clock API; "
     "any baked-in datetime is stale by definition. Value is live truth at call time."

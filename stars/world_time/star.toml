@@ -17,7 +17,7 @@ python_package = "stars.world_time"
 skill_factory = "stars.world_time.skill:build_skill"
 
 [policy]
-allowed_egress = ["https://timeapi.io"]
+allowed_egress = ["https://timeapi.io", "https://www.google.com"]
 freshness = "live_at_call"
 redirects = "deny"
 max_response_bytes = 1048576
