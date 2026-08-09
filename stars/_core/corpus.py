@@ -79,6 +79,10 @@ def validate_public_star_corpora(definitions: Iterable[StarDefinition]) -> None:
 def _as_corpus_tuple(value: Any, *, reference: str) -> tuple[CorpusPrompt, ...]:
     if isinstance(value, CorpusPrompt):
         return (value,)
+    if isinstance(value, str):
+        raise StarCorpusError(
+            f"{reference} must be a sequence of CorpusPrompt, got str"
+        )
     if isinstance(value, Mapping):
         raise StarCorpusError(
             f"{reference} must be a sequence of CorpusPrompt, not a mapping"

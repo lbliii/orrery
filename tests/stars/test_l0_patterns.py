@@ -69,7 +69,7 @@ class TestL0HtmlToPdf:
         """Transform faucet: no egress allowlist; contract types fail loud."""
         manifest = load_star_manifest("html_to_pdf")
         assert manifest["policy"]["allowed_egress"] == []
-        assert_tool_schema_keys(pdf_schemas(), {"convert", "health"})
+        assert_tool_schema_keys(pdf_schemas(), {"convert", "health", "submit", "result"})
         assert_manifest_publish_corpus("html_to_pdf")
         with pytest.raises(TypeError, match="html must be a string"):
             convert(None)  # type: ignore[arg-type]
