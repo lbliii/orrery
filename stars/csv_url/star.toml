@@ -1,0 +1,25 @@
+[star]
+name = "orrery/csv-url"
+version = "0.1.0"
+description = "Bounded typed rows from named allowlisted public CSV datasets"
+publisher = "orrery"
+publisher_key_id_env = "ORRERY_CSV_URL_KEY_ID"
+direct_mcp_path = "/stars/csv-url/mcp"
+tools = ["get"]
+[pricing]
+unit = "call"
+price_per_call = "0.00"
+currency = "USD"
+[runtime]
+python_package = "stars.csv_url"
+skill_factory = "stars.csv_url.skill:build_skill"
+[policy]
+allowed_egress = ["https://raw.githubusercontent.com"]
+freshness = "at_call"
+redirects = "deny"
+max_response_bytes = 524288
+[receipt]
+schema_version = "1"
+algorithm = "Ed25519"
+[publish]
+corpus = "stars.csv_url.corpus:CORPUS"
