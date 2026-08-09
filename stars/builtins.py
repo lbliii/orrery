@@ -25,6 +25,7 @@ BUILTIN_STAR_PACKAGES = (
     "stars.table_fresh",
     "stars.pypi_release",
     "stars.npm_release",
+    "stars.gh_file_at_ref",
     "stars.source_watch",
     "stars.world_time",
 )
