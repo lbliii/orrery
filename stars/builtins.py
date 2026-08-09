@@ -21,6 +21,7 @@ BUILTIN_STAR_PACKAGES = (
     "stars.csv_url",
     "stars.table_diff",
     "stars.row_lookup",
+    "stars.row_validate",
     "stars.source_watch",
     "stars.world_time",
 )

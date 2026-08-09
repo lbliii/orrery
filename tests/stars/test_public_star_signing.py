@@ -11,6 +11,7 @@ from stars.csv_url.skill import build_skill as build_csv
 from stars.html_to_pdf.skill import build_skill as build_pdf
 from stars.http_head.skill import build_skill as build_head
 from stars.row_lookup.skill import build_skill as build_row_lookup
+from stars.row_validate.skill import build_skill as build_row_validate
 from stars.source_watch.skill import build_skill as build_watch
 from stars.spdx_license.skill import build_skill as build_spdx
 from stars.table_diff.skill import build_skill as build_table_diff
@@ -50,12 +51,14 @@ def test_global_public_star_key_is_stable_and_verifies_all_factory_envelopes(
     import stars.csv_url.skill as csv_module
     import stars.http_head.skill as head_module
     import stars.row_lookup.skill as row_lookup_module
+    import stars.row_validate.skill as row_validate_module
     import stars.spdx_license.skill as spdx_module
     import stars.table_diff.skill as table_diff_module
 
     csv_module.get_dataset = lambda _dataset: {"dataset": "flights-airport"}
     head_module.observe_head = lambda _target: {"status": 200}
     row_lookup_module.lookup_row = lambda _dataset, _key: {"row": {"count": 853}}
+    row_validate_module.validate_row = lambda _profile, _row: {"valid": True}
     spdx_module.get_license = lambda _license_id: {"license_id": "MIT"}
     table_diff_module.diff_tables = lambda _left, _right, _key: {"changed_count": 0}
     factories = {
@@ -79,6 +82,14 @@ def test_global_public_star_key_is_stable_and_verifies_all_factory_envelopes(
             build_row_lookup,
             "lookup",
             {"dataset": "flights-airport", "key": {"origin": "ABE", "destination": "ATL"}},
+        ),
+        "orrery/row-validate": (
+            build_row_validate,
+            "validate",
+            {
+                "profile": "flights-airport",
+                "row": {"origin": "ABE", "destination": "ATL", "count": 853},
+            },
         ),
     }
     first = {name: factory() for name, (factory, _, _) in factories.items()}
@@ -115,6 +126,7 @@ def test_production_public_stars_fail_without_valid_config(
         "ORRERY_CSV_URL_PRIVATE_KEY",
         "ORRERY_TABLE_DIFF_PRIVATE_KEY",
         "ORRERY_ROW_LOOKUP_PRIVATE_KEY",
+        "ORRERY_ROW_VALIDATE_PRIVATE_KEY",
     ):
         monkeypatch.delenv(name, raising=False)
     if key is not None:
@@ -129,6 +141,7 @@ def test_production_public_stars_fail_without_valid_config(
         build_csv,
         build_table_diff,
         build_row_lookup,
+        build_row_validate,
     ):
         with pytest.raises((RuntimeError, ValueError)):
             factory()
