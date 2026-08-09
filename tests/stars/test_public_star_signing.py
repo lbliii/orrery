@@ -12,6 +12,7 @@ from stars.html_to_pdf.skill import build_skill as build_pdf
 from stars.http_head.skill import build_skill as build_head
 from stars.source_watch.skill import build_skill as build_watch
 from stars.spdx_license.skill import build_skill as build_spdx
+from stars.table_diff.skill import build_skill as build_table_diff
 from stars.well_known.skill import build_skill as build_well_known
 from stars.world_time.skill import build_skill as build_time
 
@@ -48,10 +49,12 @@ def test_global_public_star_key_is_stable_and_verifies_all_factory_envelopes(
     import stars.csv_url.skill as csv_module
     import stars.http_head.skill as head_module
     import stars.spdx_license.skill as spdx_module
+    import stars.table_diff.skill as table_diff_module
 
     csv_module.get_dataset = lambda _dataset: {"dataset": "flights-airport"}
     head_module.observe_head = lambda _target: {"status": 200}
     spdx_module.get_license = lambda _license_id: {"license_id": "MIT"}
+    table_diff_module.diff_tables = lambda _left, _right, _key: {"changed_count": 0}
     factories = {
         "orrery/html-to-pdf": (build_pdf, "health", {}),
         "orrery/world-time": (build_time, "fetch", {}),
@@ -60,6 +63,15 @@ def test_global_public_star_key_is_stable_and_verifies_all_factory_envelopes(
         "orrery/well-known": (build_well_known, "read", {}),
         "orrery/spdx-license": (build_spdx, "get", {}),
         "orrery/csv-url": (build_csv, "get", {}),
+        "orrery/table-diff": (
+            build_table_diff,
+            "diff",
+            {
+                "left": {"rows": [{"id": "a"}]},
+                "right": {"rows": [{"id": "a"}]},
+                "key_column": "id",
+            },
+        ),
     }
     first = {name: factory() for name, (factory, _, _) in factories.items()}
     second = {name: factory() for name, (factory, _, _) in factories.items()}
@@ -93,6 +105,7 @@ def test_production_public_stars_fail_without_valid_config(
         "ORRERY_WELL_KNOWN_PRIVATE_KEY",
         "ORRERY_SPDX_LICENSE_PRIVATE_KEY",
         "ORRERY_CSV_URL_PRIVATE_KEY",
+        "ORRERY_TABLE_DIFF_PRIVATE_KEY",
     ):
         monkeypatch.delenv(name, raising=False)
     if key is not None:
@@ -105,6 +118,7 @@ def test_production_public_stars_fail_without_valid_config(
         build_well_known,
         build_spdx,
         build_csv,
+        build_table_diff,
     ):
         with pytest.raises((RuntimeError, ValueError)):
             factory()
