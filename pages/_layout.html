@@ -35,7 +35,6 @@
           <a href="/stars"{% if nav.stars %} aria-current="page"{% end %}>Stars</a>
           <a href="/constellations"{% if nav.constellations %} aria-current="page"{% end %}>Constellations</a>
           <a href="/namespaces"{% if nav.namespaces %} aria-current="page"{% end %}>Namespaces</a>
-          <a href="/console"{% if nav.console %} aria-current="page"{% end %}>Console</a>
         </nav>
       </header>
 
@@ -45,7 +44,10 @@
 
       <footer class="footer">
         <span>{{ footer_note ?? "Orrery · skills you point at, not install" }}</span>
-        <span class="mono">{{ footer_meta ?? "gaze → resolve → call" }}</span>
+        <span class="mono">
+          <a href="/console">Ops · console</a>
+          · {{ footer_meta ?? "gaze → resolve → call" }}
+        </span>
       </footer>
     </div>
     <script src="/static/motion.js"></script>

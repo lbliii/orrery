@@ -20,7 +20,7 @@ The product surfaces are implemented as Chirp filesystem-routed pages in [`pages
 | `/namespaces` | Private tenancy pitch |
 | `/api/resolve?name=` | JSON resolve record (Skill DNS) |
 
-The same process is also a dogfood MCP host ([#964](https://github.com/lbliii/chirp/issues/964) / [#985](https://github.com/lbliii/chirp/issues/985)): aggregated `/mcp`, discovery at `/skills`, a reliability `/console`, six dogfood skills (gaze, resolve, html-to-pdf plumbing stub, world-time reactive spike, source-watch), and publish-oracle smoke. Resolve records are synchronized from the live registry after the publish gate.
+The same process is also a dogfood MCP host ([#964](https://github.com/lbliii/chirp/issues/964) / [#985](https://github.com/lbliii/chirp/issues/985)): aggregated `/mcp`, discovery at `/skills`, dogfood skills (gaze, resolve, html-to-pdf, world-time, source-watch, launch-gate), and publish-oracle smoke. **Product trust** is the Resolve/Star oracle pill (`check · freeze · smoke`). Host ops live at `/console` (Chirp reliability console — not part of the night-observatory product chrome). Resolve records are synced from mounted skill manifests in [`catalog/`](./catalog/).
 
 ### Reactive star (`orrery/world-time`)
 
@@ -56,7 +56,7 @@ uv sync --group dev
 uv run python app.py
 ```
 
-Open `/` for the brand + live feed, browse `/gaze`, `/resolve`, `/stars`, `/constellations`, `/namespaces`, check reliability at `/console`, or point an MCP client at `/mcp`.
+Open `/` for the brand + live feed, browse `/gaze`, `/resolve`, `/stars`, `/constellations`, `/namespaces`, or point an MCP client at `/mcp`. Host reliability ops: `/console` (footer **Ops · console**).
 
 ```bash
 # List tools (modern Streamable HTTP headers)

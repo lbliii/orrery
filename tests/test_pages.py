@@ -10,9 +10,9 @@ import json
 
 import pytest
 from chirp.testing import TestClient
+from test_app import _modern_mcp_headers, _modern_mcp_params
 
 from catalog import CATALOG, Catalog, ResolveRecord
-from test_app import _modern_mcp_headers, _modern_mcp_params
 
 
 @pytest.mark.issue(18)
@@ -111,10 +111,17 @@ class TestBrandChrome:
                 r = await client.get(path)
                 assert r.status == 200, path
                 assert 'class="topbar"' in r.text, path
-                assert 'href="/console"' in r.text, path
                 assert 'class="cosmos"' in r.text, path
                 assert "/static/styles.css" in r.text, path
                 assert "fonts.googleapis.com" in r.text, path
+                # Ops console is footer-only — not primary product nav.
+                assert ">Ops · console<" in r.text, path
+                assert 'aria-label="Primary"' in r.text, path
+                nav_start = r.text.index('aria-label="Primary"')
+                nav_end = r.text.index("</nav>", nav_start)
+                primary = r.text[nav_start:nav_end]
+                assert "/console" not in primary, path
+                assert ">Console<" not in primary, path
 
     async def test_active_nav_marked_per_page(self, example_app) -> None:
         async with TestClient(example_app) as client:

@@ -3,16 +3,24 @@
 Reads the host :class:`~chirp.skill.publish.PublishReceipt` (check → freeze →
 smoke) and per-skill :class:`~chirp.skill.console.ReliabilityScore` values so
 public oracle pills agree with ``/console``.
+
+Host product readiness is **check + freeze** only. Smoke is attributed per
+skill via :data:`TOOL_SKILL` so one corpus miss does not paint every star.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
+
+from chirp.skill.console import ReliabilityScore
+from chirp.skill.publish import STAGE_CHECK, STAGE_FREEZE
+from chirp.skill.smoke import SmokeReport
 
 if TYPE_CHECKING:
     from chirp.skill.console import ReliabilityStore
     from chirp.skill.publish import PublishReceipt
+    from chirp.skill.registry import SkillRegistry
 
     from catalog.models import ResolveRecord
 
@@ -20,6 +28,7 @@ if TYPE_CHECKING:
 RECORD_SKILL: dict[str, str] = {
     "orrery/html-to-pdf": "html-to-pdf",
     "orrery/world-time": "world-time",
+    "orrery/source-watch": "source-watch",
 }
 
 #: MCP tool → owning skill (for per-skill smoke attribution).
@@ -34,10 +43,16 @@ TOOL_SKILL: dict[str, str] = {
     "fetch": "world-time",
     "get": "world-time",
     "answer": "world-time",
+    "observe": "source-watch",
+    "diff": "source-watch",
+    "source_watch_answer": "source-watch",
     "run": "launch-gate",
     "status": "launch-gate",
     "explain_policy": "launch-gate",
 }
+
+#: Publish-gate stages that gate the *host* (product chrome), not per-skill smoke.
+_HOST_STAGES: frozenset[str] = frozenset({STAGE_CHECK, STAGE_FREEZE})
 
 _receipt: PublishReceipt | None = None
 _scores: ReliabilityStore | None = None
@@ -54,6 +69,55 @@ def configure_oracle(
     _scores = scores
 
 
+def smoke_slice_for_skill(report: SmokeReport, skill_name: str) -> SmokeReport | None:
+    """Return smoke results owned by ``skill_name``, or ``None`` if none."""
+    results = tuple(r for r in report.results if TOOL_SKILL.get(r.tool) == skill_name)
+    if not results:
+        return None
+    return SmokeReport(results=results)
+
+
+def record_skill_scores(
+    scores: ReliabilityStore,
+    report: SmokeReport,
+    *,
+    skill_names: tuple[str, ...] | None = None,
+) -> dict[str, ReliabilityScore]:
+    """Record per-skill :class:`ReliabilityScore` slices into ``scores``.
+
+    Skills with no corpus prompts are left unscored (unknown). When
+    ``skill_names`` is omitted, every skill that owns at least one result in
+    ``report`` is recorded.
+    """
+    if skill_names is None:
+        names = tuple(
+            sorted({TOOL_SKILL[r.tool] for r in report.results if r.tool in TOOL_SKILL})
+        )
+    else:
+        names = skill_names
+
+    recorded: dict[str, ReliabilityScore] = {}
+    for name in names:
+        sliced = smoke_slice_for_skill(report, name)
+        if sliced is None:
+            continue
+        recorded[name] = scores.record(name, sliced)
+    return recorded
+
+
+def record_skill_scores_from_registry(
+    scores: ReliabilityStore,
+    report: SmokeReport,
+    registry: SkillRegistry,
+) -> dict[str, ReliabilityScore]:
+    """Record slices for every skill currently mounted on ``registry``."""
+    return record_skill_scores(
+        scores,
+        report,
+        skill_names=tuple(s.name for s in registry.skills()),
+    )
+
+
 @dataclass(frozen=True, slots=True)
 class OracleView:
     """Renderable publish-oracle status for one catalog record."""
@@ -67,9 +131,7 @@ class OracleView:
     def ok(self) -> bool:
         if not self.host_ok:
             return False
-        if self.skill_ok is False:
-            return False
-        return True
+        return self.skill_ok is not False
 
     @property
     def pill_class(self) -> str:
@@ -88,7 +150,11 @@ class OracleView:
         if not self.stages:
             return "unscored"
         if not self.host_ok:
-            failed = [name for name, passed, _ in self.stages if not passed]
+            failed = [
+                name
+                for name, passed, _ in self.stages
+                if not passed and name in _HOST_STAGES
+            ]
             if failed:
                 return " · ".join(failed) + " fail"
             return "publish fail"
@@ -110,9 +176,17 @@ def _stage_rows(receipt: PublishReceipt | None) -> tuple[tuple[str, bool, str], 
 
 
 def _host_ok(receipt: PublishReceipt | None) -> bool:
+    """Host product gate: check + freeze must pass (smoke is per-skill)."""
     if receipt is None:
         return False
-    return bool(receipt.passed)
+    host_stages = [
+        stage
+        for stage in receipt.stages
+        if str(getattr(stage, "name", "") or "") in _HOST_STAGES
+    ]
+    if not host_stages:
+        return False
+    return all(bool(getattr(stage, "passed", False)) for stage in host_stages)
 
 
 def _skill_smoke_ok(skill_name: str | None) -> bool | None:
@@ -120,11 +194,10 @@ def _skill_smoke_ok(skill_name: str | None) -> bool | None:
         return None
     if _receipt is None or _receipt.smoke is None:
         return None
-    results = _receipt.smoke.results
-    relevant = [r for r in results if TOOL_SKILL.get(r.tool) == skill_name]
-    if not relevant:
+    sliced = smoke_slice_for_skill(_receipt.smoke, skill_name)
+    if sliced is None:
         return None
-    return all(r.verdict.passed for r in relevant)
+    return sliced.passed
 
 
 def _reliability_label(skill_name: str | None) -> str:
