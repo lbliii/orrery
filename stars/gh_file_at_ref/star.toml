@@ -1,0 +1,25 @@
+[star]
+name="orrery/gh-file-at-ref"
+version="0.1.0"
+description="Bounded fixed GitHub file retrieval pinned to a full commit SHA"
+publisher="orrery"
+publisher_key_id_env="ORRERY_GH_FILE_AT_REF_KEY_ID"
+direct_mcp_path="/stars/gh-file-at-ref/mcp"
+tools=["get"]
+[pricing]
+unit="call"
+price_per_call="0.00"
+currency="USD"
+[runtime]
+python_package="stars.gh_file_at_ref"
+skill_factory="stars.gh_file_at_ref.skill:build_skill"
+[policy]
+allowed_egress=["https://api.github.com"]
+freshness="at_call"
+redirects="deny"
+max_response_bytes=524288
+[receipt]
+schema_version="1"
+algorithm="Ed25519"
+[publish]
+corpus="stars.gh_file_at_ref.corpus:CORPUS"
