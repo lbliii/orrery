@@ -25,6 +25,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from catalog import CATALOG, GAZE_DEFAULT_LIMIT, GAZE_MAX_LIMIT
 from catalog.constellation_run import explain_policy, run_constellation, status_for_run
+from public_keys import key_set_url
 from stars.html_to_pdf.skill import build_skill as build_html_to_pdf_star
 from stars.source_watch.skill import build_skill as build_source_watch_star
 from stars.world_time.service import fetch_live_utc as _fetch_live_utc
@@ -152,6 +153,11 @@ def build_resolve_skill(*, private_key: Any | None = None) -> Skill:
         if record is None:
             return {"error": "not_found", "name": name, "status": "not_found"}
         payload = record.as_dict()
+        # The aggregate MCP tool has no request object; deployments should set
+        # ORRERY_PUBLIC_ORIGIN. The public host is the safe discovery fallback.
+        payload["public_key_url"] = key_set_url(
+            os.environ.get("ORRERY_PUBLIC_ORIGIN", "https://orrery.lol")
+        )
         payload["status"] = "resolved"
         return payload
 

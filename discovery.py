@@ -182,6 +182,7 @@ def server_card(origin: str) -> dict[str, Any]:
         ),
         "homepage": f"{origin}/connect",
         "documentation": f"{origin}/llms.txt",
+        "envelope_keys": f"{origin}/.well-known/orrery/keys.json",
         "transport": {
             "type": "streamable-http",
             "endpoint": endpoint,
@@ -234,6 +235,7 @@ def mcp_manifest(origin: str) -> dict[str, Any]:
         "registration": {"dynamic": False},
         "documentation": f"{origin}/llms.txt",
         "homepage": f"{origin}/connect",
+        "envelope_keys": f"{origin}/.well-known/orrery/keys.json",
     }
 
 
@@ -257,6 +259,8 @@ def llms_txt(origin: str) -> str:
         f"- [MCP endpoint]({endpoint}): streamable HTTP; no Authorization header",
         f"- [Skill discovery]({origin}/skills): Chirp JSON skill list",
         f"- [Health]({origin}/health): liveness probe",
+        f"- [Envelope verification keys]({origin}/.well-known/orrery/keys.json): "
+        "Ed25519 public keys",
         "",
         "## Teaching trio (cohort A)",
         "",

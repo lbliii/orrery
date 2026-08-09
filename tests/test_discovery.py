@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import base64
 import json
 
 import pytest
 from chirp.testing import TestClient
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from discovery import (
     MCP_TOOLS,
@@ -14,6 +16,7 @@ from discovery import (
     mcp_endpoint,
     resolve_public_origin,
 )
+from public_keys import public_key_set
 
 HOST = {"Host": "orrery.lol"}
 
@@ -101,6 +104,7 @@ async def test_mcp_server_card(discovery_app) -> None:
         assert card["serverInfo"]["name"] == "orrery"
         assert card["transport"]["endpoint"] == "https://orrery.lol/mcp"
         assert card["authentication"]["required"] is False
+        assert card["envelope_keys"] == "https://orrery.lol/.well-known/orrery/keys.json"
         names = {t["name"] for t in card["tools"]}
         assert names == {t["name"] for t in MCP_TOOLS}
 
@@ -116,6 +120,55 @@ async def test_mcp_manifest_and_alias(discovery_app) -> None:
         assert body["endpoints"]["streamable_http"] == mcp_endpoint("https://orrery.lol")
         assert body["authentication"]["required"] is False
         assert json.loads(alias.text) == body
+        assert body["envelope_keys"] == "https://orrery.lol/.well-known/orrery/keys.json"
+
+
+@pytest.mark.asyncio
+async def test_public_envelope_key_set_is_cacheable_and_matches_resolve_key(discovery_app) -> None:
+    async with TestClient(discovery_app) as client:
+        resolved = await client.get("/api/resolve?name=orrery/html-to-pdf", headers=HOST)
+        keys = await client.get("/.well-known/orrery/keys.json", headers=HOST)
+        assert resolved.status == keys.status == 200
+        assert "max-age=3600" in (_header(keys, "cache-control") or "")
+        record, key_set = json.loads(resolved.text), json.loads(keys.text)
+        assert record["public_key_url"] == "https://orrery.lol/.well-known/orrery/keys.json"
+        key = next(item for item in key_set["keys"] if item["kid"] == record["key_id"])
+        assert key["kty"] == "OKP" and key["crv"] == "Ed25519"
+        assert key["alg"] == "EdDSA" and key["envelope_alg"] == record["alg"]
+
+
+def test_key_set_enables_standalone_canonical_envelope_verification() -> None:
+    from stars.html_to_pdf.skill import build_skill
+
+    skill = build_skill()
+    envelope = next(tool for tool in skill._pending if tool.name == "convert").handler(
+        html="<p>x</p>"
+    )
+    wire = envelope.to_wire()
+    entry = next(
+        item
+        for item in public_key_set({"orrery/html-to-pdf": skill}, origin="https://example.test")[
+            "keys"
+        ]
+        if item["kid"] == wire["key_id"]
+    )
+    fields = {
+        name: wire[name]
+        for name in (
+            "payload",
+            "skill",
+            "version",
+            "tool",
+            "nonce",
+            "input_digest",
+            "key_id",
+            "alg",
+        )
+    }
+    message = json.dumps(fields, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+    encoded = str(entry["x"])
+    public = base64.urlsafe_b64decode(encoded + "=" * (-len(encoded) % 4))
+    Ed25519PublicKey.from_public_bytes(public).verify(base64.b64decode(wire["signature"]), message)
 
 
 @pytest.mark.asyncio
