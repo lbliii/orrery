@@ -20,5 +20,6 @@ def context(request: Request) -> dict:
             "stars": path.startswith("/stars"),
             "constellations": path.startswith("/constellations"),
             "namespaces": path.startswith("/namespaces"),
+            "console": path.startswith("/console"),
         },
     }

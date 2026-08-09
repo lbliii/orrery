@@ -7,6 +7,7 @@ https://github.com/lbliii/orrery/issues/11 (dogfood corpus).
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 from typing import Any
 
@@ -174,3 +175,58 @@ class TestOrreryHostFoundation:
         assert receipt.passed, receipt.to_dict()
         assert receipt.smoke is not None
         assert receipt.smoke.passed
+
+
+@pytest.mark.issue(34)
+class TestPublishOracleSurface:
+    async def test_resolve_shows_unscored_when_publish_skipped(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/resolve")
+            assert r.status == 200
+            assert "unscored" in r.text
+            assert "sha256:" in r.text
+
+    def test_oracle_ok_after_publish_gate(
+        self, example_app, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.delenv("ORRERY_SKIP_PUBLISH", raising=False)
+        monkeypatch.setenv(
+            "ORRERY_WORLD_TIME_JSON",
+            json.dumps(
+                {
+                    "dateTime": "2026-08-08T12:00:00",
+                    "date": "08/08/2026",
+                    "time": "12:00",
+                    "timeZone": "UTC",
+                    "dayOfWeek": "Saturday",
+                }
+            ),
+        )
+        import importlib.util
+        import sys
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parent.parent
+        for name in list(sys.modules):
+            if name.startswith("orrery_app_") or name == "dogfood":
+                sys.modules.pop(name, None)
+        spec = importlib.util.spec_from_file_location(
+            "orrery_app_oracle_test", root / "app.py"
+        )
+        assert spec is not None and spec.loader is not None
+        module = importlib.util.module_from_spec(spec)
+        sys.path.insert(0, str(root))
+        try:
+            spec.loader.exec_module(module)
+        finally:
+            with contextlib.suppress(ValueError):
+                sys.path.remove(str(root))
+
+        from catalog import CATALOG
+        from trust.oracle import oracle_for
+
+        pdf = CATALOG.resolve("orrery/html-to-pdf")
+        assert pdf is not None
+        assert pdf.content_digest.startswith("sha256:")
+        assert pdf.oracle_ok is True
+        assert oracle_for(pdf).pill_text == "check · freeze · smoke"

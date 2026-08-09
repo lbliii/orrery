@@ -42,11 +42,14 @@ from chirp.skill import (
     mount_console,
     mount_skills,
 )
-from chirp.skill.smoke import render_faithful_answer, run_smoke
+from chirp.skill.smoke import render_faithful_answer
+from chirp.skill.publish import run_publish_gate
 
 from catalog import CATALOG
+from catalog.sync import refresh_catalog
 from commerce import charge_on_verify, refund_on_forge
 from dogfood import DOGFOOD_CORPUS, build_dogfood_skills, verify_receipt
+from trust.oracle import configure_oracle
 
 _ROOT = Path(__file__).parent
 PAGES_DIR = _ROOT / "pages"
@@ -243,18 +246,24 @@ async def api_envelope_verify(request: Request) -> JSONResponse:
     )
 
 
-# Publish-oracle dogfood: freeze + smoke after all routes are registered so the
-# console shows ReliabilityScore values. Skip with ORRERY_SKIP_PUBLISH=1.
-# Also skip ``run_smoke`` when an event loop is already running (async pytest
-# loaders) — ``asyncio.run`` inside ``run_smoke`` cannot nest.
+# Publish-oracle dogfood: check → freeze → smoke, then sync the Skill DNS
+# catalog from real manifests. Skip with ORRERY_SKIP_PUBLISH=1 (async pytest).
+_publish_receipt = None
 if os.environ.get("ORRERY_SKIP_PUBLISH", "").strip() not in ("1", "true", "True"):
-    app.freeze()
     try:
         asyncio.get_running_loop()
     except RuntimeError:
-        _smoke = run_smoke(app, DOGFOOD_CORPUS, answer_fn=render_faithful_answer)
-        for _skill in registry.skills():
-            scores.record(_skill.name, _smoke)
+        _publish_receipt = run_publish_gate(
+            app,
+            DOGFOOD_CORPUS,
+            answer_fn=render_faithful_answer,
+        )
+        if _publish_receipt.smoke is not None:
+            for _skill in registry.skills():
+                scores.record(_skill.name, _publish_receipt.smoke)
+
+configure_oracle(receipt=_publish_receipt, scores=scores)
+refresh_catalog(registry, receipt=_publish_receipt)
 
 
 if __name__ == "__main__":

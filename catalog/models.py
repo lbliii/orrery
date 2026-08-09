@@ -59,6 +59,15 @@ class ResolveRecord:
         return bool(self.price_per_call)
 
     @property
+    def is_free(self) -> bool:
+        return not self.is_paid
+
+    @property
+    def pricing_label(self) -> str:
+        """Human-facing toll label for UI and gaze blurbs."""
+        return self.price_per_call if self.is_paid else "Free"
+
+    @property
     def tools_display(self) -> str:
         """Comma-joined tool list for templates."""
         return ", ".join(self.tools)

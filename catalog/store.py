@@ -9,7 +9,7 @@ reads the same index — one seed list, two product surfaces.
 
 from __future__ import annotations
 
-from .fixtures import SEED_RECORDS
+from .fixtures import CONSTELLATION_SEEDS
 from .gaze import (
     GAZE_NODE_TOOLS,
     GazeHit,
@@ -25,7 +25,12 @@ from .models import ResolveRecord
 class Catalog:
     """A resolvable index of skill records keyed by name."""
 
-    def __init__(self, records: tuple[ResolveRecord, ...] = SEED_RECORDS) -> None:
+    def __init__(self, records: tuple[ResolveRecord, ...] = CONSTELLATION_SEEDS) -> None:
+        self._records = records
+        self._by_name = {r.name: r for r in records}
+
+    def reload(self, records: tuple[ResolveRecord, ...]) -> None:
+        """Replace index contents in place (keeps importers on the same instance)."""
         self._records = records
         self._by_name = {r.name: r for r in records}
 
@@ -111,7 +116,7 @@ class Catalog:
         record = self.resolve(name)
         if record is None:
             return {"error": "not_found", "name": name, "status": "not_found"}
-        return {
+        payload: dict[str, object] = {
             "name": record.name,
             "version": record.version,
             "kind": record.kind,
@@ -126,6 +131,18 @@ class Catalog:
             "href": record.href,
             "status": "ok",
         }
+        if record.kind == "constellation":
+            from .constellation import policy_for
+
+            graph = policy_for(record.name)
+            if graph is not None:
+                payload["policy_digest"] = record.content_digest
+                payload["policy_nodes"] = [n.id for n in graph.nodes]
+                payload["policy_edges"] = [
+                    {"source": e.source, "target": e.target, "kind": e.kind}
+                    for e in graph.edges
+                ]
+        return payload
 
     def list_constellations(self, *, node: str | None = None) -> tuple[GazeHit, ...]:
         """Constellation-kind records (optionally scoped to a gaze node)."""
@@ -196,5 +213,11 @@ class Catalog:
         return tuple(hit_from_record(r) for r in self.records_for_node(key))
 
 
-#: Process-wide catalog seeded from the design mocks.
+#: Process-wide catalog; refreshed from live manifests after publish-oracle.
 CATALOG = Catalog()
+
+
+def replace_catalog(records: tuple[ResolveRecord, ...]) -> Catalog:
+    """Refresh the process-wide catalog after publish-oracle manifest sync."""
+    CATALOG.reload(records)
+    return CATALOG
