@@ -147,7 +147,7 @@ class TestSourceWatch:
 
         record = CATALOG.resolve("orrery/source-watch")
         assert record is not None
-        assert record.endpoint == "mcp://orrery.dev/stars/source-watch/mcp"
+        assert record.endpoint == "mcp://orrery.lol/stars/source-watch/mcp"
         assert record.tools == ("observe", "diff", "answer")
         hits = CATALOG.match("official release notes", node="public")
         assert any(hit.name == "orrery/source-watch" for hit in hits)

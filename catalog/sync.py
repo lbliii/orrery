@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 
 from stars._core import StarRegistry
 
+from .dns import mcp_url
 from .fixtures import CONSTELLATION_SEEDS
 from .models import ResolveRecord
 from .store import replace_catalog
@@ -17,7 +18,7 @@ if TYPE_CHECKING:
 
 def _direct_endpoint(path: str) -> str:
     """Render the public direct MCP endpoint from a Star manifest path."""
-    return f"mcp://orrery.dev{path}"
+    return mcp_url(path)
 
 
 def build_star_records(

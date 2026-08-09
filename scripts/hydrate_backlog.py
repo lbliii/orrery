@@ -116,10 +116,10 @@ Gaze → Resolve → Call → Verify
 Addresses (from mocks):
 
 ```
-mcp://orrery.dev/gaze
-mcp://acme.orrery.dev/gaze
-mcp://acme.orrery.dev/constellations/docs-gate
-mcp://orrery.dev/s/html-to-pdf
+mcp://orrery.lol/gaze
+mcp://acme.orrery.lol/gaze
+mcp://acme.orrery.lol/constellations/docs-gate
+mcp://orrery.lol/s/html-to-pdf
 ```
 
 ## Workstreams (epics)
@@ -199,7 +199,7 @@ The live app matches the validated night-observatory mocks: cosmos background, b
         body="""**Parent saga:** see saga issue.
 
 **Outcome**
-Gaze is real discovery: MCP node at `mcp://orrery.dev/gaze` (and later `{tenant}.orrery.dev/gaze`) with tools `search`, `match`, `resolve`, `describe`, `list_constellations`. Human console replaces Alpine static data in `design/gaze.html`. Progressive disclosure: descriptions + prices only — no payloads.
+Gaze is real discovery: MCP node at `mcp://orrery.lol/gaze` (and later `{tenant}.orrery.lol/gaze`) with tools `search`, `match`, `resolve`, `describe`, `list_constellations`. Human console replaces Alpine static data in `design/gaze.html`. Progressive disclosure: descriptions + prices only — no payloads.
 
 **Evidence**
 - `design/gaze.html` node model (`public` / `acme` / `docs-gate`) and `match(intent)` response shape.
@@ -262,7 +262,7 @@ Star pages and MCP star endpoints match `design/star.html`: endpoint, tools, dig
 Private namespaces (`acme/*`) are the SaaS wedge: tenant subdomain gaze/resolve, scoped stars, allowlisted callers, Envelope retention, seat billing model (schema first). “Create namespace” CTA from `design/namespace.html` becomes a provisioning flow.
 
 **Evidence**
-- `design/namespace.html` feature list + `mcp://acme.orrery.dev/…` addressing.
+- `design/namespace.html` feature list + `mcp://acme.orrery.lol/…` addressing.
 - Public free / namespace paid framing in mocks.
 
 **Exit criteria**
@@ -602,7 +602,7 @@ Ship `mcp://…/s/html-to-pdf` (or equivalent) with tools `convert` + `health` a
         body="""**Parent epic:** Namespaces
 
 **Outcome**
-ADR: `mcp://acme.orrery.dev/…` (mock) vs path-based tenancy for MVP. Document DNS/host requirements for Railway.
+ADR: `mcp://acme.orrery.lol/…` (mock) vs path-based tenancy for MVP. Document DNS/host requirements for Railway.
 
 **Acceptance**
 - [ ] Written decision in repo docs.

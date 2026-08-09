@@ -115,9 +115,7 @@ def explain_policy(name: str = "acme/launch-gate") -> dict[str, Any]:
 
     narrative: list[str] = [
         f"Constellation {name} evaluates {len(gate_nodes)} gates before release.",
-        "Gate order: "
-        + " → ".join(n.label for n in gate_nodes)
-        + " → release.",
+        "Gate order: " + " → ".join(n.label for n in gate_nodes) + " → release.",
     ]
     if graph.repair_loop_max and repair is not None:
         narrative.append(
@@ -125,12 +123,9 @@ def explain_policy(name: str = "acme/launch-gate") -> dict[str, Any]:
             f"up to {graph.repair_loop_max} times."
         )
     for target, sources in fan_in.items():
-        narrative.append(
-            f"Fan-in: {target} collects evidence from {', '.join(sources)}."
-        )
+        narrative.append(f"Fan-in: {target} collects evidence from {', '.join(sources)}.")
     narrative.append(
-        f"Release composite is signed under {graph.release_key_id} "
-        f"({graph.release_digest})."
+        f"Release composite is signed under {graph.release_key_id} ({graph.release_digest})."
     )
 
     return {

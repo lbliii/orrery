@@ -369,7 +369,7 @@ DOGFOOD_CORPUS: tuple[CorpusPrompt, ...] = (
         required_facts=(
             "orrery/html-to-pdf",
             "resolved",
-            "mcp://orrery.dev/stars/html-to-pdf/mcp",
+            "mcp://orrery.lol/stars/html-to-pdf/mcp",
             "sha256:",
             "orrery-pdf-1",
         ),

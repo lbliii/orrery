@@ -101,7 +101,9 @@ uv run pytest
 
 ## Deploy (Railway)
 
-Live: [https://orrery-production-f7de.up.railway.app](https://orrery-production-f7de.up.railway.app)
+Live: [https://orrery.lol](https://orrery.lol)
+
+Custom domain ``orrery.lol`` is the public HTTP host. Skill DNS resolve records use the same apex as ``mcp://orrery.lol/…`` (override with ``ORRERY_MCP_HOST``).
 
 `Dockerfile` + `railway.toml` live at the repo root. The Railway service is connected to `lbliii/orrery`; merges to `main` rebuild and redeploy automatically (same as pidge). The image install layer re-fetches Chirp at `GIT_REF` because the Dockerfile cache-busts against GitHub's commits API.
 

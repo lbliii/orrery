@@ -31,7 +31,7 @@ class TestResolveSchema:
     def test_resolve_by_full_name(self, example_app) -> None:
         rec = CATALOG.resolve("orrery/html-to-pdf")
         assert rec is not None
-        assert rec.endpoint == "mcp://orrery.dev/stars/html-to-pdf/mcp"
+        assert rec.endpoint == "mcp://orrery.lol/stars/html-to-pdf/mcp"
         assert rec.kind == "star"
 
     def test_resolve_by_bare_and_versioned_name(self, example_app) -> None:
@@ -84,7 +84,7 @@ class TestResolveApi:
             assert r.status == 200
             body = json.loads(r.text)
             assert body["name"] == "orrery/html-to-pdf"
-            assert body["endpoint"] == "mcp://orrery.dev/stars/html-to-pdf/mcp"
+            assert body["endpoint"] == "mcp://orrery.lol/stars/html-to-pdf/mcp"
 
     async def test_api_resolve_404_on_miss(self, example_app) -> None:
         async with TestClient(example_app) as client:
@@ -161,11 +161,11 @@ class TestStarDetail:
             r = await client.get("/stars")
             assert r.status == 200
             assert "orrery/html-to-pdf@1.2.0" in r.text
-            assert "mcp://orrery.dev/stars/html-to-pdf/mcp" in r.text
+            assert "mcp://orrery.lol/stars/html-to-pdf/mcp" in r.text
             assert "Last Envelope" in r.text
             assert "data-receipt" in r.text
             assert 'data-copy-mcp' in r.text
-            assert 'data-mcp-url="mcp://orrery.dev/stars/html-to-pdf/mcp"' in r.text
+            assert 'data-mcp-url="mcp://orrery.lol/stars/html-to-pdf/mcp"' in r.text
             assert "Verified · not forged" in r.text
             assert "input_digest" in r.text
             assert "signature" in r.text
@@ -265,7 +265,7 @@ class TestReactiveWorldTimeStar:
             body = json.loads(r.text)
             assert body["name"] == "orrery/world-time"
             assert body["price_per_call"] is None
-            assert body["endpoint"] == "mcp://orrery.dev/stars/world-time/mcp"
+            assert body["endpoint"] == "mcp://orrery.lol/stars/world-time/mcp"
             assert "payload" not in body
 
     async def test_mcp_answer_returns_signed_envelope(self, example_app) -> None:
@@ -480,7 +480,7 @@ class TestResolveHttpAndMcp:
             assert r.status == 200
             body = json.loads(r.text)
             assert body["name"] == "orrery/html-to-pdf"
-            assert body["endpoint"] == "mcp://orrery.dev/stars/html-to-pdf/mcp"
+            assert body["endpoint"] == "mcp://orrery.lol/stars/html-to-pdf/mcp"
             assert body["key_id"] == "orrery-pdf-1"
 
     async def test_resolve_html_console_still_renders(self, example_app) -> None:
@@ -518,7 +518,7 @@ class TestResolveHttpAndMcp:
             assert called.status == 200
             text = json.loads(called.text)["result"]["content"][0]["text"]
             assert "orrery/html-to-pdf" in text
-            assert "mcp://orrery.dev/stars/html-to-pdf/mcp" in text
+            assert "mcp://orrery.lol/stars/html-to-pdf/mcp" in text
             assert "/console/" not in text
             assert "sha256:" in text
 
@@ -716,7 +716,7 @@ class TestGazeConsole:
             r = await client.get("/gaze")
             assert r.status == 200
             assert "gaze-nodes" in r.text
-            assert "mcp://orrery.dev/gaze" in r.text
+            assert "mcp://orrery.lol/gaze" in r.text
             assert "orrery/html-to-pdf" in r.text
             assert "orrery/world-time" in r.text
             assert "acme/launch-gate" in r.text
