@@ -6,8 +6,8 @@ import base64
 from datetime import UTC, datetime
 
 import pytest
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from chirp.skill import Skill
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from scripts.canary_world_time import parse_envelope, validate_payload, verify
 
