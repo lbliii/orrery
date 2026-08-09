@@ -6,9 +6,13 @@ import json
 import os
 import urllib.error
 import urllib.request
+from datetime import UTC, datetime
+from email.utils import parsedate_to_datetime
 from typing import Any
 
-from .contract import CLONE_WARNING, WORLD_TIME_URL
+from .contract import CLONE_WARNING, FALLBACK_TIME_URL, WORLD_TIME_URL
+
+MAX_UPSTREAM_SKEW_SECONDS = 300
 
 
 def _payload(raw: dict[str, Any], *, source: str) -> dict[str, object]:
@@ -22,6 +26,41 @@ def _payload(raw: dict[str, Any], *, source: str) -> dict[str, object]:
         "source": source,
         "live_at_call": True,
         "clone_warning": CLONE_WARNING,
+    }
+
+
+def _is_fresh_utc(value: object, *, now: datetime | None = None) -> bool:
+    """Return whether an upstream UTC instant is sufficiently recent to claim live truth."""
+    if not isinstance(value, str):
+        return False
+    try:
+        observed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return False
+    if observed.tzinfo is None:
+        observed = observed.replace(tzinfo=UTC)
+    current = now or datetime.now(UTC)
+    return abs((current - observed).total_seconds()) <= MAX_UPSTREAM_SKEW_SECONDS
+
+
+def _fallback_google_date() -> dict[str, Any]:
+    """Use a no-store HTTP Date header only when the primary clock is stale/unavailable."""
+    request = urllib.request.Request(
+        FALLBACK_TIME_URL,
+        headers={
+            "User-Agent": "orrery-world-time/0.1 (+https://github.com/lbliii/orrery)",
+            "Cache-Control": "no-cache",
+        },
+        method="HEAD",
+    )
+    with urllib.request.urlopen(request, timeout=8) as response:
+        header = response.headers.get("Date")
+    if not header:
+        raise ValueError("fallback clock response has no Date header")
+    observed = parsedate_to_datetime(header).astimezone(UTC)
+    return {
+        "dateTime": observed.isoformat().replace("+00:00", "Z"),
+        "timeZone": "UTC",
     }
 
 
@@ -41,27 +80,31 @@ def fetch_live_utc() -> dict[str, object]:
             "Accept": "application/json",
         },
     )
+    primary_error = ""
     try:
         with urllib.request.urlopen(request, timeout=8) as response:
             raw = json.loads(response.read().decode("utf-8"))
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, OSError) as exc:
+        primary_error = f"primary unavailable: {exc}"
+    else:
+        if isinstance(raw, dict) and _is_fresh_utc(raw.get("dateTime")):
+            return _payload(raw, source=WORLD_TIME_URL)
+        primary_error = "primary returned malformed or stale UTC observation"
+
+    try:
+        fallback = _fallback_google_date()
+        if _is_fresh_utc(fallback.get("dateTime")):
+            return _payload(fallback, source=FALLBACK_TIME_URL)
+        raise ValueError("fallback returned stale UTC observation")
+    except (urllib.error.URLError, TimeoutError, OSError, ValueError) as exc:
         return {
             "error": "upstream_unreachable",
-            "detail": str(exc),
+            "detail": f"{primary_error}; fallback unavailable: {exc}",
             "timezone": "UTC",
             "source": WORLD_TIME_URL,
             "live_at_call": True,
             "clone_warning": CLONE_WARNING,
         }
-    if not isinstance(raw, dict):
-        return {
-            "error": "upstream_malformed",
-            "timezone": "UTC",
-            "source": WORLD_TIME_URL,
-            "live_at_call": True,
-            "clone_warning": CLONE_WARNING,
-        }
-    return _payload(raw, source=WORLD_TIME_URL)
 
 
 def fetch() -> dict[str, object]:
