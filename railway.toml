@@ -17,7 +17,11 @@ builder = "dockerfile"
 dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "python app.py"
+# One repository backs the public API and its private managed-worker service.
+# The web service leaves ORRERY_PROCESS_KIND unset; the worker service sets it
+# to `worker` in Railway, so a shared source cannot accidentally run two web
+# replicas instead of consuming the durable queue.
+startCommand = "sh -c 'if [ \"${ORRERY_PROCESS_KIND:-web}\" = \"worker\" ]; then exec python -m runs.worker; else exec python app.py; fi'"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"

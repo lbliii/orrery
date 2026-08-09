@@ -16,6 +16,7 @@ from .queue import (
     QueueLease,
     RedisQueueBackend,
 )
+from .submission import ManagedRunSubmission
 from .worker import (
     JobHandlerRegistry,
     RunWorkerRuntime,
@@ -30,6 +31,7 @@ __all__ = [
     "InMemoryQueueBackend",
     "InMemoryRunRepository",
     "JobHandlerRegistry",
+    "ManagedRunSubmission",
     "ManagedRunWorker",
     "PostgresRunRepository",
     "QueueLease",

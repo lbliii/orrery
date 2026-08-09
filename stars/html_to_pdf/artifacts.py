@@ -59,7 +59,13 @@ class DurablePdfArtifactService:
         self._ttl_seconds = ttl_seconds
         self._clock = clock or (lambda: datetime.now(UTC))
 
-    def publish(self, data: bytes) -> PdfArtifact:
+    def publish(
+        self,
+        data: bytes,
+        *,
+        content_type: str = "application/pdf",
+        filename: str | None = None,
+    ) -> PdfArtifact:
         now = self._clock()
         artifact_id = new_artifact_id()
         digest = hashlib.sha256(data).hexdigest()
@@ -68,8 +74,8 @@ class DurablePdfArtifactService:
             storage_key=artifact_storage_key(artifact_id),
             sha256=digest,
             byte_length=len(data),
-            content_type="application/pdf",
-            filename=f"{artifact_id}.pdf",
+            content_type=content_type,
+            filename=filename or f"{artifact_id}{_extension_for(content_type)}",
             expires_at=now + timedelta(seconds=self._ttl_seconds),
             policy=ArtifactPolicy(access="receipt-holder", retention_class="ephemeral"),
         )
@@ -90,7 +96,6 @@ class DurablePdfArtifactService:
             record is None
             or record.state is not ArtifactState.AVAILABLE
             or record.expires_at <= self._clock()
-            or record.content_type != "application/pdf"
         ):
             return None
         data = self._storage.get(key=record.storage_key)
@@ -133,7 +138,7 @@ class UnconfiguredPdfArtifactService:
     def __init__(self, reason: str) -> None:
         self.reason = reason
 
-    def publish(self, data: bytes) -> PdfArtifact:
+    def publish(self, data: bytes, **_: object) -> PdfArtifact:
         raise ArtifactDeliveryUnavailable(self.reason)
 
     def download(self, artifact_id: str) -> tuple[ArtifactRecord, bytes] | None:
@@ -196,3 +201,9 @@ def configure_pdf_artifacts(
     """Inject a service for app construction and focused integration tests."""
     global pdf_artifacts
     pdf_artifacts = service
+
+
+def _extension_for(content_type: str) -> str:
+    return {"application/pdf": ".pdf", "text/csv": ".csv", "image/png": ".png"}.get(
+        content_type, ".bin"
+    )

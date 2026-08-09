@@ -5,7 +5,7 @@ description = "Render simple HTML to a downloadable PDF with signed receipts"
 publisher = "orrery"
 publisher_key_id_env = "ORRERY_PDF_KEY_ID"
 direct_mcp_path = "/stars/html-to-pdf/mcp"
-tools = ["convert", "health"]
+tools = ["convert", "submit", "result", "health"]
 
 [pricing]
 unit = "call"

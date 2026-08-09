@@ -17,6 +17,7 @@ import time
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import timedelta
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Protocol
 
 from .domain import PostgresRunRepository, RunRecord, RunState
@@ -265,7 +266,13 @@ def build_runtime(
         lease_for=timedelta(seconds=settings.lease_seconds),
         retry_after=timedelta(seconds=settings.retry_seconds),
     )
-    return RunWorkerRuntime(worker, registry or JobHandlerRegistry(), settings)
+    if registry is None:
+        # Import here so the worker runtime remains infrastructure-only until
+        # startup, while production always gets the closed built-in allowlist.
+        from stars.cpu_workloads import build_registry
+
+        registry = build_registry()
+    return RunWorkerRuntime(worker, registry, settings)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -276,8 +283,42 @@ def main(argv: list[str] | None = None) -> int:
     runtime = build_runtime(WorkerSettings.from_env())
     if args.once:
         return 0 if runtime.process_once() else 1
+    _start_health_server()
     runtime.run_forever()
     return 0
+
+
+def _start_health_server() -> None:
+    """Expose only a private liveness probe when Railway assigns ``PORT``.
+
+    The worker has no public domain, but sharing the repository-level Railway
+    healthcheck with the web service means it must answer a lightweight probe.
+    Startup happens only after both durable backends have initialized.
+    """
+    configured_port = os.environ.get("PORT", "").strip()
+    if not configured_port:
+        return
+    port = int(configured_port)
+
+    class HealthHandler(BaseHTTPRequestHandler):
+        def do_GET(self) -> None:
+            if self.path != "/health":
+                self.send_error(404)
+                return
+            body = b'{"status":"ok","role":"managed-worker"}'
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, _format: str, *_args: object) -> None:
+            return
+
+    server = ThreadingHTTPServer(("0.0.0.0", port), HealthHandler)
+    thread = threading.Thread(target=server.serve_forever, name="worker-health", daemon=True)
+    thread.start()
+    logger.info("worker health probe started", extra={"port": port})
 
 
 if __name__ == "__main__":  # pragma: no cover - exercised through module invocation
