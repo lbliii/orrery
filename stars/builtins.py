@@ -19,6 +19,7 @@ BUILTIN_STAR_PACKAGES = (
     "stars.pep_section",
     "stars.spdx_license",
     "stars.csv_url",
+    "stars.table_diff",
     "stars.source_watch",
     "stars.world_time",
 )

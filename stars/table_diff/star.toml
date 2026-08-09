@@ -1,0 +1,25 @@
+[star]
+name = "orrery/table-diff"
+version = "0.1.0"
+description = "Pure bounded comparison of two caller-provided tabular snapshots"
+publisher = "orrery"
+publisher_key_id_env = "ORRERY_TABLE_DIFF_KEY_ID"
+direct_mcp_path = "/stars/table-diff/mcp"
+tools = ["diff"]
+[pricing]
+unit = "call"
+price_per_call = "0.00"
+currency = "USD"
+[runtime]
+python_package = "stars.table_diff"
+skill_factory = "stars.table_diff.skill:build_skill"
+[policy]
+allowed_egress = []
+freshness = "caller_provided"
+redirects = "deny"
+max_response_bytes = 65536
+[receipt]
+schema_version = "1"
+algorithm = "Ed25519"
+[publish]
+corpus = "stars.table_diff.corpus:CORPUS"
