@@ -49,7 +49,7 @@ def test_global_public_star_key_is_stable_and_verifies_all_factory_envelopes(
     import stars.http_head.skill as head_module
     import stars.spdx_license.skill as spdx_module
 
-    csv_module.get_dataset = lambda _dataset: {"dataset": "cars"}
+    csv_module.get_dataset = lambda _dataset: {"dataset": "flights-airport"}
     head_module.observe_head = lambda _target: {"status": 200}
     spdx_module.get_license = lambda _license_id: {"license_id": "MIT"}
     factories = {

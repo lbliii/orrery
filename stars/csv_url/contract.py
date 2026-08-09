@@ -4,10 +4,12 @@ from typing import Final
 
 STAR_NAME: Final = "orrery/csv-url"
 STAR_VERSION: Final = "0.1.0"
-DEFAULT_DATASET: Final = "cars"
+DEFAULT_DATASET: Final = "flights-airport"
 DATASET_URLS: Final = {
     "airports": "https://raw.githubusercontent.com/vega/vega-datasets/main/data/airports.csv",
-    "cars": "https://raw.githubusercontent.com/vega/vega-datasets/main/data/cars.csv",
+    "flights-airport": (
+        "https://raw.githubusercontent.com/vega/vega-datasets/main/data/flights-airport.csv"
+    ),
     "seattle-weather": (
         "https://raw.githubusercontent.com/vega/vega-datasets/main/data/seattle-weather.csv"
     ),
