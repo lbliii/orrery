@@ -18,6 +18,11 @@ The product surfaces are implemented as Chirp filesystem-routed pages in [`pages
 | `/stars` | Star detail — manifest, price, signed Envelope receipt |
 | `/constellations` | Drawn policy graph + composite receipt |
 | `/namespaces` | Private tenancy pitch |
+| `/connect` | Agent onboarding — MCP endpoint, Cursor snippet, discovery links |
+| `/llms.txt` | Compact agent brief (llmstxt.org-style) |
+| `/llms-full.txt` | Tools, direct stars, curl recipe |
+| `/.well-known/mcp/server-card.json` | SEP-1649-shaped MCP server card |
+| `/.well-known/mcp` | SEP-1960-shaped MCP manifest (`/.well-known/mcp.json` alias) |
 | `/api/resolve?name=` | JSON resolve record (Skill DNS) |
 
 The same process is also a dogfood MCP host ([#964](https://github.com/lbliii/chirp/issues/964) / [#985](https://github.com/lbliii/chirp/issues/985)): aggregated `/mcp`, discovery at `/skills`, dogfood skills (gaze, resolve, html-to-pdf, world-time, source-watch, launch-gate), and publish-oracle smoke. **Product trust** is the Resolve/Star oracle pill (`check · freeze · smoke`). Host ops live at `/console` (Chirp reliability console — not part of the night-observatory product chrome). Resolve records are synchronized from the Star registry after the publish gate.
@@ -59,6 +64,8 @@ Strategy ADRs (control plane, prepaid wallet, Stripe top-up):
 | [`docs/adr/0003-stripe-topup.md`](./docs/adr/0003-stripe-topup.md) | Checkout + webhook credit (design only) |
 | [`docs/adr/0004-publisher-direct-call.md`](./docs/adr/0004-publisher-direct-call.md) | Agent → publisher MCP; Orrery is not a proxy |
 
+Strategy plan (vending-machine sky, discovery at scale, dual trust, thin harnesses): [`docs/plan/vending-machine-sky.md`](./docs/plan/vending-machine-sky.md) · saga [#56](https://github.com/lbliii/orrery/issues/56).
+
 Design mocks (validated direction): [`design/`](./design/). Frozen favorite: [`design/v1-night-gold/`](./design/v1-night-gold/).
 
 Design language (identity + system inventory): [`docs/design/identity.md`](./docs/design/identity.md) · [`docs/design/system.md`](./docs/design/system.md).
@@ -70,7 +77,7 @@ uv sync --group dev
 uv run python app.py
 ```
 
-Open `/` for the brand + live feed, browse `/gaze`, `/resolve`, `/stars`, `/constellations`, `/namespaces`, or point an MCP client at `/mcp`. Host reliability ops: `/console` (footer **Ops · console**).
+Open `/` for the brand + live feed, browse `/gaze`, `/resolve`, `/stars`, `/constellations`, `/namespaces`, or point an MCP client at `/mcp`. Agent onboarding: `/connect`, `/llms.txt`, `/.well-known/mcp/server-card.json`. Host reliability ops: `/console` (footer **Ops · console**).
 
 ```bash
 # List tools (modern Streamable HTTP headers)
@@ -103,7 +110,7 @@ uv run pytest
 
 Live: [https://orrery.lol](https://orrery.lol)
 
-Custom domain ``orrery.lol`` is the public HTTP host. Skill DNS resolve records use the same apex as ``mcp://orrery.lol/…`` (override with ``ORRERY_MCP_HOST``).
+Custom domain ``orrery.lol`` is the public HTTP host. Skill DNS resolve records use the same apex as ``mcp://orrery.lol/…`` (override with ``ORRERY_MCP_HOST``). Absolute discovery URLs use ``ORRERY_PUBLIC_ORIGIN`` (falls back to ``https://$RAILWAY_PUBLIC_DOMAIN``, then the request host).
 
 `Dockerfile` + `railway.toml` live at the repo root. The Railway service is connected to `lbliii/orrery`; merges to `main` rebuild and redeploy automatically (same as pidge). The image install layer re-fetches Chirp at `GIT_REF` because the Dockerfile cache-busts against GitHub's commits API.
 
@@ -120,6 +127,7 @@ railway up --service orrery
 | `CHIRP_SECRET_KEY` | generated secret |
 | `CHIRP_LOG_FORMAT` | `json` |
 | `GIT_REF` | `main` (Chirp git ref for the skill stack) |
+| `ORRERY_PUBLIC_ORIGIN` | `https://orrery.lol` |
 
 `AppConfig.from_env()` binds `0.0.0.0:$PORT` on Railway. Healthcheck targets `/health`. Public domain target port must match `$PORT` (8080 on Railway).
 
