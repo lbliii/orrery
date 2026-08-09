@@ -1,0 +1,25 @@
+[star]
+name = "orrery/cert-expiry"
+version = "0.1.0"
+description = "TLS certificate expiry metadata for named allowlisted hosts"
+publisher = "orrery"
+publisher_key_id_env = "ORRERY_CERT_EXPIRY_KEY_ID"
+direct_mcp_path = "/stars/cert-expiry/mcp"
+tools = ["inspect"]
+[pricing]
+unit = "call"
+price_per_call = "0.00"
+currency = "USD"
+[runtime]
+python_package = "stars.cert_expiry"
+skill_factory = "stars.cert_expiry.skill:build_skill"
+[policy]
+allowed_egress = ["https://orrery.lol", "https://docs.python.org"]
+freshness = "at_call"
+redirects = "deny"
+max_response_bytes = 16384
+[receipt]
+schema_version = "1"
+algorithm = "Ed25519"
+[publish]
+corpus = "stars.cert_expiry.corpus:CORPUS"
