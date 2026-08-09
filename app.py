@@ -47,6 +47,7 @@ from chirp.skill import (
 from chirp.skill.publish import run_publish_gate
 from chirp.skill.smoke import render_faithful_answer
 
+from artifacts import safe_attachment_filename
 from catalog import CATALOG
 from catalog.sync import refresh_catalog
 from commerce import charge_on_verify, refund_on_forge
@@ -370,29 +371,33 @@ def api_gaze_search(request: Request) -> JSONResponse:
 
 
 @app.route("/artifacts/{artifact_id}", referenced=True)
-def pdf_artifact(artifact_id: str) -> Response:
-    """Download a short-lived PDF emitted by the html-to-pdf Star."""
+def artifact_download(artifact_id: str) -> Response:
+    """Proxy an authorized, non-expired artifact using its stored metadata."""
     try:
         delivered = get_pdf_artifacts().download(artifact_id)
     except ArtifactDeliveryUnavailable:
         return Response(
-            "PDF artifact delivery is temporarily unavailable.",
+            "Artifact delivery is temporarily unavailable.",
             status=503,
             content_type="text/plain; charset=utf-8",
-            headers=(("Cache-Control", "no-store"),),
+            headers=(("Cache-Control", "no-store"), ("X-Content-Type-Options", "nosniff")),
         )
     if delivered is None:
         return Response(
-            "PDF artifact not found or expired.",
+            "Artifact not found, expired, or not authorized.",
             status=404,
             content_type="text/plain; charset=utf-8",
+            headers=(("Cache-Control", "no-store"), ("X-Content-Type-Options", "nosniff")),
         )
     artifact, data = delivered
     return Response(
         data,
-        content_type="application/pdf",
+        content_type=artifact.content_type,
         headers=(
-            ("Content-Disposition", f'attachment; filename="{artifact.artifact_id}.pdf"'),
+            (
+                "Content-Disposition",
+                f'attachment; filename="{safe_attachment_filename(artifact.filename)}"',
+            ),
             ("Cache-Control", "no-store"),
             ("X-Content-Type-Options", "nosniff"),
         ),

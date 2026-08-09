@@ -14,6 +14,13 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
 from artifacts import ArtifactPolicy, ArtifactRecord, ArtifactState, ArtifactStorage
+from artifacts.delivery import (
+    DownloadAuditEvent,
+    DownloadAuditSink,
+    LoggingDownloadAudit,
+    audit_artifact_ref,
+    policy_allows,
+)
 from artifacts.domain import artifact_storage_key, new_artifact_id
 from artifacts.storage import InMemoryObjectStorage, S3ObjectStorage
 
@@ -53,11 +60,13 @@ class DurablePdfArtifactService:
         *,
         ttl_seconds: int = PDF_ARTIFACT_TTL_SECONDS,
         clock: Callable[[], datetime] | None = None,
+        audit: DownloadAuditSink | None = None,
     ) -> None:
         self._repository = repository
         self._storage = storage
         self._ttl_seconds = ttl_seconds
         self._clock = clock or (lambda: datetime.now(UTC))
+        self._audit = audit or LoggingDownloadAudit()
 
     def publish(
         self,
@@ -90,19 +99,35 @@ class DurablePdfArtifactService:
             raise
         return PdfArtifact(record.artifact_id, f"sha256:{digest}", record.expires_at)
 
-    def download(self, artifact_id: str) -> tuple[ArtifactRecord, bytes] | None:
+    def download(
+        self, artifact_id: str, *, receipt_holder: bool = True, owner_id: str | None = None
+    ) -> tuple[ArtifactRecord, bytes] | None:
         record = self._repository.get(artifact_id)
         if (
             record is None
             or record.state is not ArtifactState.AVAILABLE
             or record.expires_at <= self._clock()
         ):
+            self._audit.record(DownloadAuditEvent(audit_artifact_ref(artifact_id), "not_available"))
+            return None
+        if not policy_allows(record, receipt_holder=receipt_holder, owner_id=owner_id):
+            self._audit.record(
+                DownloadAuditEvent(audit_artifact_ref(artifact_id), "denied", record.content_type)
+            )
             return None
         data = self._storage.get(key=record.storage_key)
         if data is None:
+            self._audit.record(
+                DownloadAuditEvent(
+                    audit_artifact_ref(artifact_id), "object_missing", record.content_type
+                )
+            )
             return None
         if len(data) != record.byte_length or hashlib.sha256(data).hexdigest() != record.sha256:
             raise ArtifactDeliveryUnavailable("artifact integrity check failed")
+        self._audit.record(
+            DownloadAuditEvent(audit_artifact_ref(artifact_id), "served", record.content_type)
+        )
         return record, data
 
     def health(self) -> dict[str, str]:
@@ -141,7 +166,7 @@ class UnconfiguredPdfArtifactService:
     def publish(self, data: bytes, **_: object) -> PdfArtifact:
         raise ArtifactDeliveryUnavailable(self.reason)
 
-    def download(self, artifact_id: str) -> tuple[ArtifactRecord, bytes] | None:
+    def download(self, artifact_id: str, **_: object) -> tuple[ArtifactRecord, bytes] | None:
         raise ArtifactDeliveryUnavailable(self.reason)
 
     def health(self) -> dict[str, str]:

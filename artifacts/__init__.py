@@ -12,6 +12,7 @@ from .capabilities import (
     UploadIntent,
 )
 from .cleanup import ArtifactCleanupService, CleanupResult
+from .delivery import DownloadAuditEvent, LoggingDownloadAudit, safe_attachment_filename
 from .domain import (
     ArtifactPolicy,
     ArtifactRecord,
@@ -30,10 +31,13 @@ __all__ = [
     "ArtifactState",
     "ArtifactStorage",
     "CleanupResult",
+    "DownloadAuditEvent",
     "InMemoryObjectStorage",
+    "LoggingDownloadAudit",
     "ObjectCapability",
     "PostgresArtifactRepository",
     "S3ObjectStorage",
     "UploadIntent",
     "artifact_storage_key",
+    "safe_attachment_filename",
 ]
