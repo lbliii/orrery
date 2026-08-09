@@ -81,12 +81,12 @@ uv run pytest
 
 Live: [https://orrery-production-f7de.up.railway.app](https://orrery-production-f7de.up.railway.app)
 
-`Dockerfile` + `railway.toml` live at the repo root. Merges to `main` rebuild via [`.github/workflows/deploy-railway.yml`](./.github/workflows/deploy-railway.yml) (same pattern as Chirp's Lucky Cat demo): `railway up --ci --service orrery` with a project-scoped `RAILWAY_TOKEN` repo secret.
+`Dockerfile` + `railway.toml` live at the repo root. The Railway service is connected to `lbliii/orrery`; merges to `main` rebuild and redeploy automatically (same as pidge). The image install layer re-fetches Chirp at `GIT_REF` because the Dockerfile cache-busts against GitHub's commits API.
 
 Manual / first deploy from this directory:
 
 ```bash
-railway up --ci --service orrery
+railway up --service orrery
 ```
 
 | Variable | Value |
