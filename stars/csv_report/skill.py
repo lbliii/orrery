@@ -3,20 +3,20 @@ from __future__ import annotations
 from typing import Any
 
 from chirp.skill import Skill
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
+from stars.cpu_signing import cpu_signing_key
 from stars.managed_api import ManagedStarService, configured_managed_service
 
 
 def build_skill(
     *, private_key: Any | None = None, service: ManagedStarService | None = None
 ) -> Skill:
-    private = private_key or Ed25519PrivateKey.generate()
+    private, key_id = cpu_signing_key(private_key=private_key)
     skill = Skill(
         "csv-report",
         version="1.0.0",
         private_key=private,
-        key_id="orrery-cpu-1",
+        key_id=key_id,
         public_key=private.public_key().public_bytes_raw(),
     )
 
