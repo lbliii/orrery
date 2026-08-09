@@ -24,9 +24,10 @@ from chirp.skill.smoke import CorpusPrompt
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from catalog import CATALOG
+from catalog.constellation_run import explain_policy, run_constellation, status_for_run
 
-#: How many dogfood skills this host mounts (Foundation epic #2 + Wave 1).
-N_DOGFOOD_SKILLS = 4
+#: How many dogfood skills this host mounts (Foundation epic #2 + Wave 1 + #33).
+N_DOGFOOD_SKILLS = 5
 
 #: Smoke HTML used by the star detail receipt and corpus.
 SMOKE_HTML = "<!doctype html><html><body><h1>Orrery</h1></body></html>"
@@ -266,6 +267,59 @@ def build_world_time_skill(*, private_key: Any | None = None) -> Skill:
     return skill
 
 
+def build_launch_gate_skill(*, private_key: Any | None = None) -> Skill:
+    """launch-gate — constellation orchestration (run / status / explain_policy, #33)."""
+    private = private_key or _load_or_generate_key("ORRERY_LAUNCH_GATE_PRIVATE_KEY")
+    public = private.public_key().public_bytes_raw()
+    skill = Skill(
+        "launch-gate",
+        version="2.0.0",
+        private_key=private,
+        key_id=os.environ.get("ORRERY_LAUNCH_GATE_KEY_ID", "acme-launch-gate-1"),
+        public_key=public,
+    )
+
+    @skill.tool(
+        "run",
+        description="Execute the constellation on a Doc Bundle (pages, links, examples)",
+    )
+    def run(
+        pages: list[str] | None = None,
+        links: list[str] | None = None,
+        examples: list[str] | None = None,
+        constellation: str = "acme/launch-gate",
+    ) -> dict[str, object]:
+        bundle = {
+            "pages": list(pages or []),
+            "links": list(links or []),
+            "examples": list(examples or []),
+        }
+        return run_constellation(
+            bundle,
+            constellation=constellation,
+            skill_name=skill.name,
+            skill_version=skill.version,
+            key_id=skill.key_id,
+            private_key=private,
+        )
+
+    @skill.tool(
+        "status",
+        description="Composite receipt / in-flight chain for a constellation run",
+    )
+    def status(run_id: str = "") -> dict[str, object]:
+        return status_for_run(run_id)
+
+    @skill.tool(
+        "explain_policy",
+        description="Gates, repair loops, and fan-in in plain language",
+    )
+    def explain_policy_tool(name: str = "acme/launch-gate") -> dict[str, object]:
+        return explain_policy(name)
+
+    return skill
+
+
 def get_html_to_pdf_skill() -> Skill:
     """Return the shared html-to-pdf skill (same instance the host mounts)."""
     global _html_to_pdf_skill
@@ -381,6 +435,7 @@ def build_dogfood_skills() -> tuple[Skill, ...]:
         build_resolve_skill(),
         get_html_to_pdf_skill(),
         get_world_time_skill(),
+        build_launch_gate_skill(),
     )
     assert len(skills) == N_DOGFOOD_SKILLS
     return skills
@@ -425,5 +480,31 @@ DOGFOOD_CORPUS: tuple[CorpusPrompt, ...] = (
             "clone_warning",
             "answer",
         ),
+    ),
+    CorpusPrompt(
+        id="launch-gate-explain-smoke",
+        prompt="Explain the acme/launch-gate constellation policy.",
+        tool="explain_policy",
+        arguments={"name": "acme/launch-gate"},
+        required_facts=("gates", "repair_loop", "fan_in", "release"),
+    ),
+    CorpusPrompt(
+        id="launch-gate-run-smoke",
+        prompt="Run launch-gate on a documentation bundle.",
+        tool="run",
+        arguments={
+            "pages": ["README.md"],
+            "links": ["https://example.com/docs"],
+            "examples": ["quickstart"],
+            "constellation": "acme/launch-gate",
+        },
+        required_facts=("run_id", "secret-scan", "license", "html-to-pdf", "completed"),
+    ),
+    CorpusPrompt(
+        id="launch-gate-status-smoke",
+        prompt="Fetch the composite receipt for the latest launch-gate run.",
+        tool="status",
+        arguments={},
+        required_facts=("completed", "chain", "secret-scan"),
     ),
 )

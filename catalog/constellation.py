@@ -1,6 +1,7 @@
 """Constellation policy graphs — gates, repair loops, fan-in (#31).
 
-Read-only model for the graph viewer. Orchestration ``run`` MCP is Wave 4 (#33).
+Policy graph model for the viewer; orchestration lives in
+``catalog.constellation_run`` (#33).
 """
 
 from __future__ import annotations
