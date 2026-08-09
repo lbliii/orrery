@@ -50,6 +50,8 @@ from catalog import CATALOG
 from catalog.sync import refresh_catalog
 from commerce import charge_on_verify, refund_on_forge
 from dogfood import DOGFOOD_CORPUS, build_dogfood_skills, verify_receipt
+from stars._core.direct_mcp import mount_direct_mcp
+from stars.builtins import build_direct_skills, builtin_registry
 from trust.oracle import configure_oracle, record_skill_scores_from_registry
 
 _ROOT = Path(__file__).parent
@@ -89,6 +91,9 @@ config = AppConfig.from_env(
     worker_mode="async",
 )
 app = App(config=config)
+star_registry = builtin_registry()
+direct_star_skills = build_direct_skills(star_registry)
+_DIRECT_STAR_MCP_PATHS = frozenset(definition.direct_mcp_path for definition in star_registry)
 
 if config.env != "development" and config.secret_key == _DEFAULT_SECRET:
     msg = (
@@ -100,7 +105,9 @@ if config.env != "development" and config.secret_key == _DEFAULT_SECRET:
 for middleware in secure_stack(
     app.config,
     # MCP JSON-RPC clients have no browser CSRF cookie; exempt the machine face.
-    csrf=CSRFConfig(exempt_paths=frozenset({"/mcp", "/api/envelope/verify"})),
+    csrf=CSRFConfig(
+        exempt_paths=frozenset({"/mcp", "/api/envelope/verify", *_DIRECT_STAR_MCP_PATHS})
+    ),
     headers=SecurityHeadersConfig(content_security_policy=_ORRERY_CSP),
 ):
     app.add_middleware(middleware)
@@ -114,6 +121,11 @@ _skills = build_dogfood_skills()
 registry = mount_skills(app, _skills)
 scores = ReliabilityStore()
 mount_console(app, registry, scores=scores)
+
+# Every Star also has a direct MCP endpoint with its canonical tool names.
+# The aggregate host retains legacy aliases where flat MCP names collide.
+for _definition in star_registry:
+    mount_direct_mcp(app, _definition, direct_star_skills[_definition.name])
 
 # ---------------------------------------------------------------------------
 # Product surfaces → filesystem-routed pages (Gaze / Resolve / Stars / …)
@@ -158,9 +170,7 @@ def api_resolve(request: Request) -> JSONResponse:
     name = (request.query.get("name") or "").strip()
     record = CATALOG.resolve(name) if name else None
     if record is None:
-        return JSONResponse.from_value(
-            {"error": "not_found", "name": name}, status=404
-        )
+        return JSONResponse.from_value({"error": "not_found", "name": name}, status=404)
     return JSONResponse.from_value(record.as_dict())
 
 
@@ -208,18 +218,12 @@ async def api_envelope_verify(request: Request) -> JSONResponse:
     try:
         body = await request.json()
     except Exception:
-        return JSONResponse.from_value(
-            {"verified": False, "error": "invalid_json"}, status=400
-        )
+        return JSONResponse.from_value({"verified": False, "error": "invalid_json"}, status=400)
     if not isinstance(body, dict):
-        return JSONResponse.from_value(
-            {"verified": False, "error": "expected_object"}, status=400
-        )
+        return JSONResponse.from_value({"verified": False, "error": "expected_object"}, status=400)
     payment_id, price_per_call = _commerce_fields(body)
     # payment_id / price_per_call are commerce metadata, not Envelope wire fields.
-    payload = {
-        k: v for k, v in body.items() if k not in ("payment_id", "price_per_call")
-    }
+    payload = {k: v for k, v in body.items() if k not in ("payment_id", "price_per_call")}
     ok = verify_receipt(payload)
     skill = str(body["skill"]) if isinstance(body.get("skill"), str) else None
     nonce = str(body["nonce"]) if isinstance(body.get("nonce"), str) else None
@@ -255,20 +259,18 @@ if os.environ.get("ORRERY_SKIP_PUBLISH", "").strip() not in ("1", "true", "True"
         asyncio.get_running_loop()
     except RuntimeError:
         # Public stars must exist before gaze/resolve smoke prompts run.
-        refresh_catalog(registry, receipt=None)
+        refresh_catalog(star_registry, direct_star_skills, receipt=None)
         _publish_receipt = run_publish_gate(
             app,
             DOGFOOD_CORPUS,
             answer_fn=render_faithful_answer,
         )
         if _publish_receipt.smoke is not None:
-            record_skill_scores_from_registry(
-                scores, _publish_receipt.smoke, registry
-            )
+            record_skill_scores_from_registry(scores, _publish_receipt.smoke, registry)
 
 configure_oracle(receipt=_publish_receipt, scores=scores)
 # Re-sync digests / oracle_ok (and seed stars when publish was skipped).
-refresh_catalog(registry, receipt=_publish_receipt)
+refresh_catalog(star_registry, direct_star_skills, receipt=_publish_receipt)
 
 
 if __name__ == "__main__":

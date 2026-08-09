@@ -20,13 +20,27 @@ The product surfaces are implemented as Chirp filesystem-routed pages in [`pages
 | `/namespaces` | Private tenancy pitch |
 | `/api/resolve?name=` | JSON resolve record (Skill DNS) |
 
-The same process is also a dogfood MCP host ([#964](https://github.com/lbliii/chirp/issues/964) / [#985](https://github.com/lbliii/chirp/issues/985)): aggregated `/mcp`, discovery at `/skills`, dogfood skills (gaze, resolve, html-to-pdf, world-time, source-watch, launch-gate), and publish-oracle smoke. **Product trust** is the Resolve/Star oracle pill (`check · freeze · smoke`). Host ops live at `/console` (Chirp reliability console — not part of the night-observatory product chrome). Resolve records are synced from mounted skill manifests in [`catalog/`](./catalog/).
+The same process is also a dogfood MCP host ([#964](https://github.com/lbliii/chirp/issues/964) / [#985](https://github.com/lbliii/chirp/issues/985)): aggregated `/mcp`, discovery at `/skills`, dogfood skills (gaze, resolve, html-to-pdf, world-time, source-watch, launch-gate), and publish-oracle smoke. **Product trust** is the Resolve/Star oracle pill (`check · freeze · smoke`). Host ops live at `/console` (Chirp reliability console — not part of the night-observatory product chrome). Resolve records are synchronized from the Star registry after the publish gate.
 
 ### Reactive star (`orrery/world-time`)
 
 Wave 1 spike ([#37](https://github.com/lbliii/orrery/issues/37)): tools `fetch` / `get` / `answer` pull a **live UTC** reading from a public clock API at call time and seal it in a signed Chirp Envelope. Gaze/resolve show price + blurb only — never the live payload.
 
 **Why cloning fails the value test:** an offline copy of the tool code cannot mint a fresh UTC instant from the upstream clock. Any baked-in datetime is stale by definition; the product is live truth at call time, not a distributable package. (html-to-pdf remains alongside as the Envelope plumbing demo.)
+
+### Star packages and direct MCP
+
+Every callable Star lives in [`stars/`](./stars/) as a versioned capability package: a `star.toml` manifest, framework-free `service.py`, stable `contract.py`, Chirp/MCP `skill.py`, and publish corpus. The host loads those manifests to generate the public resolve records; adding a Star does not require a parallel catalog entry.
+
+Resolve records point at a Star's direct MCP endpoint, where its natural tool names are available without aggregate-host collisions:
+
+| Star | Direct MCP endpoint | Canonical tools |
+| --- | --- | --- |
+| `orrery/html-to-pdf` | `/stars/html-to-pdf/mcp` | `convert`, `health` |
+| `orrery/world-time` | `/stars/world-time/mcp` | `fetch`, `get`, `answer` |
+| `orrery/source-watch` | `/stars/source-watch/mcp` | `observe`, `diff`, `answer` |
+
+`/mcp` remains an aggregate compatibility/control-plane surface. It prefixes Source Watch's aggregate `answer` as `source_watch_answer` because world-time already owns that flat tool name; the direct Source Watch endpoint always exposes the canonical `answer`.
 
 ### Source Watch star (`orrery/source-watch`)
 

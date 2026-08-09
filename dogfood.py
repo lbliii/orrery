@@ -14,10 +14,7 @@ Each skill has a golden corpus entry that passes the publish oracle
 
 from __future__ import annotations
 
-import json
 import os
-import urllib.error
-import urllib.request
 from typing import Any
 
 from chirp.skill import Envelope, Skill, verify_envelope
@@ -26,25 +23,16 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from catalog import CATALOG
 from catalog.constellation_run import explain_policy, run_constellation, status_for_run
-from source_watch import ANSWER_MAX_CHARS
-from source_watch import answer as source_watch_answer
-from source_watch import diff as source_watch_diff
-from source_watch import observe as source_watch_observe
+from stars.html_to_pdf.skill import build_skill as build_html_to_pdf_star
+from stars.source_watch.skill import build_skill as build_source_watch_star
+from stars.world_time.service import fetch_live_utc as _fetch_live_utc
+from stars.world_time.skill import build_skill as build_world_time_star
 
 #: How many dogfood skills this host mounts (Foundation epic #2 + Waves 1/2).
 N_DOGFOOD_SKILLS = 6
 
 #: Smoke HTML used by the star detail receipt and corpus.
 SMOKE_HTML = "<!doctype html><html><body><h1>Orrery</h1></body></html>"
-
-#: Public UTC clock used by the reactive world-time star (stdlib urllib).
-WORLD_TIME_URL = "https://timeapi.io/api/Time/current/zone?timeZone=UTC"
-
-#: Why an offline clone fails the value test (README + star page + payload).
-WORLD_TIME_CLONE_WARNING = (
-    "Offline clones cannot mint a fresh UTC instant from the public clock API; "
-    "any baked-in datetime is stale by definition. Value is live truth at call time."
-)
 
 _html_to_pdf_skill: Skill | None = None
 _world_time_skill: Skill | None = None
@@ -58,62 +46,8 @@ def _load_or_generate_key(env_name: str) -> Ed25519PrivateKey:
 
 
 def fetch_live_utc() -> dict[str, object]:
-    """Pull a live UTC clock reading (injectable via ``ORRERY_WORLD_TIME_JSON``).
-
-    Tests/CI set ``ORRERY_WORLD_TIME_JSON`` to a deterministic fixture so smoke
-    does not depend on upstream availability. Production leaves it unset and
-    hits :data:`WORLD_TIME_URL` at call time.
-    """
-    override = os.environ.get("ORRERY_WORLD_TIME_JSON", "").strip()
-    if override:
-        data = json.loads(override)
-        if not isinstance(data, dict):
-            msg = "ORRERY_WORLD_TIME_JSON must be a JSON object"
-            raise ValueError(msg)
-        return _world_time_payload(data, source="fixture:ORRERY_WORLD_TIME_JSON")
-
-    req = urllib.request.Request(
-        WORLD_TIME_URL,
-        headers={
-            "User-Agent": "orrery-world-time/0.1 (+https://github.com/lbliii/orrery)",
-            "Accept": "application/json",
-        },
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=8) as resp:
-            raw = json.loads(resp.read().decode("utf-8"))
-    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, OSError) as exc:
-        return {
-            "error": "upstream_unreachable",
-            "detail": str(exc),
-            "timezone": "UTC",
-            "source": WORLD_TIME_URL,
-            "live_at_call": True,
-            "clone_warning": WORLD_TIME_CLONE_WARNING,
-        }
-    if not isinstance(raw, dict):
-        return {
-            "error": "upstream_malformed",
-            "timezone": "UTC",
-            "source": WORLD_TIME_URL,
-            "live_at_call": True,
-            "clone_warning": WORLD_TIME_CLONE_WARNING,
-        }
-    return _world_time_payload(raw, source=WORLD_TIME_URL)
-
-
-def _world_time_payload(raw: dict[str, Any], *, source: str) -> dict[str, object]:
-    datetime_s = raw.get("dateTime") or raw.get("datetime") or raw.get("utc_datetime")
-    return {
-        "timezone": str(raw.get("timeZone") or raw.get("timezone") or "UTC"),
-        "datetime": datetime_s,
-        "date": raw.get("date"),
-        "time": raw.get("time"),
-        "day_of_week": raw.get("dayOfWeek") or raw.get("day_of_week"),
-        "source": source,
-        "live_at_call": True,
-        "clone_warning": WORLD_TIME_CLONE_WARNING,
-    }
+    """Compatibility import for the World Time Star's package service."""
+    return _fetch_live_utc()
 
 
 def build_gaze_skill(*, private_key: Any | None = None) -> Skill:
@@ -202,113 +136,21 @@ def build_resolve_skill(*, private_key: Any | None = None) -> Skill:
 
 
 def build_html_to_pdf_skill(*, private_key: Any | None = None) -> Skill:
-    """html-to-pdf — stub HTML→PDF convert + health (Call / Envelope demo)."""
-    private = private_key or _load_or_generate_key("ORRERY_PDF_PRIVATE_KEY")
-    public = private.public_key().public_bytes_raw()
-    skill = Skill(
-        "html-to-pdf",
-        version="1.2.0",
-        private_key=private,
-        key_id=os.environ.get("ORRERY_PDF_KEY_ID", "orrery-pdf-1"),
-        public_key=public,
-    )
-
-    @skill.tool("convert", description="Convert HTML to PDF (stub; real Envelope)")
-    def convert(html: str) -> dict[str, object]:
-        raw = html.encode("utf-8")
-        # Stub metrics — enough for digest + Envelope proof without a PDF engine.
-        pages = max(1, (len(raw) + 1499) // 1500)
-        return {
-            "pages": pages,
-            "bytes_hint": len(raw) + 1024,
-            "content_type": "application/pdf",
-        }
-
-    @skill.tool("health", description="html-to-pdf readiness probe")
-    def health() -> dict[str, str]:
-        return {"status": "ok", "skill": "html-to-pdf"}
-
-    return skill
+    """Build the aggregate adapter for the html-to-pdf Star package."""
+    return build_html_to_pdf_star(private_key=private_key)
 
 
 def build_world_time_skill(*, private_key: Any | None = None) -> Skill:
-    """world-time — live UTC clock sealed in an Envelope at call time (#37)."""
-    private = private_key or _load_or_generate_key("ORRERY_WORLD_TIME_PRIVATE_KEY")
-    public = private.public_key().public_bytes_raw()
-    skill = Skill(
-        "world-time",
-        version="0.1.0",
-        private_key=private,
-        key_id=os.environ.get("ORRERY_WORLD_TIME_KEY_ID", "orrery-world-time-1"),
-        public_key=public,
-    )
-
-    @skill.tool(
-        "fetch",
-        description="Fetch live UTC from the public clock API (signed at call time)",
-    )
-    def fetch() -> dict[str, object]:
-        return fetch_live_utc()
-
-    @skill.tool(
-        "get",
-        description="Get the live UTC reading (same live source as fetch)",
-    )
-    def get() -> dict[str, object]:
-        return fetch_live_utc()
-
-    @skill.tool(
-        "answer",
-        description="Answer with the live UTC datetime sealed in an Envelope",
-    )
-    def answer() -> dict[str, object]:
-        live = fetch_live_utc()
-        when = live.get("datetime") or live.get("error") or "unknown"
-        return {
-            **live,
-            "answer": f"UTC now is {when}",
-        }
-
-    return skill
+    """Build the aggregate adapter for the World Time Star package."""
+    return build_world_time_star(private_key=private_key)
 
 
 def build_source_watch_skill(*, private_key: Any | None = None) -> Skill:
-    """source-watch — evidence-backed monitoring of an allowlisted source."""
-    private = private_key or _load_or_generate_key("ORRERY_SOURCE_WATCH_PRIVATE_KEY")
-    public = private.public_key().public_bytes_raw()
-    skill = Skill(
-        "source-watch",
-        version="0.1.0",
-        private_key=private,
-        key_id=os.environ.get("ORRERY_SOURCE_WATCH_KEY_ID", "orrery-source-watch-1"),
-        public_key=public,
+    """Build the prefixed Source Watch adapter for the aggregate MCP host."""
+    return build_source_watch_star(
+        private_key=private_key,
+        answer_tool_name="source_watch_answer",
     )
-
-    @skill.tool(
-        "observe",
-        description="Fetch an allowlisted source and record signed digest evidence",
-    )
-    def observe(source: str = "python-release-notes") -> dict[str, object]:
-        return source_watch_observe(source)
-
-    @skill.tool("diff", description="Fetch now and compare normalized content to a known digest")
-    def diff(source: str = "python-release-notes", since_digest: str = "") -> dict[str, object]:
-        return source_watch_diff(source, since_digest)
-
-    # ``answer`` is already owned by world-time on the aggregated MCP host.
-    # Keep Source Watch's verb explicit while retaining the skill-local contract.
-    @skill.tool(
-        "source_watch_answer",
-        description="Answer from a freshly fetched official source with bounded evidence",
-    )
-    def answer(
-        question: str,
-        source: str = "python-release-notes",
-        max_chars: int = ANSWER_MAX_CHARS,
-    ) -> dict[str, object]:
-        return source_watch_answer(question, source, max_chars)
-
-    return skill
 
 
 def build_launch_gate_skill(*, private_key: Any | None = None) -> Skill:
@@ -527,7 +369,7 @@ DOGFOOD_CORPUS: tuple[CorpusPrompt, ...] = (
         required_facts=(
             "orrery/html-to-pdf",
             "resolved",
-            "mcp://orrery.dev/s/html-to-pdf",
+            "mcp://orrery.dev/stars/html-to-pdf/mcp",
             "sha256:",
             "orrery-pdf-1",
         ),

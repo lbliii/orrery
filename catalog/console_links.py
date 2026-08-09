@@ -4,11 +4,8 @@ from __future__ import annotations
 
 from .models import ResolveRecord
 
-#: Resolve catalog name → mounted dogfood skill for ``/console/{skill}``.
+#: Control-plane skills whose catalog name is not derivable from a Star package.
 RECORD_CONSOLE_SKILL: dict[str, str] = {
-    "orrery/html-to-pdf": "html-to-pdf",
-    "orrery/world-time": "world-time",
-    "orrery/source-watch": "source-watch",
     "gaze": "gaze",
     "resolve": "resolve",
 }

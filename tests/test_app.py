@@ -192,16 +192,14 @@ class TestOrreryHostFoundation:
 
         host = sys.modules["orrery_app_under_test"]
         # Mirror boot: catalog must exist before gaze/resolve smoke prompts.
-        refresh_catalog(host.registry, receipt=None)
+        refresh_catalog(host.star_registry, host.direct_star_skills, receipt=None)
         receipt = run_publish_gate(example_app, DOGFOOD_CORPUS)
         assert receipt.passed, receipt.to_dict()
         assert receipt.smoke is not None
         assert receipt.smoke.passed
 
         scores = ReliabilityStore()
-        recorded = record_skill_scores_from_registry(
-            scores, receipt.smoke, host.registry
-        )
+        recorded = record_skill_scores_from_registry(scores, receipt.smoke, host.registry)
         assert recorded["html-to-pdf"].status == "pass"
         assert recorded["html-to-pdf"].total == 1
         assert recorded["gaze"].total == 1
@@ -242,9 +240,7 @@ class TestPublishOracleSurface:
         for name in list(sys.modules):
             if name.startswith("orrery_app_") or name == "dogfood":
                 sys.modules.pop(name, None)
-        spec = importlib.util.spec_from_file_location(
-            "orrery_app_oracle_test", root / "app.py"
-        )
+        spec = importlib.util.spec_from_file_location("orrery_app_oracle_test", root / "app.py")
         assert spec is not None and spec.loader is not None
         module = importlib.util.module_from_spec(spec)
         sys.path.insert(0, str(root))
@@ -268,7 +264,7 @@ class TestPublishOracleSurface:
         assert wt.oracle_ok is True
         assert oracle_for(wt).pill_text == "check · freeze · smoke"
 
-        # Per-skill console scores — not one host-wide 5/7 stamped on every star.
+        # Per-skill console scores — not one host-wide report stamped on every star.
         pdf_score = module.scores.get("html-to-pdf")
         gate_score = module.scores.get("launch-gate")
         assert pdf_score.status == "pass"
@@ -327,3 +323,51 @@ class TestPublishOracleSurface:
             # Restore module globals used by other tests that re-import app.
             oracle_mod._receipt = None
             oracle_mod._scores = None
+
+
+@pytest.mark.issue(52)
+class TestDirectStarMcpEndpoints:
+    async def test_direct_star_endpoints_expose_canonical_tool_names(self, example_app) -> None:
+        expected = {
+            "/stars/html-to-pdf/mcp": {"convert", "health"},
+            "/stars/world-time/mcp": {"fetch", "get", "answer"},
+            "/stars/source-watch/mcp": {"observe", "diff", "answer"},
+        }
+        async with TestClient(example_app) as client:
+            for path, names in expected.items():
+                response = await client.post(
+                    path,
+                    json={
+                        "jsonrpc": "2.0",
+                        "method": "tools/list",
+                        "id": 52,
+                        "params": _modern_mcp_params(),
+                    },
+                    headers=_modern_mcp_headers("tools/list"),
+                )
+                assert response.status == 200, path
+                body = json.loads(response.text)
+                assert {tool["name"] for tool in body["result"]["tools"]} == names
+
+    async def test_direct_source_watch_uses_unprefixed_answer(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            response = await client.post(
+                "/stars/source-watch/mcp",
+                json={
+                    "jsonrpc": "2.0",
+                    "method": "tools/call",
+                    "id": 53,
+                    "params": _modern_mcp_params(
+                        name="answer",
+                        arguments={
+                            "question": "What deployment guidance is current?",
+                            "source": "python-release-notes",
+                        },
+                    ),
+                },
+                headers=_modern_mcp_headers("tools/call", "answer"),
+            )
+            assert response.status == 200
+            text = json.loads(response.text)["result"]["content"][0]["text"]
+            assert "source-watch" in text
+            assert "live_at_call" in text

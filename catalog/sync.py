@@ -1,12 +1,11 @@
-"""Merge live publish-oracle manifests into the resolve catalog.
-
-Public stars are built from mounted ``chirp.skill`` manifests (real digests,
-versions, tools). Constellation horizon seeds stay static until Wave 4.
-"""
+"""Generate the resolve catalog from validated first-class Star packages."""
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any
+
+from stars._core import StarRegistry
 
 from .fixtures import CONSTELLATION_SEEDS
 from .models import ResolveRecord
@@ -14,90 +13,55 @@ from .store import replace_catalog
 
 if TYPE_CHECKING:
     from chirp.skill.publish import PublishReceipt
-    from chirp.skill.registry import SkillRegistry
-
-#: Public callable stars on this host (Skill DNS names + copy).
-PUBLIC_STAR_META: dict[str, dict[str, object]] = {
-    "html-to-pdf": {
-        "catalog_name": "orrery/html-to-pdf",
-        "description": "Render HTML → PDF",
-        "endpoint": "mcp://orrery.dev/s/html-to-pdf",
-    },
-    "world-time": {
-        "catalog_name": "orrery/world-time",
-        "description": "Live UTC at call time — offline clones are stale",
-        "endpoint": "mcp://orrery.dev/s/world-time",
-    },
-    "source-watch": {
-        "catalog_name": "orrery/source-watch",
-        "description": "Live official-source evidence, digest comparison, and bounded answers",
-        "endpoint": "mcp://orrery.dev/s/source-watch",
-    },
-}
 
 
-def _manifest_map(registry: SkillRegistry) -> dict[str, object]:
-    out: dict[str, object] = {}
-    for manifest in registry.manifests():
-        out[manifest.name] = manifest
-    return out
+def _direct_endpoint(path: str) -> str:
+    """Render the public direct MCP endpoint from a Star manifest path."""
+    return f"mcp://orrery.dev{path}"
 
 
 def build_star_records(
-    registry: SkillRegistry,
+    stars: StarRegistry,
+    direct_skills: Mapping[str, Any],
     *,
     receipt: PublishReceipt | None = None,
 ) -> tuple[ResolveRecord, ...]:
-    """Build public star rows from mounted skills + freeze manifests."""
-    manifests = _manifest_map(registry)
-    if receipt is not None:
-        for raw in receipt.manifests:
-            name = str(raw.get("name", ""))
-            if name:
-                manifests[name] = raw
-
+    """Build public records from Star manifests and their canonical direct skills."""
+    _ = receipt  # The package manifest is catalog truth; aggregate smoke is trust evidence.
     records: list[ResolveRecord] = []
-    for skill_name, meta in PUBLIC_STAR_META.items():
-        skill = registry.get(skill_name)
-        manifest = manifests.get(skill_name)
-        if skill is None or manifest is None:
-            continue
-
-        if hasattr(manifest, "content_digest"):
-            digest = str(manifest.content_digest)
-            version = str(manifest.version)
-            tools = tuple(str(t) for t in manifest.tools)
-        else:
-            digest = str(manifest["content_digest"])
-            version = str(manifest.get("version") or skill.version)
-            tools = tuple(str(t) for t in manifest.get("tools") or ())
-
+    for definition in stars:
+        skill = direct_skills.get(definition.name)
+        if skill is None:
+            msg = f"No direct skill was built for Star {definition.name!r}"
+            raise RuntimeError(msg)
+        manifest = skill.assemble_manifest()
+        price = definition.price_per_call
         records.append(
             ResolveRecord(
-                name=str(meta["catalog_name"]),
-                version=version,
+                name=definition.name,
+                version=definition.version,
                 kind="star",
                 visibility="public",
-                description=str(meta["description"]),
-                endpoint=str(meta["endpoint"]),
+                description=definition.description,
+                endpoint=_direct_endpoint(definition.direct_mcp_path),
                 key_id=str(skill.key_id),
-                content_digest=digest,
-                price_per_call=None,
+                content_digest=str(manifest.content_digest),
+                price_per_call=None if price.is_zero() else f"{definition.price_currency} {price}",
                 oracle_ok=True,
-                tools=tools or tuple(t.name for t in skill._pending),
+                tools=tuple(skill.tools),
             )
         )
     return tuple(records)
 
 
 def refresh_catalog(
-    registry: SkillRegistry,
+    stars: StarRegistry,
+    direct_skills: Mapping[str, Any],
     *,
     receipt: PublishReceipt | None = None,
 ) -> tuple[ResolveRecord, ...]:
     """Replace the process catalog with live stars + constellation seeds."""
-    stars = build_star_records(registry, receipt=receipt)
-    records = stars + CONSTELLATION_SEEDS
+    records = build_star_records(stars, direct_skills, receipt=receipt) + CONSTELLATION_SEEDS
 
     from trust.oracle import oracle_ok_for_record
 

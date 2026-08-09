@@ -90,9 +90,7 @@ def record_skill_scores(
     ``report`` is recorded.
     """
     if skill_names is None:
-        names = tuple(
-            sorted({TOOL_SKILL[r.tool] for r in report.results if r.tool in TOOL_SKILL})
-        )
+        names = tuple(sorted({TOOL_SKILL[r.tool] for r in report.results if r.tool in TOOL_SKILL}))
     else:
         names = skill_names
 
@@ -151,9 +149,7 @@ class OracleView:
             return "unscored"
         if not self.host_ok:
             failed = [
-                name
-                for name, passed, _ in self.stages
-                if not passed and name in _HOST_STAGES
+                name for name, passed, _ in self.stages if not passed and name in _HOST_STAGES
             ]
             if failed:
                 return " · ".join(failed) + " fail"
@@ -180,9 +176,7 @@ def _host_ok(receipt: PublishReceipt | None) -> bool:
     if receipt is None:
         return False
     host_stages = [
-        stage
-        for stage in receipt.stages
-        if str(getattr(stage, "name", "") or "") in _HOST_STAGES
+        stage for stage in receipt.stages if str(getattr(stage, "name", "") or "") in _HOST_STAGES
     ]
     if not host_stages:
         return False

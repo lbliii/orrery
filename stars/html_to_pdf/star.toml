@@ -1,0 +1,30 @@
+[star]
+name = "orrery/html-to-pdf"
+version = "1.2.0"
+description = "Stub HTML-to-PDF conversion with signed Envelope receipts"
+publisher = "orrery"
+publisher_key_id_env = "ORRERY_PDF_KEY_ID"
+direct_mcp_path = "/stars/html-to-pdf/mcp"
+tools = ["convert", "health"]
+
+[pricing]
+unit = "call"
+price_per_call = "0.00"
+currency = "USD"
+
+[runtime]
+python_package = "stars.html_to_pdf"
+skill_factory = "stars.html_to_pdf.skill:build_skill"
+
+[policy]
+allowed_egress = []
+freshness = "at_call"
+redirects = "deny"
+max_response_bytes = 1048576
+
+[receipt]
+schema_version = "1"
+algorithm = "Ed25519"
+
+[publish]
+corpus = "stars.html_to_pdf.corpus:CORPUS"
