@@ -1,27 +1,27 @@
 from __future__ import annotations
 
-import os
 from typing import Any
 
 from chirp.skill import Skill
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+from stars.signing import public_star_signing_key
 
 from .contract import DEFAULT_DOCUMENT, STAR_VERSION
 from .service import read as read_document
 
 
 def build_skill(*, private_key: Any | None = None) -> Skill:
-    raw = os.environ.get("ORRERY_WELL_KNOWN_PRIVATE_KEY", "").strip()
-    private = private_key or (
-        Ed25519PrivateKey.from_private_bytes(bytes.fromhex(raw))
-        if raw
-        else Ed25519PrivateKey.generate()
+    private, key_id = public_star_signing_key(
+        private_key=private_key,
+        private_key_env="ORRERY_WELL_KNOWN_PRIVATE_KEY",
+        key_id_env="ORRERY_WELL_KNOWN_KEY_ID",
+        default_key_id="orrery-well-known-1",
     )
     skill = Skill(
         "well-known",
         version=STAR_VERSION,
         private_key=private,
-        key_id=os.environ.get("ORRERY_WELL_KNOWN_KEY_ID", "orrery-well-known-1"),
+        key_id=key_id,
         public_key=private.public_key().public_bytes_raw(),
     )
 

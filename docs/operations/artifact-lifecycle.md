@@ -66,6 +66,15 @@ generate an ephemeral key only when the variable is unset; such a key is not a
 portable production identity. Publish the matching JWK before changing the key
 ID, as described by the public Envelope key-set rotation contract.
 
+### Public direct Star signing identity
+
+All other public direct Stars first honor their existing per-Star private-key
+and key-ID variables. When those are not set, configure the shared
+`ORRERY_STAR_PRIVATE_KEY` (hex-encoded 32-byte Ed25519 key) and
+`ORRERY_STAR_KEY_ID`. Production factory construction fails closed without a
+valid per-Star or shared identity. Development/test may generate only when no
+key is configured. The CPU Star identity remains intentionally separate.
+
 The managed run's terminal receipt records the opaque artifact ID, content
 metadata, and `sha256:<digest>`. The `result` MCP tool returns that terminal
 receipt inside Chirp's signed envelope. An agent should verify the envelope

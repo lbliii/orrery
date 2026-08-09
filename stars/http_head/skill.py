@@ -2,34 +2,28 @@
 
 from __future__ import annotations
 
-import os
 from typing import Any
 
 from chirp.skill import Skill
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+from stars.signing import public_star_signing_key
 
 from .contract import DEFAULT_TARGET, STAR_VERSION
 from .service import head as observe_head
 
 
-def _private_key(private_key: Any | None) -> Ed25519PrivateKey:
-    if private_key is not None:
-        return private_key
-    raw = os.environ.get("ORRERY_HTTP_HEAD_PRIVATE_KEY", "").strip()
-    return (
-        Ed25519PrivateKey.from_private_bytes(bytes.fromhex(raw))
-        if raw
-        else Ed25519PrivateKey.generate()
-    )
-
-
 def build_skill(*, private_key: Any | None = None) -> Skill:
-    private = _private_key(private_key)
+    private, key_id = public_star_signing_key(
+        private_key=private_key,
+        private_key_env="ORRERY_HTTP_HEAD_PRIVATE_KEY",
+        key_id_env="ORRERY_HTTP_HEAD_KEY_ID",
+        default_key_id="orrery-http-head-1",
+    )
     skill = Skill(
         "http-head",
         version=STAR_VERSION,
         private_key=private,
-        key_id=os.environ.get("ORRERY_HTTP_HEAD_KEY_ID", "orrery-http-head-1"),
+        key_id=key_id,
         public_key=private.public_key().public_bytes_raw(),
     )
 
