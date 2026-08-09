@@ -1,3 +1,4 @@
+from catalog.constellation import policy_for
 from stars.builtins import builtin_registry
 from stars.table_fresh.service import run
 from stars.table_fresh.skill import build_skill
@@ -35,3 +36,9 @@ def test_constellation_definition_and_direct_skill() -> None:
         and definition.direct_mcp_path == "/constellations/table-fresh/mcp"
     )
     assert {item.name for item in build_skill()._pending} == {"run"}
+    graph = policy_for("orrery/table-fresh")
+    assert graph is not None
+    assert [node.star_ref for node in graph.nodes if node.star_ref] == [
+        "orrery/csv-url",
+        "orrery/table-diff",
+    ]

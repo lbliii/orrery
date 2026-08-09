@@ -306,9 +306,43 @@ STALE_PROOF_POLICY = PolicyGraph(
     release_key_id="orrery-stale-proof-1",
 )
 
+TABLE_FRESH_POLICY = PolicyGraph(
+    nodes=(
+        PolicyNode("csv-url", "csv-url", "gate", 180, 200, 0, "orrery/csv-url", "fresh"),
+        PolicyNode("table-diff", "table-diff", "gate", 460, 200, 1, "orrery/table-diff", "compare"),
+        PolicyNode(
+            "fresh-verdict",
+            "fresh verdict",
+            "composite",
+            760,
+            300,
+            2,
+            status_label="composite",
+            r=18,
+        ),
+    ),
+    edges=(
+        PolicyEdge(
+            "tf1", "csv-url", "table-diff", "gate", "M220 200 C300 200, 340 200, 420 200", 1
+        ),
+        PolicyEdge(
+            "tf2", "table-diff", "fresh-verdict", "gate", "M500 220 C590 270, 650 290, 720 300", 2
+        ),
+    ),
+    repair_loop_max=None,
+    footnote="Fresh source evidence → bounded route diff → signed verdict (100-row sample).",
+    composite_chain=(
+        CompositeStep(1, "csv-url", "Envelope ✓", "fresh flights-airport sample"),
+        CompositeStep(2, "table-diff", "Envelope ✓", "route-key comparison"),
+    ),
+    release_digest="sha256:table-fresh…",
+    release_key_id="orrery-table-fresh-1",
+)
+
 POLICIES: dict[str, PolicyGraph] = {
     "acme/launch-gate": LAUNCH_GATE_POLICY,
     "orrery/stale-proof": STALE_PROOF_POLICY,
+    "orrery/table-fresh": TABLE_FRESH_POLICY,
 }
 
 
