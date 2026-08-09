@@ -166,8 +166,14 @@ class TestOrreryHostFoundation:
     def test_dogfood_skills_pass_publish_oracle(
         self, example_app, monkeypatch: pytest.MonkeyPatch
     ) -> None:
+        import sys
+
+        from chirp.skill.console import ReliabilityStore
+
         import dogfood
+        from catalog.sync import refresh_catalog
         from dogfood import DOGFOOD_CORPUS
+        from trust.oracle import record_skill_scores_from_registry
 
         # Publish gate re-imports paths; keep world-time deterministic.
         monkeypatch.setenv(
@@ -184,10 +190,21 @@ class TestOrreryHostFoundation:
         )
         assert dogfood.fetch_live_utc()["datetime"] == "2026-08-08T12:00:00"
 
+        host = sys.modules["orrery_app_under_test"]
+        # Mirror boot: catalog must exist before gaze/resolve smoke prompts.
+        refresh_catalog(host.star_registry, host.direct_star_skills, receipt=None)
         receipt = run_publish_gate(example_app, DOGFOOD_CORPUS)
         assert receipt.passed, receipt.to_dict()
         assert receipt.smoke is not None
         assert receipt.smoke.passed
+
+        scores = ReliabilityStore()
+        recorded = record_skill_scores_from_registry(scores, receipt.smoke, host.registry)
+        assert recorded["html-to-pdf"].status == "pass"
+        assert recorded["html-to-pdf"].total == 1
+        assert recorded["gaze"].total == 1
+        assert recorded["launch-gate"].total == 3
+        assert recorded["html-to-pdf"].total != recorded["launch-gate"].total
 
 
 @pytest.mark.issue(34)
@@ -223,9 +240,7 @@ class TestPublishOracleSurface:
         for name in list(sys.modules):
             if name.startswith("orrery_app_") or name == "dogfood":
                 sys.modules.pop(name, None)
-        spec = importlib.util.spec_from_file_location(
-            "orrery_app_oracle_test", root / "app.py"
-        )
+        spec = importlib.util.spec_from_file_location("orrery_app_oracle_test", root / "app.py")
         assert spec is not None and spec.loader is not None
         module = importlib.util.module_from_spec(spec)
         sys.path.insert(0, str(root))
@@ -243,6 +258,71 @@ class TestPublishOracleSurface:
         assert pdf.content_digest.startswith("sha256:")
         assert pdf.oracle_ok is True
         assert oracle_for(pdf).pill_text == "check · freeze · smoke"
+
+        wt = CATALOG.resolve("orrery/world-time")
+        assert wt is not None
+        assert wt.oracle_ok is True
+        assert oracle_for(wt).pill_text == "check · freeze · smoke"
+
+        # Per-skill console scores — not one host-wide report stamped on every star.
+        pdf_score = module.scores.get("html-to-pdf")
+        gate_score = module.scores.get("launch-gate")
+        assert pdf_score.status == "pass"
+        assert pdf_score.total == 1
+        assert gate_score.status == "pass"
+        assert gate_score.total == 3
+        assert pdf_score.label != gate_score.label
+
+    def test_host_ok_ignores_smoke_stage_failure(self) -> None:
+        from chirp.skill.publish import (
+            STAGE_CHECK,
+            STAGE_FREEZE,
+            STAGE_SMOKE,
+            PublishReceipt,
+            StageResult,
+        )
+        from chirp.skill.smoke import SmokeReport, SmokeResult, SmokeVerdict
+
+        from trust import oracle as oracle_mod
+        from trust.oracle import OracleView, configure_oracle, oracle_for
+
+        class _Rec:
+            name = "orrery/html-to-pdf"
+            kind = "star"
+
+        smoke = SmokeReport(
+            results=(
+                SmokeResult(
+                    prompt_id="pdf-convert-smoke",
+                    tool="convert",
+                    verdict=SmokeVerdict(passed=True, reason="faithful"),
+                    engine_payload={"pages": 1},
+                    answer="ok pages application/pdf bytes_hint",
+                ),
+            )
+        )
+        receipt = PublishReceipt(
+            passed=False,
+            stages=(
+                StageResult(STAGE_CHECK, True, "ok"),
+                StageResult(STAGE_FREEZE, True, "ok"),
+                StageResult(STAGE_SMOKE, False, "1 prompt failed"),
+            ),
+            smoke=smoke,
+        )
+        configure_oracle(receipt=receipt, scores=None)
+        try:
+            view = oracle_for(_Rec())  # type: ignore[arg-type]
+            assert isinstance(view, OracleView)
+            assert view.host_ok is True
+            assert view.skill_ok is True
+            assert view.ok is True
+            assert view.pill_text == "check · freeze · smoke"
+        finally:
+            configure_oracle(receipt=None, scores=None)
+            # Restore module globals used by other tests that re-import app.
+            oracle_mod._receipt = None
+            oracle_mod._scores = None
 
 
 @pytest.mark.issue(52)

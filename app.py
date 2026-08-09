@@ -17,7 +17,8 @@ Run locally::
     uv run python app.py
 
 Point an MCP client at ``/mcp``. Open ``/`` for the brand + live feed,
-``/resolve`` for the resolver console, or ``/console`` for reliability scores.
+``/resolve`` for the resolver console, or footer **Ops · console** for host
+reliability scores.
 """
 
 from __future__ import annotations
@@ -51,7 +52,7 @@ from commerce import charge_on_verify, refund_on_forge
 from dogfood import DOGFOOD_CORPUS, build_dogfood_skills, verify_receipt
 from stars._core.direct_mcp import mount_direct_mcp
 from stars.builtins import build_direct_skills, builtin_registry
-from trust.oracle import configure_oracle
+from trust.oracle import configure_oracle, record_skill_scores_from_registry
 
 _ROOT = Path(__file__).parent
 PAGES_DIR = _ROOT / "pages"
@@ -92,9 +93,7 @@ config = AppConfig.from_env(
 app = App(config=config)
 star_registry = builtin_registry()
 direct_star_skills = build_direct_skills(star_registry)
-_DIRECT_STAR_MCP_PATHS = frozenset(
-    definition.direct_mcp_path for definition in star_registry
-)
+_DIRECT_STAR_MCP_PATHS = frozenset(definition.direct_mcp_path for definition in star_registry)
 
 if config.env != "development" and config.secret_key == _DEFAULT_SECRET:
     msg = (
@@ -171,9 +170,7 @@ def api_resolve(request: Request) -> JSONResponse:
     name = (request.query.get("name") or "").strip()
     record = CATALOG.resolve(name) if name else None
     if record is None:
-        return JSONResponse.from_value(
-            {"error": "not_found", "name": name}, status=404
-        )
+        return JSONResponse.from_value({"error": "not_found", "name": name}, status=404)
     return JSONResponse.from_value(record.as_dict())
 
 
@@ -221,18 +218,12 @@ async def api_envelope_verify(request: Request) -> JSONResponse:
     try:
         body = await request.json()
     except Exception:
-        return JSONResponse.from_value(
-            {"verified": False, "error": "invalid_json"}, status=400
-        )
+        return JSONResponse.from_value({"verified": False, "error": "invalid_json"}, status=400)
     if not isinstance(body, dict):
-        return JSONResponse.from_value(
-            {"verified": False, "error": "expected_object"}, status=400
-        )
+        return JSONResponse.from_value({"verified": False, "error": "expected_object"}, status=400)
     payment_id, price_per_call = _commerce_fields(body)
     # payment_id / price_per_call are commerce metadata, not Envelope wire fields.
-    payload = {
-        k: v for k, v in body.items() if k not in ("payment_id", "price_per_call")
-    }
+    payload = {k: v for k, v in body.items() if k not in ("payment_id", "price_per_call")}
     ok = verify_receipt(payload)
     skill = str(body["skill"]) if isinstance(body.get("skill"), str) else None
     nonce = str(body["nonce"]) if isinstance(body.get("nonce"), str) else None
@@ -260,23 +251,25 @@ async def api_envelope_verify(request: Request) -> JSONResponse:
     )
 
 
-# Publish-oracle dogfood: check → freeze → smoke, then sync the Skill DNS
-# catalog from real manifests. Skip with ORRERY_SKIP_PUBLISH=1 (async pytest).
+# Publish-oracle dogfood: seed Skill DNS, then check → freeze → smoke with
+# per-skill score slices. Skip with ORRERY_SKIP_PUBLISH=1 (async pytest).
 _publish_receipt = None
 if os.environ.get("ORRERY_SKIP_PUBLISH", "").strip() not in ("1", "true", "True"):
     try:
         asyncio.get_running_loop()
     except RuntimeError:
+        # Public stars must exist before gaze/resolve smoke prompts run.
+        refresh_catalog(star_registry, direct_star_skills, receipt=None)
         _publish_receipt = run_publish_gate(
             app,
             DOGFOOD_CORPUS,
             answer_fn=render_faithful_answer,
         )
         if _publish_receipt.smoke is not None:
-            for _skill in registry.skills():
-                scores.record(_skill.name, _publish_receipt.smoke)
+            record_skill_scores_from_registry(scores, _publish_receipt.smoke, registry)
 
 configure_oracle(receipt=_publish_receipt, scores=scores)
+# Re-sync digests / oracle_ok (and seed stars when publish was skipped).
 refresh_catalog(star_registry, direct_star_skills, receipt=_publish_receipt)
 
 

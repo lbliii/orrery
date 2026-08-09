@@ -126,7 +126,7 @@ Reusable across routes:
 | `/stars` | `.detail-hero` + `.detail-grid` | `.receipt`, `.meta-list`, `.price` |
 | `/constellations` | `.console-head` + `.detail-grid` | `.constellation`, `.legend` |
 | `/namespaces` | `.ns-hero` + `.ns-grid` | (compositional only) |
-| `/console` | Chirp-owned reliability console | Shares brand chrome via layout link only; not restyled here |
+| `/console` | Chirp-owned ops reliability console | Footer **Ops · console** only; not primary nav |
 
 ## Effects + responsive contract
 
@@ -146,8 +146,8 @@ Reusable across routes:
 
 ## `/console` note
 
-`/console` is mounted by Chirp (`mount_console`), not a `pages/` surface. It
-inherits the site via the topbar link and shared CSS variables when Chirp
-embeds into the same origin, but Orrery does not own its internal layout.
-Gaps (generic host chrome vs night observatory) are documented here; do not
-restyle the Chirp console unless a dedicated theming hook lands upstream.
+`/console` is Chirp host **ops** (`mount_console`), not a product surface.
+Primary nav stays Gaze / Resolve / Stars / Constellations / Namespaces; the
+footer links **Ops · console**. Product trust is the Resolve/Star oracle pill.
+Orrery does not restyle Chirp console chrome unless a theming hook lands
+upstream.

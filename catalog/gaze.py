@@ -88,11 +88,7 @@ GAZE_NODE_TOOLS: tuple[str, ...] = (
 def hit_from_record(record: ResolveRecord) -> GazeHit:
     """Build a gaze hit from a resolve record (descriptions + prices only)."""
     toll = record.pricing_label
-    blurb = record.description or record.short_name
-    if record.description:
-        blurb = f"{blurb} · {toll}"
-    else:
-        blurb = toll
+    blurb = f"{record.description} · {toll}" if record.description else toll
     return GazeHit(
         name=record.name,
         kind=record.kind,
