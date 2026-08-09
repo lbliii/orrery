@@ -34,6 +34,9 @@ TOOL_SKILL: dict[str, str] = {
     "fetch": "world-time",
     "get": "world-time",
     "answer": "world-time",
+    "run": "launch-gate",
+    "status": "launch-gate",
+    "explain_policy": "launch-gate",
 }
 
 _receipt: PublishReceipt | None = None

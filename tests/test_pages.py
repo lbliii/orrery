@@ -12,6 +12,7 @@ import pytest
 from chirp.testing import TestClient
 
 from catalog import CATALOG, Catalog, ResolveRecord
+from test_app import _modern_mcp_headers, _modern_mcp_params
 
 
 @pytest.mark.issue(18)
@@ -783,6 +784,101 @@ class TestConstellationPolicyModel:
         assert graph.repair_loop_max == 3
         assert any(e.kind == "repair_loop" for e in graph.edges)
         assert len(graph.composite_chain) == 4
+
+
+@pytest.mark.issue(33)
+class TestConstellationMCP:
+    async def test_tools_list_exposes_constellation_tools(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            listed = await client.post(
+                "/mcp",
+                json={
+                    "jsonrpc": "2.0",
+                    "method": "tools/list",
+                    "id": 1,
+                    "params": _modern_mcp_params(),
+                },
+                headers=_modern_mcp_headers("tools/list"),
+            )
+            tool_names = {t["name"] for t in json.loads(listed.text)["result"]["tools"]}
+            assert {"run", "status", "explain_policy"} <= tool_names
+
+    async def test_run_returns_chained_step_receipts(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            called = await client.post(
+                "/mcp",
+                json={
+                    "jsonrpc": "2.0",
+                    "method": "tools/call",
+                    "id": 2,
+                    "params": _modern_mcp_params(
+                        name="run",
+                        arguments={
+                            "pages": ["README.md"],
+                            "links": [],
+                            "examples": [],
+                        },
+                    ),
+                },
+                headers=_modern_mcp_headers("tools/call", "run"),
+            )
+            assert called.status == 200
+            body = json.loads(called.text)["result"]["content"][0]["text"]
+            assert "secret-scan" in body
+            assert "license" in body
+            assert "html-to-pdf" in body
+            assert "human-approve" in body
+            assert "run_id" in body
+            assert "Envelope" in body or "signature" in body
+
+    async def test_status_returns_latest_chain(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            await client.post(
+                "/mcp",
+                json={
+                    "jsonrpc": "2.0",
+                    "method": "tools/call",
+                    "id": 3,
+                    "params": _modern_mcp_params(
+                        name="run",
+                        arguments={"pages": ["guide.md"]},
+                    ),
+                },
+                headers=_modern_mcp_headers("tools/call", "run"),
+            )
+            status = await client.post(
+                "/mcp",
+                json={
+                    "jsonrpc": "2.0",
+                    "method": "tools/call",
+                    "id": 4,
+                    "params": _modern_mcp_params(name="status", arguments={}),
+                },
+                headers=_modern_mcp_headers("tools/call", "status"),
+            )
+            text = json.loads(status.text)["result"]["content"][0]["text"]
+            assert "completed" in text
+            assert "secret-scan" in text
+
+    async def test_explain_policy_describes_gates_and_loops(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            called = await client.post(
+                "/mcp",
+                json={
+                    "jsonrpc": "2.0",
+                    "method": "tools/call",
+                    "id": 5,
+                    "params": _modern_mcp_params(
+                        name="explain_policy",
+                        arguments={"name": "acme/launch-gate"},
+                    ),
+                },
+                headers=_modern_mcp_headers("tools/call", "explain_policy"),
+            )
+            text = json.loads(called.text)["result"]["content"][0]["text"]
+            assert "secret-scan" in text
+            assert "repair" in text.lower()
+            assert "fan" in text.lower()
 
 
 @pytest.mark.issue(29)
