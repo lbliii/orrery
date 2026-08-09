@@ -1,6 +1,6 @@
 # Orrery — Railway service config.
 #
-# Connect GitHub (lbliii/orrery) or deploy from the repo root with `railway up`.
+# GitHub (lbliii/orrery) → auto-deploy on main. Or `railway up` from repo root.
 #
 # Required service variables:
 #   CHIRP_ENV=production
