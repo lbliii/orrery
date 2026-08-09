@@ -67,6 +67,7 @@ from discovery import (
 )
 from dogfood import DOGFOOD_CORPUS, build_dogfood_skills, verify_receipt
 from mcp_compat import StandardMcpCompatibilityMiddleware
+from public_keys import KEY_SET_CACHE_CONTROL, key_set_url, public_key_set
 from stars._core.corpus import corpus_ok_by_star, validate_public_star_corpora
 from stars._core.direct_mcp import mount_direct_mcp
 from stars.builtins import build_direct_skills, builtin_registry
@@ -198,6 +199,20 @@ def mcp_server_card(request: Request) -> Response:
     return _discovery_json(server_card(_orrery_origin(request)))
 
 
+@app.route("/.well-known/orrery/keys.json")
+def envelope_public_keys(request: Request) -> Response:
+    """JWKS-like public keys for independently verifying Star Envelopes."""
+    return Response(
+        discovery_dumps(public_key_set(direct_star_skills, origin=_orrery_origin(request))),
+        content_type="application/json; charset=utf-8",
+        headers=(
+            ("Cache-Control", KEY_SET_CACHE_CONTROL),
+            ("Access-Control-Allow-Origin", DISCOVERY_CORS),
+            ("X-Content-Type-Options", "nosniff"),
+        ),
+    )
+
+
 @app.route("/.well-known/mcp")
 def mcp_well_known_manifest(request: Request) -> Response:
     return _discovery_json(mcp_manifest(_orrery_origin(request)))
@@ -278,7 +293,9 @@ def api_resolve(request: Request) -> JSONResponse:
     record = CATALOG.resolve(name) if name else None
     if record is None:
         return JSONResponse.from_value({"error": "not_found", "name": name}, status=404)
-    return JSONResponse.from_value(record.as_dict())
+    payload = record.as_dict()
+    payload["public_key_url"] = key_set_url(_orrery_origin(request))
+    return JSONResponse.from_value(payload)
 
 
 @app.route("/api/gaze/match", referenced=True)
