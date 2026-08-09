@@ -83,7 +83,10 @@ def get(
         return {"error": "upstream_too_large", "target": target, "live_at_call": True}
     try:
         record = json.loads(body)
-        raw = base64.b64decode(record["content"], validate=True)
+        encoded = record["content"]
+        if not isinstance(encoded, str):
+            raise ValueError("GitHub content must be base64 text")
+        raw = base64.b64decode("".join(encoded.split()), validate=True)
         blob = record["sha"]
     except UnicodeDecodeError, json.JSONDecodeError, KeyError, TypeError, ValueError:
         return {"error": "source_malformed", "target": target, "live_at_call": True}

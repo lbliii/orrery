@@ -1,4 +1,3 @@
-import base64
 import json
 
 from stars.gh_file_at_ref.service import get
@@ -6,7 +5,7 @@ from stars.gh_file_at_ref.service import get
 REF = "a" * 40
 URL = f"https://api.github.com/repos/lbliii/orrery/contents/README.md?ref={REF}"
 SOURCE = json.dumps(
-    {"content": base64.b64encode(b"# Orrery").decode(), "sha": "blob", "type": "file"}
+    {"content": "IyBP\nc nJlcnk=\n".replace(" ", ""), "sha": "blob", "type": "file"}
 ).encode()
 
 
