@@ -150,11 +150,13 @@ def test_public_pdf_delivery_in_a_disposable_headless_browser(tmp_path: Path) ->
                 with page.expect_download() as expected_download:
                     page.evaluate(
                         """url => { const link = document.createElement('a'); link.href = url;
-                        link.download = ''; document.body.append(link); link.click();
-                        link.remove(); }""",
+                        link.id = 'orrery-browser-download'; link.download = '';
+                        document.body.append(link); link.click(); }""",
                         artifact_url,
                     )
                 download = expected_download.value
+                assert download.failure() is None
+                page.locator("#orrery-browser-download").evaluate("element => element.remove()")
                 download_path = tmp_path / download.suggested_filename
                 download.save_as(str(download_path))
                 downloaded_sha256 = hashlib.sha256(download_path.read_bytes()).hexdigest()
