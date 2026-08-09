@@ -35,6 +35,8 @@ RUN uv pip install --python /opt/venv/bin/python \
 
 COPY app.py dogfood.py /app/
 COPY catalog /app/catalog/
+COPY commerce /app/commerce/
+COPY trust /app/trust/
 COPY pages /app/pages/
 COPY static /app/static/
 
