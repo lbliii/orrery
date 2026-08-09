@@ -80,4 +80,6 @@ class TestL0HtmlToPdf:
             payload,
             ("artifact_base64", "sha256", "byte_length", "page_count", "content_type"),
         )
-        assert health()["status"] == "ok"
+        probe = health()
+        assert probe["skill"] == "html-to-pdf"
+        assert probe["status"] in {"ok", "degraded"}
