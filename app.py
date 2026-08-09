@@ -66,6 +66,7 @@ from discovery import (
     dumps as discovery_dumps,
 )
 from dogfood import DOGFOOD_CORPUS, build_dogfood_skills, verify_receipt
+from stars._core.corpus import corpus_ok_by_star, validate_public_star_corpora
 from stars._core.direct_mcp import mount_direct_mcp
 from stars.builtins import build_direct_skills, builtin_registry
 from stars.html_to_pdf.artifacts import ArtifactDeliveryUnavailable, get_pdf_artifacts
@@ -381,8 +382,11 @@ async def api_envelope_verify(request: Request) -> JSONResponse:
 
 # Publish-oracle dogfood: seed Skill DNS, then check → freeze → smoke with
 # per-skill score slices. Skip with ORRERY_SKIP_PUBLISH=1 (async pytest).
+# L1 (#117): every public star package must ship a non-empty CORPUS unless skip.
 _publish_receipt = None
+_corpus_ok = corpus_ok_by_star(star_registry)
 if os.environ.get("ORRERY_SKIP_PUBLISH", "").strip() not in ("1", "true", "True"):
+    validate_public_star_corpora(star_registry)
     try:
         asyncio.get_running_loop()
     except RuntimeError:
@@ -396,7 +400,7 @@ if os.environ.get("ORRERY_SKIP_PUBLISH", "").strip() not in ("1", "true", "True"
         if _publish_receipt.smoke is not None:
             record_skill_scores_from_registry(scores, _publish_receipt.smoke, registry)
 
-configure_oracle(receipt=_publish_receipt, scores=scores)
+configure_oracle(receipt=_publish_receipt, scores=scores, corpus_ok=_corpus_ok)
 # Re-sync digests / oracle_ok (and seed stars when publish was skipped).
 refresh_catalog(star_registry, direct_star_skills, receipt=_publish_receipt)
 

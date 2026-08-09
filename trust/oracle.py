@@ -56,17 +56,21 @@ _HOST_STAGES: frozenset[str] = frozenset({STAGE_CHECK, STAGE_FREEZE})
 
 _receipt: PublishReceipt | None = None
 _scores: ReliabilityStore | None = None
+#: Public star name → L1 CORPUS present and non-empty.
+_corpus_ok: dict[str, bool] = {}
 
 
 def configure_oracle(
     *,
     receipt: PublishReceipt | None,
     scores: ReliabilityStore | None,
+    corpus_ok: dict[str, bool] | None = None,
 ) -> None:
     """Bind publish-oracle outputs for the process lifetime."""
-    global _receipt, _scores
+    global _receipt, _scores, _corpus_ok
     _receipt = receipt
     _scores = scores
+    _corpus_ok = dict(corpus_ok or {})
 
 
 def smoke_slice_for_skill(report: SmokeReport, skill_name: str) -> SmokeReport | None:
@@ -207,6 +211,9 @@ def oracle_for(record: ResolveRecord) -> OracleView:
     skill_ok = _skill_smoke_ok(skill_name)
     if record.kind != "star":
         skill_ok = None
+    elif corpus_ok_for_record(record) is False:
+        # L1: missing/empty package CORPUS fails the star even if host freeze passed.
+        skill_ok = False
     return OracleView(
         host_ok=host_ok,
         skill_ok=skill_ok,
@@ -215,9 +222,25 @@ def oracle_for(record: ResolveRecord) -> OracleView:
     )
 
 
+def corpus_ok_for_record(record: ResolveRecord) -> bool | None:
+    """L1 CORPUS gate for a star row, or ``None`` when the star is unscored here."""
+    if record.kind != "star":
+        return None
+    if record.name not in _corpus_ok:
+        return None
+    return _corpus_ok[record.name]
+
+
 def oracle_ok_for_record(record: ResolveRecord) -> bool:
-    """Whether the catalog row should show oracle-ok (used during catalog sync)."""
+    """Whether the catalog row should show oracle-ok (used during catalog sync).
+
+    Public stars without a non-empty package ``CORPUS`` are never oracle-ok
+    (L1 / #117), even when host check+freeze passed.
+    """
     view = oracle_for(record)
     if record.kind != "star":
         return view.host_ok
+    corpus = corpus_ok_for_record(record)
+    if corpus is False:
+        return False
     return view.ok

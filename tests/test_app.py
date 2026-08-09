@@ -312,7 +312,7 @@ class TestPublishOracleSurface:
             ),
             smoke=smoke,
         )
-        configure_oracle(receipt=receipt, scores=None)
+        configure_oracle(receipt=receipt, scores=None, corpus_ok={})
         try:
             view = oracle_for(_Rec())  # type: ignore[arg-type]
             assert isinstance(view, OracleView)
@@ -321,10 +321,11 @@ class TestPublishOracleSurface:
             assert view.ok is True
             assert view.pill_text == "check · freeze · smoke"
         finally:
-            configure_oracle(receipt=None, scores=None)
+            configure_oracle(receipt=None, scores=None, corpus_ok={})
             # Restore module globals used by other tests that re-import app.
             oracle_mod._receipt = None
             oracle_mod._scores = None
+            oracle_mod._corpus_ok = {}
 
 
 @pytest.mark.issue(52)

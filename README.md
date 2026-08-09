@@ -81,6 +81,8 @@ Strategy ADRs (control plane, prepaid wallet, Stripe top-up, discovery):
 
 Strategy plan (vending-machine sky, discovery at scale, dual trust, thin harnesses): [`docs/plan/vending-machine-sky.md`](./docs/plan/vending-machine-sky.md) · saga [#56](https://github.com/lbliii/orrery/issues/56).
 
+Star evaluation (L0–L5; corpus/oracle first): [`docs/plan/star-eval.md`](./docs/plan/star-eval.md) · checklist [`docs/design/star-eval.md`](./docs/design/star-eval.md) · epic [#114](https://github.com/lbliii/orrery/issues/114).
+
 Specimen sky (pattern-coverage tranche): [`docs/plan/specimen-sky.md`](./docs/plan/specimen-sky.md) · saga [#76](https://github.com/lbliii/orrery/issues/76). Scouting litmus + shapes: [`docs/design/scouting.md`](./docs/design/scouting.md). Product atlases (Pidge-style soft recommend): [`docs/design/atlas.md`](./docs/design/atlas.md).
 
 Design mocks (validated direction): [`design/`](./design/). Frozen favorite: [`design/v1-night-gold/`](./design/v1-night-gold/).
@@ -113,7 +115,7 @@ curl -s http://localhost:8000/mcp \
   -d '{"jsonrpc":"2.0","method":"tools/call","id":2,"params":{"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientCapabilities":{}},"name":"gaze_match","arguments":{"intent":"html pdf convert","node":"public"}}}'
 ```
 
-Boot runs freeze + smoke against the dogfood corpus so `/console` shows reliability scores. Set `ORRERY_SKIP_PUBLISH=1` to skip that during local iteration.
+Boot runs freeze + smoke against the dogfood corpus so `/console` shows reliability scores. Every public star package must ship a non-empty `corpus.py` (`CORPUS`) or it is not `oracle_ok` (L1). Set `ORRERY_SKIP_PUBLISH=1` to skip the publish gate during local iteration. Eval layers: [`docs/design/star-eval.md`](./docs/design/star-eval.md).
 
 Copy `.env.example` → `.env` if you want stable signing keys across restarts.
 
