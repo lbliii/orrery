@@ -54,9 +54,12 @@ every leaf itself when parallel work is possible.
    a **Task subagent** with the worker contract below. Prefer **parallel**
    subagents when owned paths do not overlap.
 4. **Integrate** — Track PRs, merge when asked (or when you said “drive to
-   merge”), close issues, refresh the board, report status in plain language.
-5. **Stop conditions** — Hit the turn cap, empty ready queue, path conflict, or
-   user interrupt. Never fake-unblock to keep the swarm busy.
+   merge”), close issues, **drop `ready` on close**, refresh the board, report
+   status in plain language. Prefer fixing worker CI (often ruff) in-branch
+   over re-delegating the whole leaf.
+5. **Stop conditions** — Hit the turn/leaf cap, empty ready queue, path
+   conflict, or user interrupt. Caps are intentional pauses — stop and report
+   the next ready leaf; do not fake-unblock to keep the swarm busy.
 
 ### Caps (per orchestrator turn unless user overrides)
 
@@ -64,8 +67,12 @@ every leaf itself when parallel work is possible.
 | --- | --- |
 | Planner unblocks | ≤5 leaves → `ready`, or ≤2 designs closed |
 | Parallel workers | ≤3 subagents (raise only if paths disjoint) |
-| Leaves closed this drive | ≤5 unless user says “keep going” |
+| Leaves closed this drive | ≤5 unless user says “keep going” / `drive` |
 | Megafile conflict | Serialize; do not parallelize overlapping owned paths |
+
+**Plan gate bias:** A closed design/ADR that unblocks many leaves beats shipping
+one more half-specified worker. Prefer planner freeze when the ready queue is
+empty or leaves lack owned paths / acceptance.
 
 ### Status lines
 
@@ -94,15 +101,20 @@ You are an Orrery worker. Read AGENTS.md + field-guide/index.md.
 Claim ONLY GitHub issue #<N> if labels include leaf AND ready.
 Restate outcome, owned paths, frozen decisions, acceptance.
 Implement only owned paths; one PR with PR template; run acceptance.
+Before push: `uv run ruff check .` (and `--fix` when safe) — CI lint is the
+usual fail, not pytest.
 If paths/acceptance missing, stop and report triage needed — do not invent design.
-Return: PR URL, acceptance command + result, files touched.
+Do NOT merge; leave PR open for the orchestrator.
+Return: PR URL, acceptance command + result, ruff clean, files touched.
 ```
 
 ### Path disjointness
 
 Before parallel `claim`s, compare **Owned paths**. If two leaves both touch
-`app.py`, `discovery.py`, `dogfood.py`, or the same `stars/<name>/`, run them
-**serially** (or triage a split).
+`app.py`, `discovery.py`, `dogfood.py`, the same `stars/<name>/`, or the same
+shared package (e.g. both under `stars/_core/`), run them **serially** (or
+triage a split). Fixture-only vs star-package leaves are usually safe in
+parallel.
 
 ---
 
@@ -142,7 +154,20 @@ Before parallel `claim`s, compare **Owned paths**. If two leaves both touch
 4. Touch **only** owned paths (megafile carve-outs must be explicit on the issue).
 5. Do not invent schema/policy; open a design issue or comment instead.
 6. One PR using the PR template; run the acceptance command; report results.
-7. Optional: one field-guide line for a true surprise (respect line budget).
+7. **Before push:** `uv run ruff check .` must be clean (fix import order /
+   line length locally — do not leave that to the orchestrator).
+8. Optional: one field-guide line for a true surprise (respect line budget).
+9. Do not merge unless the user pinned `ship #N` with merge intent; default is
+   open PR for orchestrator integrate.
+
+### Integrate hygiene (orchestrator / `ship`)
+
+When a leaf PR merges and the issue closes:
+
+1. Remove `ready` (and `blocked` if somehow still present) from the closed issue.
+2. Confirm the board’s `leaf`+`ready` list no longer includes it.
+3. If the merge unblocks dependents, either flip them to `ready` or leave a
+   one-line comment on why they stay `blocked`.
 
 ### `triage #N` (planner)
 

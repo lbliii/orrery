@@ -128,7 +128,7 @@ labels after create** (GitHub forms cannot map dropdowns to labels by themselves
 | Blocked | `blocked` (remove `ready`) | Dependency or human gate; no worker lease |
 | Ready | `ready` (remove `blocked`) | Leaf may be claimed by a worker |
 | In flight | assignee or PR link | One worker owner; do not double-claim |
-| Done | issue closed | Acceptance true; PR merged or epic exit graded |
+| Done | issue closed; **remove `ready`** | Acceptance true; PR merged or epic exit graded |
 
 Rules:
 
@@ -138,6 +138,8 @@ Rules:
 3. Epics may carry `blocked` while children proceed only if the epic exit still
    waits on an external gate — prefer blocking the specific leaf.
 4. Priority (`P0`–`P3`) is scheduling, not readiness.
+5. Closing a leaf **must** drop `ready` (and `blocked`). Stale `ready` on closed
+   issues poisons orchestrator board counts.
 
 ## Ownership and megafiles
 
@@ -149,6 +151,7 @@ carve-out or a prior split/refactor leaf:
 - `dogfood.py`
 - `static/styles.css` (unless the leaf is brand-scoped)
 - package-wide `__init__` registries that every star touches
+- shared packages such as `stars/_core/` (serialize leaves that both edit it)
 
 Prefer “touch only `stars/<name>/` + `tests/stars/…` + ops doc” shaped leaves.
 
@@ -161,14 +164,17 @@ Prefer “touch only `stars/<name>/` + `tests/stars/…` + ops doc” shaped lea
 4. Planner files leaves with owned paths + machine acceptance.
 5. Planner flips leaves to ready when deps close.
 6. Worker claims one ready leaf; implements only owned paths.
-7. Worker opens PR citing issue number + acceptance commands.
-8. Review lenses: CI, canaries, envelope/verify tests, human on new decisions.
-9. On surprise, update field-guide/ (budgeted) or open a design issue — do not
-   silently expand leaf scope.
+7. Worker runs acceptance **and** `uv run ruff check .` before push.
+8. Worker opens PR citing issue number + acceptance commands (does not merge).
+9. Orchestrator integrates: CI green → merge → close issue → **drop `ready`**.
+10. On surprise, update field-guide/ (budgeted) or open a design issue — do not
+    silently expand leaf scope.
 ```
 
 Frontier models belong on steps 1–5 and on intentional breakage that needs a
 new decision. Inexpensive models belong on step 6 when the leaf is explicit.
+A design/ADR freeze that clears many deps is higher leverage than one more
+underspecified leaf.
 
 ## Intentional breakage
 
@@ -183,7 +189,8 @@ If a leaf must change a core contract outside its owned paths:
 
 | Lens | Cheap signal |
 | --- | --- |
-| CI pytest | Default gate |
+| CI ruff | Import order / line length — usual first fail |
+| CI pytest | Default behavioral gate |
 | Issue marker / named acceptance | Leaf-local grade |
 | Public canaries | Live contract still true |
 | Envelope / verify tests | Receipt trust boundary |
@@ -221,6 +228,8 @@ Orrery. `field-guide/index.md` is the inject point. Constraints:
 - [ ] Epics link parent saga and child issues
 - [ ] Design decisions that outlive an epic land an ADR
 - [ ] PRs fill the PR template and name the acceptance command run
+- [ ] Workers run `uv run ruff check .` before push (not only pytest acceptance)
+- [ ] Closed leaves no longer carry `ready`
 - [ ] Surprises go to `field-guide/` within budget
 
 ## Non-goals

@@ -38,6 +38,7 @@ as contention hotspots unless the leaf explicitly owns a carve-out:
 - `app.py`, `discovery.py`, `dogfood.py`
 - `static/styles.css` (unless brand-scoped)
 - shared star registries / package `__init__` wiring
+- same shared package (e.g. two leaves under `stars/_core/`) — serialize
 
 ## Surprises (keep short)
 
@@ -46,6 +47,8 @@ as contention hotspots unless the leaf explicitly owns a carve-out:
 - Gaze must not return valuable tool payloads — shortlist + facets only.
 - Public networked stars are allowlisted and bounded; read the star ops doc
   before widening egress.
+- Swarm CI tax: acceptance pytest is often green while `ruff check .` fails
+  (I001/E501). Run ruff before push; on merge, drop `ready` from the closed leaf.
 
 ## How to add a line
 
