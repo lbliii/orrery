@@ -48,6 +48,7 @@ _EXAMPLE_TOOL_PREFERENCE = (
     "observe",
     "lookup",
     "validate",
+    "bind",
     "diff",
     "head",
     "inspect",
@@ -453,6 +454,10 @@ def _sample_value(
         return "www.python.org"
     if lowered in {"dataset", "profile", "source", "document", "target"}:
         return prop.get("default") or "example"
+    if lowered in {"decision_id"}:
+        return "planner-freeze-1"
+    if lowered in {"statement"}:
+        return "pause for typed decision on unsupported MyST directive; do not invent MDX."
     if lowered in {"idempotency_key"}:
         return "demo-1"
     if lowered in {"run_id"}:

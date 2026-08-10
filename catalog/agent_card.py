@@ -565,6 +565,33 @@ _STAR_CARDS: dict[str, AgentCard] = {
         ),
         outputs=(_io("row", "object"), *_ENVELOPE),
     ),
+    "orrery/decision-bind": _card(
+        summary="Seal a planner decision into a citeable DecisionReceipt with a stable digest.",
+        use_when=(
+            "You need a citeable freeze before downstream work proceeds",
+            "You want offline-verifiable decision_digest evidence, not debate hosting",
+        ),
+        not_for=(
+            "Hosting ADRs or design docs",
+            "Multi-party voting or quorum signatures",
+            "Fetching statement text by digest alone",
+        ),
+        example_intents=("seal planner decision", "bind decision receipt"),
+        tools=("bind",),
+        coverage_slug="decision-bind",
+        inputs=(
+            _io("decision_id", "string", required=True, note="stable caller id ≤128 chars"),
+            _io("statement", "string", required=True, note="exact decision text ≤16 KiB UTF-8"),
+            _io("adr_url", "string", note="optional HTTPS ADR link"),
+            _io("issue_url", "string", note="optional HTTPS tracker link"),
+        ),
+        outputs=(
+            _io("decision_digest", "string"),
+            _io("decided_at", "string"),
+            _io("statement", "string"),
+            *_ENVELOPE,
+        ),
+    ),
     "orrery/row-validate": _card(
         summary="Pure validation of one row against a named static source-aligned profile.",
         use_when=(

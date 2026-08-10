@@ -5,9 +5,9 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 
 from runs import (
+    CleanupLag,
     InMemoryAuditLog,
     InMemoryQueueBackend,
-    CleanupLag,
     build_operator_health,
 )
 from runs.reconcile import AuditEvent
