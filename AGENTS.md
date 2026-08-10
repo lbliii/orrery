@@ -1,7 +1,10 @@
 # AGENTS.md
 
-How to work on this repo with agents. Prefer **simple invokes** below over
-pasting long prompts.
+How to work on this repo with agents.
+
+**Default:** you talk to the **orchestrator** (this chat). It reads the board,
+plans, and **delegates** planner/worker work to subagents. You should not have
+to say `claim #N` unless you want a single-leaf escape hatch.
 
 | Doc | Role |
 | --- | --- |
@@ -18,24 +21,92 @@ Planners own `saga` / `epic` / `design`. Do not re-decide ADRs in a leaf.
 
 ## Simple invokes
 
-Say one of these (new chat preferred for worker/planner modes):
-
-| You say | Mode | Agent does |
+| You say | Mode | What happens |
 | --- | --- | --- |
-| **`board`** / **`status`** | Read-only | Count open saga/epic/design/`leaf+ready`/`leaf+blocked`; list ready titles; one-line burndown hint |
-| **`burndown`** | Planner | Unblock the queue (cap ≤5 newly `ready` or ≤2 designs closed). No product code. End with a board |
-| **`unblock`** | Planner | Same as burndown, but focus only on flipping `blocked` → `ready` when deps are real |
-| **`plan #N`** | Planner | Design/epic `#N` only — freeze decision, ADR if lasting, file child leaves with owned paths + acceptance + `blocked`/`ready` |
-| **`claim #N`** / **`work #N`** | Worker | Implement leaf `#N` only if `leaf`+`ready`; restated paths + acceptance; one PR; run acceptance |
-| **`ship #N`** | Worker | Alias of `claim #N` with explicit “open PR + fill PR template” |
-| **`triage #N`** | Planner | Make issue `#N` swarm-ready (owned paths, acceptance, labels) or explain why it stays blocked — no feature code |
+| **`swarm`** / **`drive`** / **`orchestrate`** | **Orchestrator (default)** | Parent stays in this chat; runs board → plan/unblock → delegate workers via subagents; loops until cap or you stop |
+| **`swarm #N`** / **`drive epic #N`** / **`drive saga #N`** | Orchestrator scoped | Same, but only that epic/saga subtree |
+| **`board`** / **`status`** | Read-only | Counts + ready list; no edits |
+| **`burndown`** / **`unblock`** | Planner-only | Unblock queue (no product code); may be a subagent |
+| **`plan #N`** | Planner-only | Design/epic freeze; usually a subagent |
+| **`claim #N`** / **`work #N`** / **`ship #N`** | Worker escape hatch | Single leaf in-process or one subagent — use when you want to pin one issue |
+| **`triage #N`** | Planner escape hatch | Make one issue swarm-ready |
 
-If the user names an issue without a verb (`#158`), default to **`claim #N`** when
-it is `leaf`+`ready`, else **`triage #N`**.
+If you give a goal in plain language (“push tree-handling”, “clear wave:1 ready
+queue”), treat it as **`swarm`** with that scope — not a request that *you*
+micro-claim leaves.
 
 ---
 
-## Mode contracts
+## Orchestrator mode (default contract)
+
+The parent agent in this chat is the **orchestrator**. It does **not** implement
+every leaf itself when parallel work is possible.
+
+### Responsibilities (parent)
+
+1. **Board** — `gh` summary: ready / blocked / open designs; pick the active
+   saga/epic (default bias: [#237](https://github.com/lbliii/orrery/issues/237)
+   tree-handling, then [#124](https://github.com/lbliii/orrery/issues/124),
+   [#160](https://github.com/lbliii/orrery/issues/160), [#1](https://github.com/lbliii/orrery/issues/1)).
+2. **Plan gate** — If ready queue is empty or leaves lack owned paths, run or
+   delegate **planner** work first (`burndown` / `plan #N` / `triage`).
+3. **Delegate workers** — For each `leaf`+`ready` in scope (respect caps), launch
+   a **Task subagent** with the worker contract below. Prefer **parallel**
+   subagents when owned paths do not overlap.
+4. **Integrate** — Track PRs, merge when asked (or when you said “drive to
+   merge”), close issues, refresh the board, report status in plain language.
+5. **Stop conditions** — Hit the turn cap, empty ready queue, path conflict, or
+   user interrupt. Never fake-unblock to keep the swarm busy.
+
+### Caps (per orchestrator turn unless user overrides)
+
+| Knob | Default |
+| --- | --- |
+| Planner unblocks | ≤5 leaves → `ready`, or ≤2 designs closed |
+| Parallel workers | ≤3 subagents (raise only if paths disjoint) |
+| Leaves closed this drive | ≤5 unless user says “keep going” |
+| Megafile conflict | Serialize; do not parallelize overlapping owned paths |
+
+### Status lines
+
+Before each major step, emit one short line, e.g.:
+
+- `Orchestrator: board — 3 ready, 41 blocked`
+- `Orchestrator: planner — unblock #244 deps`
+- `Orchestrator: worker ×2 — #244, #159`
+- `Orchestrator: integrate — PR …`
+
+### Subagent briefs (copy into Task prompts)
+
+**Planner subagent** — read-only product code; may edit issues/ADRs/docs:
+
+```text
+You are an Orrery planner. Read AGENTS.md + docs/plan/issue-lifecycle.md.
+No star/runtime implementation. Goal: <GOAL>.
+Follow the burndown/plan/triage contract. Return: ready now / newly unblocked /
+still blocked (why) / ADR paths touched.
+```
+
+**Worker subagent** — one leaf only:
+
+```text
+You are an Orrery worker. Read AGENTS.md + field-guide/index.md.
+Claim ONLY GitHub issue #<N> if labels include leaf AND ready.
+Restate outcome, owned paths, frozen decisions, acceptance.
+Implement only owned paths; one PR with PR template; run acceptance.
+If paths/acceptance missing, stop and report triage needed — do not invent design.
+Return: PR URL, acceptance command + result, files touched.
+```
+
+### Path disjointness
+
+Before parallel `claim`s, compare **Owned paths**. If two leaves both touch
+`app.py`, `discovery.py`, `dogfood.py`, or the same `stars/<name>/`, run them
+**serially** (or triage a split).
+
+---
+
+## Mode contracts (leaf-level — for subagents / escape hatches)
 
 ### `board` / `status`
 
@@ -85,6 +156,7 @@ Rewrite or comment so `#N` matches the leaf/design template. Add `leaf` /
 | Concern | Where it lives | Become a public Star/Constellation? |
 | --- | --- | --- |
 | How we burn down *this* GitHub backlog | `AGENTS.md`, issue lifecycle, labels | **No** — harness/process, not a toll on live truth |
+| Orchestrator / subagent delegation | `AGENTS.md` (this file) | **No** — Cursor harness, not Orrery SKUs |
 | Field guide / surprises while building Orrery | `field-guide/` | **No** — repo stigmergy |
 | Saga/epic/design templates | `.github/ISSUE_TEMPLATE/` | **No** |
 | Sealed fact a *any* agent hangs on its tree | `stars/` | **Yes** — gaze → resolve → call → seal |
@@ -101,8 +173,9 @@ result mid-tree, it belongs on the [tree-handling rim](docs/plan/tree-handling-r
 
 ## Session hygiene
 
-- **New chat** for each `claim` / `plan` / `burndown` (keep planner and worker
-  context separate).
-- **One leaf per worker session.**
-- Prefer inexpensive models for `claim` when the leaf is explicit; frontier for
-  `plan` / `burndown`.
+- **Stay in one orchestrator chat** for `swarm` / `drive` — subagents get fresh
+  context via Task; you should not open a new chat per leaf.
+- New chat is still fine for a clean `board` glance or a pinned `claim #N`
+  escape hatch.
+- Prefer inexpensive models for worker subagents when the leaf is explicit;
+  frontier for orchestrator judgment and planner freezes.
