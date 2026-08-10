@@ -338,11 +338,11 @@
       "expect_top3": ["orrery/write-authority-check"]
     },
     {
-      "intent": "check markdown links bounded",
+      "intent": "bounded markdown link status",
       "expect_top3": ["orrery/link-check-bounded"]
     },
     {
-      "intent": "verify docs links under cap",
+      "intent": "docs links under max_link_count",
       "expect_top3": ["orrery/link-check-bounded"]
     },
     {
