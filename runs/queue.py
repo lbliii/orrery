@@ -32,6 +32,15 @@ class FailureDisposition:
     reason: str
 
 
+@dataclass(frozen=True)
+class QueueStats:
+    ready_depth: int
+    leased_depth: int
+    dead_letter_depth: int
+    oldest_ready_age_seconds: float | None
+    oldest_lease_age_seconds: float | None
+
+
 class QueueBackend(Protocol):
     """Atomic durable queue operations, implemented by Redis or a test fake."""
 
@@ -46,6 +55,9 @@ class QueueBackend(Protocol):
     ) -> FailureDisposition: ...
     def recover_expired(self, *, max_attempts: int) -> int: ...
     def dead_letters(self) -> tuple[Mapping[str, Any], ...]: ...
+    def active_run_ids(self) -> frozenset[str]: ...
+    def drop(self, run_id: str) -> bool: ...
+    def stats(self) -> QueueStats: ...
 
 
 class InMemoryQueueBackend:
@@ -134,6 +146,46 @@ class InMemoryQueueBackend:
     def dead_letters(self) -> tuple[Mapping[str, Any], ...]:
         return tuple(dict(job) for job in self._dead)
 
+    def active_run_ids(self) -> frozenset[str]:
+        return frozenset(self._jobs)
+
+    def drop(self, run_id: str) -> bool:
+        job = self._jobs.pop(run_id, None)
+        return job is not None
+
+    def stats(self) -> QueueStats:
+        now = self._clock()
+        ready_ages: list[float] = []
+        lease_ages: list[float] = []
+        ready_depth = leased_depth = 0
+        for job in self._jobs.values():
+            if "token" in job:
+                leased_depth += 1
+                expires = job.get("expires_at")
+                if isinstance(expires, datetime):
+                    # Age of the lease is how long until expiry inverted: seconds held ≈
+                    # not tracked; expose seconds until expiry as negative age signal via
+                    # oldest lease = max(now - available proxy). Use expires_at - lease
+                    # start unknown; report seconds past available_at while leased.
+                    available = job.get("available_at")
+                    if isinstance(available, datetime):
+                        lease_ages.append(max(0.0, (now - available).total_seconds()))
+            elif job.get("available_at") <= now:
+                ready_depth += 1
+                available = job["available_at"]
+                ready_ages.append(max(0.0, (now - available).total_seconds()))
+            else:
+                ready_depth += 1
+                available = job["available_at"]
+                ready_ages.append(max(0.0, (now - available).total_seconds()))
+        return QueueStats(
+            ready_depth=ready_depth,
+            leased_depth=leased_depth,
+            dead_letter_depth=len(self._dead),
+            oldest_ready_age_seconds=max(ready_ages) if ready_ages else None,
+            oldest_lease_age_seconds=max(lease_ages) if lease_ages else None,
+        )
+
     def _valid_job(self, lease: QueueLease) -> dict[str, Any] | None:
         job = self._jobs.get(lease.run_id)
         if job is None or job.get("token") != lease.token or job.get("expires_at") <= self._clock():
@@ -153,6 +205,13 @@ class RedisClient(Protocol):
     """Small subset shared by redis-py and an intentionally tiny test fake."""
 
     def eval(self, script: str, numkeys: int, *keys_and_args: str) -> str | bytes | None: ...
+    def hkeys(self, name: str) -> list[Any]: ...
+    def hdel(self, name: str, *keys: str) -> int: ...
+    def zrem(self, name: str, *values: str) -> int: ...
+    def hlen(self, name: str) -> int: ...
+    def zcard(self, name: str) -> int: ...
+    def llen(self, name: str) -> int: ...
+    def zrange(self, name: str, start: int, end: int, withscores: bool = False) -> list[Any]: ...
 
 
 class RedisQueueBackend:
@@ -364,6 +423,40 @@ class RedisQueueBackend:
         raw = self._call("dead", [self._key("dead")], []) or "[]"
         return tuple(json.loads(raw))
 
+    def active_run_ids(self) -> frozenset[str]:
+        keys = self._client.hkeys(self._key("jobs"))
+        return frozenset(
+            key.decode() if isinstance(key, bytes) else str(key) for key in keys
+        )
+
+    def drop(self, run_id: str) -> bool:
+        removed = int(self._client.hdel(self._key("jobs"), run_id) or 0)
+        self._client.zrem(self._key("ready"), run_id)
+        self._client.zrem(self._key("leases"), run_id)
+        return removed > 0
+
+    def stats(self) -> QueueStats:
+        now_ms = self._millis()
+        ready = self._client.zrange(self._key("ready"), 0, -1, withscores=True)
+        leases = self._client.zrange(self._key("leases"), 0, -1, withscores=True)
+        ready_ages = [
+            max(0.0, (now_ms - float(score)) / 1000.0)
+            for _member, score in _score_pairs(ready)
+        ]
+        # Lease zset scores are expiry timestamps; report how overdue the worst
+        # lease is (0 while healthy). Full "held for" needs claim-time storage.
+        lease_overdue = [
+            max(0.0, (now_ms - float(score)) / 1000.0)
+            for _member, score in _score_pairs(leases)
+        ]
+        return QueueStats(
+            ready_depth=int(self._client.zcard(self._key("ready")) or 0),
+            leased_depth=int(self._client.zcard(self._key("leases")) or 0),
+            dead_letter_depth=int(self._client.llen(self._key("dead")) or 0),
+            oldest_ready_age_seconds=max(ready_ages) if ready_ages else None,
+            oldest_lease_age_seconds=max(lease_overdue) if lease_overdue else None,
+        )
+
     def _key(self, suffix: str) -> str:
         return f"{self._ns}:{suffix}"
 
@@ -385,6 +478,18 @@ class RedisQueueBackend:
             raw["token"],
             datetime.fromtimestamp(raw["expires_at_ms"] / 1000, UTC),
         )
+
+
+def _score_pairs(values: list[Any]) -> list[tuple[Any, float]]:
+    if not values:
+        return []
+    if isinstance(values[0], (tuple, list)) and len(values[0]) == 2:
+        return [(item[0], float(item[1])) for item in values]
+    # Flat [member, score, member, score, ...]
+    pairs: list[tuple[Any, float]] = []
+    for index in range(0, len(values), 2):
+        pairs.append((values[index], float(values[index + 1])))
+    return pairs
 
 
 class ManagedRunWorker:
@@ -453,7 +558,9 @@ class ManagedRunWorker:
             reason="complete",
             receipt=receipt,
         )
-        return finalized is not None and self.queue.acknowledge(lease)
+        if finalized is None:
+            return False
+        return self.queue.acknowledge(lease) or self.queue.drop(lease.run_id)
 
     def fail(self, lease: QueueLease, *, reason: str) -> FailureDisposition:
         disposition = self.queue.fail(

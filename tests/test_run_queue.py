@@ -120,3 +120,25 @@ class _FakeRedis:
     def eval(self, script: str, numkeys: int, *keys_and_args: str) -> str | bytes | None:
         self.calls.append((script, numkeys, keys_and_args))
         return self.replies.pop(0)
+
+    def hkeys(self, _name: str) -> list[str]:
+        return []
+
+    def hdel(self, _name: str, *_keys: str) -> int:
+        return 0
+
+    def zrem(self, _name: str, *_values: str) -> int:
+        return 0
+
+    def hlen(self, _name: str) -> int:
+        return 0
+
+    def zcard(self, _name: str) -> int:
+        return 0
+
+    def llen(self, _name: str) -> int:
+        return 0
+
+    def zrange(self, _name: str, _start: int, _end: int, withscores: bool = False) -> list:
+        del withscores
+        return []

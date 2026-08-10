@@ -95,7 +95,12 @@ reason.
 
 Redis is intentionally **not** the authoritative receipt store. If a worker
 dies, a later worker recovers its lease from Redis and reconciles the final
-Postgres state.
+Postgres state via `runs.reconcile.RunReconciler`, which emits compact
+`AuditEvent` records (dead-letter seal, orphan repair, terminal queue drop,
+seal-race). Operators can read a bounded summary from the worker probe
+(`OperatorRunHealth` / `/health`) — queue depth/age, audit counters, cleanup
+lag, optional artifact byte totals — never artifact bodies or credentials.
+See issue [#158](https://github.com/lbliii/orrery/issues/158).
 
 ## Chirp, Shapes, and Pelt
 

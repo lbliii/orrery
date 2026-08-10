@@ -6,6 +6,7 @@
 - **Complements:** [vending-machine-sky.md](./vending-machine-sky.md) (ADR 0005),
   [issue-lifecycle.md](./issue-lifecycle.md),
   [specimen-sky.md](./specimen-sky.md)
+- **ADR:** [0006-decision-receipt.md](../adr/0006-decision-receipt.md) (DecisionReceipt)
 - **Evidence:** [Cursor — Agent swarms and the new model economics](https://cursor.com/blog/agent-swarm-model-economics)
 
 ## Why this matters
