@@ -160,6 +160,28 @@ def test_constellation_cards_include_run_contract() -> None:
     assert any(m["name"] == "orrery/html-to-pdf" for m in card.member_stars)
     assert "run_contract" in card.as_dict()
     assert "dispositions" in card.as_dict()
+    assert "subtree_contract" in card.as_dict()
+
+
+def _assert_subtree_contract(contract: object) -> None:
+    assert isinstance(contract, dict)
+    for key in ("stages", "pause_policy", "composite_receipt_fields", "lease_rule"):
+        assert key in contract
+    assert contract["lease_rule"] == "waiting_never_holds_worker_lease"
+    pause = contract["pause_policy"]
+    assert isinstance(pause, dict)
+    assert pause["allowed"] is False
+    assert pause["checkpoint_after_each_stage"] is True
+    stages = contract["stages"]
+    assert isinstance(stages, list) and stages
+    for stage in stages:
+        assert {"id", "label", "role"} <= set(stage)
+        assert stage["role"] in {"gate", "witness", "fan_in", "composite", "pause"}
+    receipt = contract["composite_receipt_fields"]
+    assert receipt["chain"] == "signed-envelope-chain"
+    assert "disposition" in receipt
+    assert "policy_digest" in receipt
+    assert {"digest", "key_id"} <= set(receipt["release"])
 
 
 def test_public_constellation_cards_expose_run_contract() -> None:
@@ -174,6 +196,7 @@ def test_public_constellation_cards_expose_run_contract() -> None:
             "blocked",
         )
         assert card.member_stars is not None
+        _assert_subtree_contract(card.as_dict()["subtree_contract"])
 
 
 def test_inputs_summary_prefers_run_contract_for_constellations() -> None:
@@ -191,6 +214,15 @@ def test_gaze_describe_public_constellation_includes_run_contract(example_app) -
     assert described["graph_summary"]
     assert "ready" in described["dispositions"]
     assert described["agent_card"]["run_contract"]["entry_tool"] == "run"
+    _assert_subtree_contract(described["agent_card"]["subtree_contract"])
+
+
+def test_public_constellation_gaze_describe_includes_subtree_contract(example_app) -> None:
+    for name in ("orrery/stale-proof", "orrery/ship-check", "orrery/table-fresh"):
+        described = CATALOG.describe(name)
+        assert described["status"] == "ok"
+        assert described["kind"] == "constellation"
+        _assert_subtree_contract(described["agent_card"]["subtree_contract"])
 
 
 def test_explain_policy_aligns_with_agent_card_fields() -> None:
@@ -209,6 +241,18 @@ def test_explain_policy_aligns_with_agent_card_fields() -> None:
     ]
     assert explained["run_contract"]["entry_tool"] == "run"
     assert any(m["name"] == "orrery/html-to-pdf" for m in explained["member_stars"])
+    _assert_subtree_contract(explained["subtree_contract"])
+
+
+def test_explain_policy_public_constellations_include_subtree_contract() -> None:
+    from catalog.constellation_run import explain_policy
+
+    for name in ("orrery/stale-proof", "orrery/ship-check", "orrery/table-fresh"):
+        explained = explain_policy(name)
+        assert explained["status"] == "ok"
+        _assert_subtree_contract(explained["subtree_contract"])
+        card = require_card(name)
+        assert explained["subtree_contract"] == card.as_dict()["subtree_contract"]
 
 
 async def test_well_known_agent_card_schema_route(example_app) -> None:

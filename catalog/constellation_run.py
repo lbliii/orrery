@@ -102,12 +102,17 @@ def _sign_gate_envelope(
 def explain_policy(name: str = "acme/launch-gate") -> dict[str, Any]:
     """Plain-language gates, repair loops, and fan-in for a constellation.
 
-    Aligns with Agent Card constellation fields (#220): ``graph_summary``,
-    input schema, ``dispositions``, ``run_contract``, and ``member_stars``.
-    When invoked through the MCP ``explain_policy`` tool, Chirp seals this
-    payload in a signed Envelope.
+    Aligns with Agent Card constellation fields (#220 + ADR 0007):
+    ``graph_summary``, input schema, ``dispositions``, ``run_contract``,
+    ``member_stars``, and ``subtree_contract``. When invoked through the MCP
+    ``explain_policy`` tool, Chirp seals this payload in a signed Envelope.
     """
-    from catalog.agent_card import DEFAULT_DISPOSITIONS, card_for, member_stars_from_policy
+    from catalog.agent_card import (
+        DEFAULT_DISPOSITIONS,
+        card_for,
+        member_stars_from_policy,
+        subtree_contract_from_policy,
+    )
 
     graph = policy_for(name)
     if graph is None:
@@ -170,6 +175,13 @@ def explain_policy(name: str = "acme/launch-gate") -> dict[str, Any]:
         if card is not None and card.member_stars is not None
         else [dict(item) for item in member_stars_from_policy(name)]
     )
+    if card is not None and card.subtree_contract is not None:
+        subtree = card.as_dict()["subtree_contract"]
+    else:
+        subtree = subtree_contract_from_policy(
+            name,
+            dispositions=tuple(dispositions),
+        )
 
     return {
         "constellation": name,
@@ -194,6 +206,7 @@ def explain_policy(name: str = "acme/launch-gate") -> dict[str, Any]:
         "dispositions": dispositions,
         "run_contract": run_contract,
         "member_stars": members,
+        "subtree_contract": subtree,
         "gates": [n.label for n in gate_nodes],
         "repair_loop": {
             "from": repair.source if repair else None,

@@ -44,6 +44,12 @@ class AgentCardIO:
 #: Sealed composite outcomes agents should expect from constellation runs.
 DEFAULT_DISPOSITIONS: tuple[str, ...] = ("ready", "not-ready", "stale", "blocked")
 
+#: ADR 0007 lease invariant — paused runs never hold a worker/MCP lease.
+LEASE_RULE = "waiting_never_holds_worker_lease"
+
+#: ADR 0007 stage roles (planner freeze vocabulary).
+_STAGE_ROLES = frozenset({"gate", "witness", "fan_in", "composite", "pause"})
+
 
 @dataclass(frozen=True, slots=True)
 class AgentCard:
@@ -65,6 +71,7 @@ class AgentCard:
     graph_summary: str | None = None
     dispositions: tuple[str, ...] | None = None
     member_stars: tuple[Mapping[str, object], ...] | None = None
+    subtree_contract: Mapping[str, object] | None = None
 
     def as_dict(self) -> dict[str, object]:
         """Full card for resolve / gaze_describe (no live tool payloads)."""
@@ -90,6 +97,8 @@ class AgentCard:
             payload["dispositions"] = list(self.dispositions)
         if self.member_stars is not None:
             payload["member_stars"] = [dict(item) for item in self.member_stars]
+        if self.subtree_contract is not None:
+            payload["subtree_contract"] = _copy_subtree_contract(self.subtree_contract)
         return payload
 
     def gaze_preview(self) -> dict[str, object]:
@@ -160,6 +169,121 @@ def member_stars_from_policy(name: str) -> tuple[dict[str, object], ...]:
     return tuple(members)
 
 
+def _copy_subtree_contract(contract: Mapping[str, object]) -> dict[str, object]:
+    """Deep-ish copy suitable for agent-card / explain_policy wire payloads."""
+    stages = contract.get("stages") or []
+    pause = contract.get("pause_policy") or {}
+    receipt = contract.get("composite_receipt_fields") or {}
+    release = receipt.get("release") if isinstance(receipt, Mapping) else None
+    return {
+        "stages": [dict(stage) for stage in stages],  # type: ignore[arg-type]
+        "pause_policy": dict(pause),  # type: ignore[arg-type]
+        "composite_receipt_fields": {
+            **dict(receipt),  # type: ignore[arg-type]
+            **(
+                {"release": dict(release)}  # type: ignore[arg-type]
+                if isinstance(release, Mapping)
+                else {}
+            ),
+        },
+        "lease_rule": contract["lease_rule"],
+    }
+
+
+def _policy_digest_for_contract(name: str, graph: Any) -> str:
+    """Digest of stages + edges + release identity (ADR 0007)."""
+    import hashlib
+    import json
+
+    blob = json.dumps(
+        {
+            "constellation": name,
+            "nodes": [node.id for node in graph.nodes],
+            "edges": [(edge.source, edge.target, edge.kind) for edge in graph.edges],
+            "release": {
+                "digest": graph.release_digest,
+                "key_id": graph.release_key_id,
+            },
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return "sha256:" + hashlib.sha256(blob.encode()).hexdigest()
+
+
+def subtree_contract_from_policy(
+    name: str,
+    *,
+    dispositions: tuple[str, ...] | None = None,
+    pause_allowed: bool = False,
+    pause_modes: tuple[str, ...] | None = None,
+    continuation_tools: tuple[str, ...] | None = None,
+    release_digest: str | None = None,
+    release_key_id: str | None = None,
+    policy_digest: str | None = None,
+    stages: tuple[Mapping[str, object], ...] | None = None,
+) -> dict[str, object]:
+    """Build ADR 0007 ``subtree_contract`` for a constellation card.
+
+    Existing public graphs are synchronous-only (``pause_policy.allowed`` false)
+    unless a stage is already a durable pause.
+    """
+    from .constellation import policy_for
+
+    graph = policy_for(name)
+    disposition_values = dispositions if dispositions is not None else DEFAULT_DISPOSITIONS
+
+    if stages is None:
+        if graph is None:
+            raise AgentCardError(f"no policy graph for subtree_contract: {name!r}")
+        built_stages: list[dict[str, object]] = []
+        for node in sorted(graph.nodes, key=lambda item: item.step):
+            role = node.node_kind if node.node_kind in _STAGE_ROLES else "gate"
+            stage: dict[str, object] = {
+                "id": node.id,
+                "label": node.label,
+                "role": role,
+            }
+            if node.star_ref:
+                stage["star_ref"] = node.star_ref
+            built_stages.append(stage)
+    else:
+        built_stages = [dict(stage) for stage in stages]
+
+    pause_policy: dict[str, object] = {
+        "allowed": pause_allowed,
+        "checkpoint_after_each_stage": True,
+    }
+    if pause_allowed:
+        pause_policy["modes"] = list(pause_modes or ())
+        pause_policy["continuation_tools"] = list(continuation_tools or ())
+
+    digest = release_digest
+    key_id = release_key_id
+    frozen_digest = policy_digest
+    if graph is not None:
+        if digest is None:
+            digest = graph.release_digest
+        if key_id is None:
+            key_id = graph.release_key_id
+        if frozen_digest is None:
+            frozen_digest = _policy_digest_for_contract(name, graph)
+    if not digest or not key_id or not frozen_digest:
+        raise AgentCardError(f"subtree_contract needs release identity for {name!r}")
+
+    return {
+        "stages": built_stages,
+        "pause_policy": pause_policy,
+        "composite_receipt_fields": {
+            "chain": "signed-envelope-chain",
+            "disposition": list(disposition_values),
+            "policy_digest": frozen_digest,
+            "release": {"digest": digest, "key_id": key_id},
+        },
+        "lease_rule": LEASE_RULE,
+    }
+
+
 def _card(
     *,
     summary: str,
@@ -177,6 +301,7 @@ def _card(
     graph_summary: str | None = None,
     dispositions: tuple[str, ...] | None = None,
     member_stars: tuple[Mapping[str, object], ...] | None = None,
+    subtree_contract: Mapping[str, object] | None = None,
 ) -> AgentCard:
     return AgentCard(
         summary=summary,
@@ -194,6 +319,7 @@ def _card(
         graph_summary=graph_summary,
         dispositions=dispositions,
         member_stars=member_stars,
+        subtree_contract=subtree_contract,
     )
 
 
@@ -230,6 +356,65 @@ def validate_agent_card(card: AgentCard, *, name: str | None = None) -> None:
     for item in (*card.inputs, *card.outputs):
         if not item.name.strip() or not item.type.strip():
             raise AgentCardError(f"inputs/outputs need name and type{where}")
+    if card.run_contract is not None:
+        _validate_subtree_contract(card.subtree_contract, where=where)
+
+
+def _validate_subtree_contract(
+    contract: Mapping[str, object] | None,
+    *,
+    where: str,
+) -> None:
+    """Require ADR 0007 keys on constellation cards (those with run_contract)."""
+    if contract is None:
+        raise AgentCardError(f"subtree_contract required for constellation cards{where}")
+    for key in ("stages", "pause_policy", "composite_receipt_fields", "lease_rule"):
+        if key not in contract:
+            raise AgentCardError(f"subtree_contract missing {key}{where}")
+    if contract.get("lease_rule") != LEASE_RULE:
+        raise AgentCardError(
+            f"subtree_contract.lease_rule must be {LEASE_RULE!r}{where}"
+        )
+    pause = contract.get("pause_policy")
+    if not isinstance(pause, Mapping) or "allowed" not in pause:
+        raise AgentCardError(f"subtree_contract.pause_policy.allowed required{where}")
+    if "checkpoint_after_each_stage" not in pause:
+        raise AgentCardError(
+            f"subtree_contract.pause_policy.checkpoint_after_each_stage required{where}"
+        )
+    stages = contract.get("stages")
+    if not isinstance(stages, list) or not stages:
+        raise AgentCardError(f"subtree_contract.stages must be a non-empty list{where}")
+    for stage in stages:
+        if not isinstance(stage, Mapping):
+            raise AgentCardError(f"subtree_contract.stages entries must be objects{where}")
+        for key in ("id", "label", "role"):
+            if key not in stage:
+                raise AgentCardError(f"subtree_contract.stages[].{key} required{where}")
+        if stage.get("role") not in _STAGE_ROLES:
+            raise AgentCardError(
+                f"subtree_contract.stages[].role must be one of {sorted(_STAGE_ROLES)}{where}"
+            )
+    receipt = contract.get("composite_receipt_fields")
+    if not isinstance(receipt, Mapping):
+        raise AgentCardError(
+            f"subtree_contract.composite_receipt_fields must be an object{where}"
+        )
+    for key in ("chain", "disposition", "policy_digest", "release"):
+        if key not in receipt:
+            raise AgentCardError(
+                f"subtree_contract.composite_receipt_fields.{key} required{where}"
+            )
+    if receipt.get("chain") != "signed-envelope-chain":
+        raise AgentCardError(
+            f"subtree_contract.composite_receipt_fields.chain must be "
+            f"'signed-envelope-chain'{where}"
+        )
+    release = receipt.get("release")
+    if not isinstance(release, Mapping) or "digest" not in release or "key_id" not in release:
+        raise AgentCardError(
+            f"subtree_contract.composite_receipt_fields.release needs digest+key_id{where}"
+        )
 
 
 def agent_card_json_schema() -> dict[str, Any]:
@@ -333,6 +518,94 @@ def agent_card_json_schema() -> dict[str, Any]:
                         "name": {"type": "string"},
                         "role": {"type": "string"},
                         "label": {"type": "string"},
+                    },
+                },
+            },
+            "subtree_contract": {
+                "type": "object",
+                "required": [
+                    "stages",
+                    "pause_policy",
+                    "composite_receipt_fields",
+                    "lease_rule",
+                ],
+                "additionalProperties": False,
+                "properties": {
+                    "stages": {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {
+                            "type": "object",
+                            "required": ["id", "label", "role"],
+                            "additionalProperties": True,
+                            "properties": {
+                                "id": {"type": "string", "minLength": 1},
+                                "label": {"type": "string", "minLength": 1},
+                                "role": {
+                                    "type": "string",
+                                    "enum": [
+                                        "gate",
+                                        "witness",
+                                        "fan_in",
+                                        "composite",
+                                        "pause",
+                                    ],
+                                },
+                                "star_ref": {"type": "string"},
+                                "optional": {"type": "boolean"},
+                            },
+                        },
+                    },
+                    "pause_policy": {
+                        "type": "object",
+                        "required": ["allowed", "checkpoint_after_each_stage"],
+                        "additionalProperties": True,
+                        "properties": {
+                            "allowed": {"type": "boolean"},
+                            "modes": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                            },
+                            "continuation_tools": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                            },
+                            "checkpoint_after_each_stage": {"type": "boolean"},
+                        },
+                    },
+                    "composite_receipt_fields": {
+                        "type": "object",
+                        "required": [
+                            "chain",
+                            "disposition",
+                            "policy_digest",
+                            "release",
+                        ],
+                        "additionalProperties": True,
+                        "properties": {
+                            "chain": {
+                                "type": "string",
+                                "const": "signed-envelope-chain",
+                            },
+                            "disposition": {},
+                            "policy_digest": {"type": "string"},
+                            "cites": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                            },
+                            "release": {
+                                "type": "object",
+                                "required": ["digest", "key_id"],
+                                "properties": {
+                                    "digest": {"type": "string"},
+                                    "key_id": {"type": "string"},
+                                },
+                            },
+                        },
+                    },
+                    "lease_rule": {
+                        "type": "string",
+                        "const": "waiting_never_holds_worker_lease",
                     },
                 },
             },
@@ -832,6 +1105,7 @@ _STAR_CARDS: dict[str, AgentCard] = {
         graph_summary="csv-url sample → table-diff → fresh verdict",
         dispositions=DEFAULT_DISPOSITIONS,
         member_stars=member_stars_from_policy("orrery/table-fresh"),
+        subtree_contract=subtree_contract_from_policy("orrery/table-fresh"),
     ),
     "orrery/pypi-release": _card(
         summary="Bounded current release metadata for named allowlisted PyPI packages.",
@@ -907,6 +1181,7 @@ _STAR_CARDS: dict[str, AgentCard] = {
         graph_summary="release metadata → source-watch → world-time → reason",
         dispositions=DEFAULT_DISPOSITIONS,
         member_stars=member_stars_from_policy("orrery/ship-check"),
+        subtree_contract=subtree_contract_from_policy("orrery/ship-check"),
     ),
     "orrery/stale-proof": _card(
         summary="Fresh UTC plus official Python release-note digest evidence.",
@@ -940,6 +1215,7 @@ _STAR_CARDS: dict[str, AgentCard] = {
         graph_summary="world-time → source-watch → seal",
         dispositions=DEFAULT_DISPOSITIONS,
         member_stars=member_stars_from_policy("orrery/stale-proof"),
+        subtree_contract=subtree_contract_from_policy("orrery/stale-proof"),
     ),
     "orrery/csv-report": _card(
         summary="Queue a durable CSV report on Orrery's managed CPU worker.",
@@ -1006,6 +1282,19 @@ _CONSTELLATION_CARDS: dict[str, AgentCard] = {
         graph_summary="private release gates → status → explain_policy",
         dispositions=DEFAULT_DISPOSITIONS,
         member_stars=(),
+        subtree_contract=subtree_contract_from_policy(
+            "acme/release-gate",
+            release_digest="sha256:77d0…a19",
+            release_key_id="acme-release-1",
+            policy_digest="sha256:77d0…a19",
+            stages=(
+                {
+                    "id": "release-gate",
+                    "label": "release-gate",
+                    "role": "composite",
+                },
+            ),
+        ),
         locality="namespace-private",
         approval="namespace-gated",
     ),
@@ -1043,6 +1332,7 @@ _CONSTELLATION_CARDS: dict[str, AgentCard] = {
         graph_summary="secret-scan → license → html-to-pdf → human-approve fan-in",
         dispositions=DEFAULT_DISPOSITIONS,
         member_stars=member_stars_from_policy("acme/launch-gate"),
+        subtree_contract=subtree_contract_from_policy("acme/launch-gate"),
         locality="namespace-private",
         approval="human-approve-witness",
     ),
