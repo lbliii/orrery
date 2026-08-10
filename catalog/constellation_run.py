@@ -15,6 +15,7 @@ from typing import Any, Literal
 from chirp.skill import sign_envelope
 
 from catalog.constellation import PolicyGraph, policy_for
+from stars.stale_proof.composite_receipt import normalize_cites, with_cites
 
 RunStatus = Literal["in_flight", "completed"]
 
@@ -30,6 +31,7 @@ class RunState:
     policy_digest: str
     chain: tuple[dict[str, Any], ...]
     release: dict[str, str]
+    cites: tuple[str, ...] = ()
 
 
 _RUNS: dict[str, RunState] = {}
@@ -216,6 +218,7 @@ def run_constellation(
     skill_version: str,
     key_id: str,
     private_key: Any,
+    cites: list[str] | tuple[str, ...] | None = None,
 ) -> dict[str, Any]:
     """Execute a constellation on a Doc Bundle and return the composite chain."""
     global _latest_run_id
@@ -259,6 +262,8 @@ def run_constellation(
             }
         )
 
+    cite_tuple = normalize_cites(cites)
+
     state = RunState(
         run_id=run_id,
         constellation=constellation,
@@ -270,19 +275,31 @@ def run_constellation(
             "digest": graph.release_digest,
             "key_id": graph.release_key_id,
         },
+        cites=cite_tuple,
     )
     _RUNS[run_id] = state
     _latest_run_id = run_id
 
-    return {
-        "constellation": constellation,
-        "run_id": run_id,
-        "policy_digest": policy_d,
-        "status": "completed",
-        "bundle": bundle,
-        "chain": chain,
+    return _composite_receipt_payload(state, chain=list(chain))
+
+
+def _composite_receipt_payload(
+    state: RunState,
+    *,
+    chain: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "run_id": state.run_id,
+        "constellation": state.constellation,
+        "status": state.status,
+        "policy_digest": state.policy_digest,
+        "bundle": state.bundle,
+        "chain": list(state.chain) if chain is None else chain,
         "release": state.release,
     }
+    if state.cites:
+        return with_cites(payload, state.cites)
+    return payload
 
 
 def status_for_run(run_id: str = "") -> dict[str, Any]:
@@ -295,12 +312,4 @@ def status_for_run(run_id: str = "") -> dict[str, Any]:
     if state is None:
         return {"error": "not_found", "run_id": resolved, "status": "not_found"}
 
-    return {
-        "run_id": state.run_id,
-        "constellation": state.constellation,
-        "status": state.status,
-        "policy_digest": state.policy_digest,
-        "bundle": state.bundle,
-        "chain": list(state.chain),
-        "release": state.release,
-    }
+    return _composite_receipt_payload(state)
