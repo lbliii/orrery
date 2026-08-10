@@ -16,6 +16,7 @@ Line budget: **80** (body below). Prefer links over essays.
 
 ## Issue lifecycle (swarm-ready)
 
+- Invokes: [`AGENTS.md`](../AGENTS.md) — say `board`, `burndown`, `claim #N`, …
 - Standard: [`docs/plan/issue-lifecycle.md`](../docs/plan/issue-lifecycle.md)
 - Workers claim only issues labeled `leaf` **and** `ready`.
 - Leaves must list **owned paths** + **machine acceptance**; do not re-decide ADRs.

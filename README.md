@@ -87,8 +87,10 @@ Managed artifact bytes are held in private object storage; the API exposes the r
 
 Backlog work follows a swarm-ready issue tree: **saga → epic → design → leaf**.
 Workers claim only `leaf` + `ready` issues with owned paths and machine
-acceptance. The standard, templates, and agent field guide:
+acceptance. Say simple invokes from [`AGENTS.md`](./AGENTS.md) (`board`,
+`burndown`, `claim #N`, …). Details:
 
+- [AGENTS.md](./AGENTS.md) — invoke phrases + mode contracts
 - [Issue lifecycle](./docs/plan/issue-lifecycle.md)
 - [Issue templates](./.github/ISSUE_TEMPLATE/)
 - [Field guide](./field-guide/)

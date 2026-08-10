@@ -206,6 +206,7 @@ Orrery. `field-guide/index.md` is the inject point. Constraints:
 
 | Asset | Purpose |
 | --- | --- |
+| [`AGENTS.md`](../../AGENTS.md) | Simple invokes: `board`, `burndown`, `claim #N`, … |
 | `.github/ISSUE_TEMPLATE/*.yml` | Form-enforced required fields |
 | `.github/PULL_REQUEST_TEMPLATE.md` | Cite leaf, paths, acceptance |
 | `scripts/hydrate_backlog.py` | Historical bulk create (not the day-to-day path) |
