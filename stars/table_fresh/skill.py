@@ -25,7 +25,13 @@ def build_skill(*, private_key: Any | None = None) -> Skill:
     )
 
     @skill.tool(
-        "run", description="Freshen a bounded flight sample and compare it to a caller baseline"
+        "run",
+        description=(
+            "Freshen a bounded flight sample and compare it to a caller baseline. "
+            "Input bundle: baseline* (object with tabular rows for table-diff). "
+            "Returns signed fresh-verdict Envelope chain "
+            "(dispositions: ready | not-ready | stale | blocked)."
+        ),
     )
     def run(baseline: dict[str, object]) -> dict[str, object]:
         return run_fresh(baseline)

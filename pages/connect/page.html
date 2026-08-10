@@ -30,6 +30,38 @@
 </section>
 
 <section class="panel" style="margin-bottom: 1.5rem">
+  <p class="kicker" style="margin-bottom: 0.5rem">Constellations for agents</p>
+  <p class="lede" style="margin: 0 0 0.75rem; font-size: 0.95rem">
+    Constellations are multi-step policy graphs. Use
+    <code class="mono">gaze_describe</code> for the run contract (what to pass /
+    what you get), and <code class="mono">explain_policy</code> for
+    <code class="mono">graph_summary</code>, input schema, and disposition enum.
+    Call <code class="mono">run</code> with the constellation-specific input
+    bundle; the composite receipt is a signed Envelope chain.
+  </p>
+  <ul class="meta-list">
+    <li>
+      <a class="mono" href="/constellations?name=orrery/stale-proof"
+        >orrery/stale-proof</a
+      >
+      <span>Live UTC + source digest seal</span>
+    </li>
+    <li>
+      <a class="mono" href="/constellations?name=orrery/ship-check"
+        >orrery/ship-check</a
+      >
+      <span>Release + freshness + UTC evidence</span>
+    </li>
+    <li>
+      <a class="mono" href="/constellations?name=orrery/table-fresh"
+        >orrery/table-fresh</a
+      >
+      <span>Fresh sample vs baseline verdict</span>
+    </li>
+  </ul>
+</section>
+
+<section class="panel" style="margin-bottom: 1.5rem">
   <p class="kicker" style="margin-bottom: 0.5rem">1. MCP endpoint</p>
   <pre class="mono" style="margin: 0; white-space: pre-wrap">{{ mcp_url }}</pre>
   <p class="lede" style="margin: 0.75rem 0 0; font-size: 0.95rem">

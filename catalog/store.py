@@ -165,6 +165,16 @@ class Catalog:
                 payload["policy_edges"] = [
                     {"source": e.source, "target": e.target, "kind": e.kind} for e in graph.edges
                 ]
+            card = record.agent_card
+            if card is not None:
+                if card.run_contract is not None:
+                    payload["run_contract"] = dict(card.run_contract)
+                if card.graph_summary is not None:
+                    payload["graph_summary"] = card.graph_summary
+                if card.dispositions is not None:
+                    payload["dispositions"] = list(card.dispositions)
+                if card.member_stars is not None:
+                    payload["member_stars"] = [dict(item) for item in card.member_stars]
         return payload
 
     def list_constellations(self, *, node: str | None = None) -> tuple[GazeHit, ...]:
