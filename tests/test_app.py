@@ -169,7 +169,9 @@ class TestOrreryHostFoundation:
                 headers=_standard_mcp_headers(),
             )
             assert initialized.status == 200
-            assert json.loads(initialized.text)["id"] == 149
+            init_body = json.loads(initialized.text)
+            assert init_body["id"] == 149
+            assert init_body["result"]["protocolVersion"] == "2025-06-18"
 
             listed = await client.post(
                 "/mcp",
