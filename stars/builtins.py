@@ -31,6 +31,7 @@ BUILTIN_STAR_PACKAGES = (
     "stars.source_watch",
     "stars.stale_proof",
     "stars.world_time",
+    "stars.decision_bind",
 )
 
 
