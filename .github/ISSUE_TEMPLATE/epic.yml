@@ -1,0 +1,81 @@
+name: Epic
+description: Outcome-sized subtree with gradable exit criteria (planner-owned).
+title: "Epic: "
+labels: ["epic"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Epics are planner-owned. File design + leaf children; do not implement
+        the whole epic in one agent turn.
+        Standard: https://github.com/lbliii/orrery/blob/main/docs/plan/issue-lifecycle.md
+        After create: add the chosen wave, readiness (`ready` or `blocked`), and priority labels.
+  - type: input
+    id: parent_saga
+    attributes:
+      label: Parent saga
+      description: Issue number, e.g. 1 or 76.
+      placeholder: "1"
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome
+      description: One paragraph — what is true when this epic closes.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope and non-goals
+      description: What is in / out for this subtree.
+    validations:
+      required: true
+  - type: textarea
+    id: decisions
+    attributes:
+      label: Decisions already made
+      description: ADR links, or “none — child design issues will freeze X”.
+      placeholder: "ADR 0005; design #62"
+    validations:
+      required: true
+  - type: textarea
+    id: child_map
+    attributes:
+      label: Child map
+      description: Design + leaf issues, or “to be filed after design”.
+    validations:
+      required: true
+  - type: textarea
+    id: exit
+    attributes:
+      label: Exit criteria
+      description: Gradable checks (tests, canaries, docs + links). Prefer machine grades.
+    validations:
+      required: true
+  - type: dropdown
+    id: wave
+    attributes:
+      label: Wave
+      options:
+        - wave:0
+        - wave:1
+        - wave:2
+        - wave:3
+        - wave:4
+        - wave:5
+        - none / not wave-tracked
+    validations:
+      required: true
+  - type: dropdown
+    id: readiness
+    attributes:
+      label: Readiness
+      description: Epics are rarely ready for workers; use blocked until children exist.
+      options:
+        - blocked
+        - ready
+      default: 0
+    validations:
+      required: true

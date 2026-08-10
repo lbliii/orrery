@@ -61,7 +61,7 @@ Their manifests are the source of truth: [`stars/`](./stars/). The live product 
 
 ## The horizon
 
-The public sky can grow with publishers owning their direct endpoints, while private namespaces organize tenant and capability surfaces. Constellations can compose stars into reusable policy graphs; managed execution and commerce can evolve around verified results. See the [vending-machine sky plan](./docs/plan/vending-machine-sky.md) and the [publisher direct-call ADR](./docs/adr/0004-publisher-direct-call.md).
+The public sky can grow with publishers owning their direct endpoints, while private namespaces organize tenant and capability surfaces. Constellations can compose stars into reusable policy graphs; managed execution and commerce can evolve around verified results. See the [vending-machine sky plan](./docs/plan/vending-machine-sky.md), the [tree-handling rim plan](./docs/plan/tree-handling-rim.md) (sealed leaves for agent task trees), and the [publisher direct-call ADR](./docs/adr/0004-publisher-direct-call.md).
 
 ## Direct stars and the aggregate host
 
@@ -82,6 +82,20 @@ Every Star declares an Ed25519 receipt algorithm and a freshness policy. A recei
 This is not an open web proxy: networked stars use named allowlists, reject redirects, and enforce response bounds. Some stars are live at call time; others are explicitly pure, static-profile, or caller-provided operations. Read the resolved record and receipt rather than inferring freshness from a name.
 
 Managed artifact bytes are held in private object storage; the API exposes the result and delivery path after the worker completes it. The architecture and retention boundary are documented in [`docs/architecture/managed-execution.md`](./docs/architecture/managed-execution.md) and [`docs/operations/artifact-lifecycle.md`](./docs/operations/artifact-lifecycle.md).
+
+## Contribute / issue lifecycle
+
+Backlog work follows a swarm-ready issue tree: **saga → epic → design → leaf**.
+Workers claim only `leaf` + `ready` issues with owned paths and machine
+acceptance. The standard, templates, and agent field guide:
+
+- [Issue lifecycle](./docs/plan/issue-lifecycle.md)
+- [Issue templates](./.github/ISSUE_TEMPLATE/)
+- [Field guide](./field-guide/)
+
+Product bet that pairs with this process: the
+[tree-handling rim](./docs/plan/tree-handling-rim.md) (sealed leaves for agent
+task trees — saga [#237](https://github.com/lbliii/orrery/issues/237)).
 
 ## Develop locally
 
