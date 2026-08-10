@@ -1,5 +1,6 @@
 """Durable lifecycle records for asynchronous Star executions."""
 
+from .admission import RunAdmissionError, budget_snapshot, check_admission
 from .diagnostics import CleanupLag, OperatorRunHealth, build_operator_health
 from .domain import (
     InMemoryRunRepository,
@@ -44,6 +45,7 @@ __all__ = [
     "QueueLease",
     "QueueStats",
     "RedisQueueBackend",
+    "RunAdmissionError",
     "RunConflictError",
     "RunReconciler",
     "RunRecord",
@@ -53,7 +55,9 @@ __all__ = [
     "UnknownJobError",
     "WorkerConfigurationError",
     "WorkerSettings",
+    "budget_snapshot",
     "build_operator_health",
     "build_runtime",
+    "check_admission",
     "new_run_id",
 ]
