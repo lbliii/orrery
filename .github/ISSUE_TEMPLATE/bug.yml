@@ -1,0 +1,66 @@
+name: Bug
+description: Defect with repro — treated as a leaf for ownership and acceptance.
+title: ""
+labels: ["bug", "leaf"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Bugs follow the leaf lifecycle: owned paths + machine acceptance when fixed.
+        Standard: https://github.com/lbliii/orrery/blob/main/docs/plan/issue-lifecycle.md
+        After create: add readiness and priority labels to match the form.
+  - type: input
+    id: parent
+    attributes:
+      label: Parent epic (optional)
+      description: Issue number if this sits under an epic; otherwise leave blank.
+  - type: textarea
+    id: repro
+    attributes:
+      label: Repro
+      description: Exact steps, curl, or test that fails today.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs actual
+    validations:
+      required: true
+  - type: textarea
+    id: owned_paths
+    attributes:
+      label: Likely owned paths
+      description: Where the fix should land. Narrow if possible.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Machine acceptance
+      description: Test or smoke that proves the fix.
+      placeholder: uv run pytest path/to/test.py -q
+    validations:
+      required: true
+  - type: dropdown
+    id: readiness
+    attributes:
+      label: Readiness
+      options:
+        - ready
+        - blocked
+      default: 0
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - P0
+        - P1
+        - P2
+        - P3
+      default: 0
+    validations:
+      required: true

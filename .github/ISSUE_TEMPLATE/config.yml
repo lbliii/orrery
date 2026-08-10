@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Live sky / product questions
+    url: https://orrery.lol/connect
+    about: Point an MCP client or browse the public sky — not for backlog intake.
+  - name: Issue lifecycle standard
+    url: https://github.com/lbliii/orrery/blob/main/docs/plan/issue-lifecycle.md
+    about: Saga → epic → design → leaf process for swarm-ready specs.

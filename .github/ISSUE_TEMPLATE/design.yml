@@ -1,0 +1,53 @@
+name: Design
+description: Freeze one contested decision before leaves implement (planner-owned).
+title: "Design: "
+labels: ["design"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Design issues are planner-owned. Close with a decision leaves may assume.
+        Lasting decisions should also land an ADR under docs/adr/.
+        Standard: https://github.com/lbliii/orrery/blob/main/docs/plan/issue-lifecycle.md
+  - type: input
+    id: parent_epic
+    attributes:
+      label: Parent epic
+      description: Issue number.
+      placeholder: "57"
+    validations:
+      required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: Question to freeze
+      description: The single decision this issue owns. No two leaves may re-decide it.
+    validations:
+      required: true
+  - type: textarea
+    id: options
+    attributes:
+      label: Options considered
+      description: Short list — enough for a reconciler, not a whitepaper.
+    validations:
+      required: true
+  - type: textarea
+    id: decision
+    attributes:
+      label: Decision
+      description: What we chose and the consequences for implementers.
+    validations:
+      required: true
+  - type: textarea
+    id: leaves_may_assume
+    attributes:
+      label: What leaves may assume after close
+      description: Explicit contract for worker issues that depend on this.
+    validations:
+      required: true
+  - type: input
+    id: adr
+    attributes:
+      label: ADR path (optional)
+      description: e.g. docs/adr/0005-discovery-and-dual-trust.md — required if the decision outlives the epic.
+      placeholder: docs/adr/00XX-….md

@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""One-shot backlog hydration for lbliii/orrery. Safe to re-run? No — creates issues."""
+"""One-shot backlog hydration for lbliii/orrery. Safe to re-run? No — creates issues.
+
+Day-to-day intake uses `.github/ISSUE_TEMPLATE/` and the lifecycle standard:
+`docs/plan/issue-lifecycle.md`. Prefer those over extending this script.
+"""
 
 from __future__ import annotations
 

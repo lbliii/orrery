@@ -1,0 +1,106 @@
+name: Leaf
+description: Worker-executable unit with owned paths and machine acceptance.
+title: ""
+labels: ["leaf"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Leaves are the only issues workers should claim — and only when labeled
+        `ready`. Do not invent design decisions here; cite them.
+        Standard: https://github.com/lbliii/orrery/blob/main/docs/plan/issue-lifecycle.md
+        After create: add the chosen wave, readiness (`ready` or `blocked`), priority, and domain labels (`gaze`, `call`, …).
+  - type: input
+    id: parent_epic
+    attributes:
+      label: Parent epic
+      description: Issue number (or parent design if this leaf only implements that freeze).
+      placeholder: "58"
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome
+      description: One sentence — what is true when this leaf closes.
+    validations:
+      required: true
+  - type: textarea
+    id: owned_paths
+    attributes:
+      label: Owned paths
+      description: Allowlist of files/dirs this worker may change.
+      placeholder: |
+        - stars/world-time/
+        - tests/stars/test_world_time.py
+        - docs/operations/world-time-canary.md
+    validations:
+      required: true
+  - type: textarea
+    id: out_of_scope
+    attributes:
+      label: Out of scope paths
+      description: Optional explicit deny list (megafile protection).
+      placeholder: |
+        - app.py
+        - discovery.py
+  - type: textarea
+    id: decisions_frozen
+    attributes:
+      label: Decisions frozen
+      description: ADR / design issue cites. Workers must not re-decide these.
+      placeholder: "ADR 0005; design #62"
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Machine acceptance
+      description: Commands or checks CI/a worker can run. Prefer pytest / canary / documented smoke.
+      placeholder: |
+        - uv run pytest tests/stars/test_world_time.py -q
+        - scripts/canary_world_time.py (documented)
+    validations:
+      required: true
+  - type: dropdown
+    id: wave
+    attributes:
+      label: Wave
+      options:
+        - wave:0
+        - wave:1
+        - wave:2
+        - wave:3
+        - wave:4
+        - wave:5
+        - none / not wave-tracked
+    validations:
+      required: true
+  - type: dropdown
+    id: readiness
+    attributes:
+      label: Readiness
+      options:
+        - blocked
+        - ready
+      default: 0
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - P0
+        - P1
+        - P2
+        - P3
+      default: 1
+    validations:
+      required: true
+  - type: input
+    id: backlog_key
+    attributes:
+      label: Backlog key (optional)
+      description: Stable id for hydration scripts — emitted as an HTML comment.
+      placeholder: gaze-intent-fixtures-v1
