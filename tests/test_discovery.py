@@ -142,9 +142,10 @@ async def test_llms_full_indexes_public_catalog_from_agent_cards(discovery_app) 
         assert f"`{sku}`" in body
         assert sku in {str(item["name"]) for item in entries}
 
-    # No invented SKUs from the issue sketch.
-    assert "content-readiness" not in body
+    # content-readiness (#213) is a real public SKU; keep unshipped siblings out.
+    assert "`orrery/content-readiness`" in body
     assert "authorized-content-patch" not in body
+    assert "orrery/publish-gate" not in body
 
 
 @pytest.mark.asyncio

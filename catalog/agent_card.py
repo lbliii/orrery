@@ -43,6 +43,7 @@ class AgentCardIO:
 
 #: Sealed composite outcomes agents should expect from constellation runs.
 DEFAULT_DISPOSITIONS: tuple[str, ...] = ("ready", "not-ready", "stale", "blocked")
+CONTENT_READINESS_DISPOSITIONS: tuple[str, ...] = ("ready", "needs-work", "inconclusive")
 
 #: ADR 0007 lease invariant — paused runs never hold a worker/MCP lease.
 LEASE_RULE = "waiting_never_holds_worker_lease"
@@ -1148,6 +1149,69 @@ _STAR_CARDS: dict[str, AgentCard] = {
             _io("prior_body_digest", "string"),
         ),
         outputs=(_io("body", "string"), _io("digest", "string"), *_ENVELOPE),
+    ),
+    "orrery/content-readiness": _card(
+        summary="Sync assessment of a caller content bundle into a sealed disposition.",
+        use_when=(
+            "You need ready | needs-work | inconclusive over structure + bounded links",
+            "You want a frozen planner subgraph seal, not a deploy or patch button",
+        ),
+        not_for=(
+            "Durable pause / continuation (sync only)",
+            "Write-authority or patch stages",
+            "Inventing new subtree field names",
+        ),
+        example_intents=(
+            "content readiness disposition",
+            "assess docs bundle structure and links",
+            "manifest preflight then structure audit",
+        ),
+        tools=("run",),
+        coverage_slug="content-readiness",
+        inputs=(
+            _io("files", "array", required=True, note="[{path, content, format?}]"),
+            _io(
+                "policy",
+                "string",
+                note="orrery/docs-only@v1 or orrery/max-100-files@v1",
+            ),
+            _io("max_link_count", "integer", note="1..50; default 20"),
+        ),
+        outputs=(_io("disposition", "string"), _io("stages", "object"), *_ENVELOPE),
+        run_contract={
+            "entry_tool": "run",
+            "required_inputs": ["files"],
+            "optional_inputs": ["policy", "max_link_count"],
+            "composite_output": "signed-envelope-chain",
+            "input_bundle": {
+                "files": {
+                    "type": "array",
+                    "required": True,
+                    "note": "caller content bundle [{path, content, format?}]",
+                },
+                "policy": {
+                    "type": "string",
+                    "required": False,
+                    "note": "named preflight policy; default orrery/docs-only@v1",
+                },
+                "max_link_count": {
+                    "type": "integer",
+                    "required": False,
+                    "note": "bounded link cap for link-check-bounded",
+                },
+            },
+        },
+        graph_summary=(
+            "manifest-bind → manifest-preflight → structure-audit → "
+            "link-check-bounded → artifact-seal"
+        ),
+        dispositions=CONTENT_READINESS_DISPOSITIONS,
+        member_stars=member_stars_from_policy("orrery/content-readiness"),
+        subtree_contract=subtree_contract_from_policy(
+            "orrery/content-readiness",
+            dispositions=CONTENT_READINESS_DISPOSITIONS,
+            pause_allowed=False,
+        ),
     ),
     "orrery/ship-check": _card(
         summary="Bounded release, freshness, and UTC evidence for reasoning.",

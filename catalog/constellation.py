@@ -330,11 +330,115 @@ SHIP_CHECK_POLICY = PolicyGraph(
     release_key_id="orrery-ship-check-1",
 )
 
+#: ADR 0007 Example 1 — sync content-readiness (#213); pause never allowed.
+CONTENT_READINESS_POLICY = PolicyGraph(
+    nodes=(
+        PolicyNode(
+            "manifest-bind",
+            "manifest-bind",
+            "gate",
+            100,
+            180,
+            0,
+            "orrery/manifest-bind",
+            "bind",
+        ),
+        PolicyNode(
+            "manifest-preflight",
+            "manifest-preflight",
+            "gate",
+            300,
+            180,
+            1,
+            "orrery/manifest-preflight",
+            "preflight",
+        ),
+        PolicyNode(
+            "structure-audit",
+            "structure-audit",
+            "gate",
+            500,
+            180,
+            2,
+            "orrery/structure-audit",
+            "audit",
+        ),
+        PolicyNode(
+            "link-check-bounded",
+            "link-check-bounded",
+            "gate",
+            700,
+            180,
+            3,
+            "orrery/link-check-bounded",
+            "links",
+        ),
+        PolicyNode(
+            "artifact-seal",
+            "artifact-seal",
+            "composite",
+            880,
+            320,
+            4,
+            status_label="composite",
+            r=18,
+        ),
+    ),
+    edges=(
+        PolicyEdge(
+            "cr1",
+            "manifest-bind",
+            "manifest-preflight",
+            "gate",
+            "M140 180 C200 180, 240 180, 260 180",
+            1,
+        ),
+        PolicyEdge(
+            "cr2",
+            "manifest-preflight",
+            "structure-audit",
+            "gate",
+            "M340 180 C400 180, 440 180, 460 180",
+            2,
+        ),
+        PolicyEdge(
+            "cr3",
+            "structure-audit",
+            "link-check-bounded",
+            "gate",
+            "M540 180 C600 180, 640 180, 660 180",
+            3,
+        ),
+        PolicyEdge(
+            "cr4",
+            "link-check-bounded",
+            "artifact-seal",
+            "gate",
+            "M740 200 C800 260, 840 300, 860 310",
+            4,
+        ),
+    ),
+    repair_loop_max=None,
+    footnote=(
+        "Sync only (pause_policy.allowed=false) · dispositions ready|needs-work|inconclusive · "
+        "composite seal in-package (no artifact-seal star)."
+    ),
+    composite_chain=(
+        CompositeStep(1, "manifest-bind", "Envelope ✓", "digest inventory"),
+        CompositeStep(2, "manifest-preflight", "Envelope ✓", "named policy"),
+        CompositeStep(3, "structure-audit", "Envelope ✓", "markdown findings"),
+        CompositeStep(4, "link-check-bounded", "Envelope ✓", "bounded HTTPS"),
+    ),
+    release_digest="sha256:content-readiness…",
+    release_key_id="orrery-content-readiness-1",
+)
+
 POLICIES: dict[str, PolicyGraph] = {
     "acme/launch-gate": LAUNCH_GATE_POLICY,
     "orrery/stale-proof": STALE_PROOF_POLICY,
     "orrery/table-fresh": TABLE_FRESH_POLICY,
     "orrery/ship-check": SHIP_CHECK_POLICY,
+    "orrery/content-readiness": CONTENT_READINESS_POLICY,
 }
 
 

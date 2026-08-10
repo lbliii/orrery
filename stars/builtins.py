@@ -30,6 +30,7 @@ BUILTIN_STAR_PACKAGES = (
     "stars.ship_check",
     "stars.source_watch",
     "stars.stale_proof",
+    "stars.content_readiness",
     "stars.world_time",
     "stars.decision_bind",
     "stars.manifest_bind",
