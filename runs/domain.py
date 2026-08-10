@@ -140,7 +140,9 @@ class InMemoryRunRepository:
             }
         )
         return sum(
-            1 for record in self._records.values() if record.caller_id == caller_id and record.state in active
+            1
+            for record in self._records.values()
+            if record.caller_id == caller_id and record.state in active
         )
 
     def transition(

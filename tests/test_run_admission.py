@@ -6,6 +6,7 @@ from datetime import timedelta
 
 import pytest
 
+from artifacts.storage import InMemoryObjectStorage
 from runs import (
     InMemoryQueueBackend,
     InMemoryRunRepository,
@@ -20,8 +21,6 @@ from runs.admission import serialized_input_bytes
 from stars.cpu_workloads import build_registry
 from stars.html_to_pdf.artifacts import DurablePdfArtifactService, InMemoryPdfArtifactRepository
 from stars.managed_api import ManagedAdmissionRejected, ManagedStarService
-from artifacts.storage import InMemoryObjectStorage
-
 
 pytestmark = pytest.mark.issue(159)
 
@@ -52,7 +51,7 @@ def _submit_many(submit: ManagedRunSubmission, caller_id: str, count: int) -> No
 
 
 def test_over_limit_input_is_rejected_before_enqueue() -> None:
-    submit, worker, _, repository, queue, service, _ = _system()
+    submit, _worker, _, repository, queue, service, _ = _system()
     huge_rows = [{"value": "x" * 2048} for _ in range(600)]
     with pytest.raises(RunAdmissionError) as error:
         submit.submit(
@@ -78,7 +77,7 @@ def test_over_limit_input_is_rejected_before_enqueue() -> None:
 
 
 def test_concurrency_cap_rejects_without_leaking_other_tenants() -> None:
-    submit, worker, _, repository, queue, service, _ = _system()
+    submit, _worker, _, _repository, queue, service, _ = _system()
     _submit_many(submit, "agent:alice", 3)
     _submit_many(submit, "agent:bob", 2)
     depth_before = queue.stats().ready_depth
@@ -108,7 +107,7 @@ def test_concurrency_cap_rejects_without_leaking_other_tenants() -> None:
 
 
 def test_idempotent_submit_replay_returns_original_despite_quota() -> None:
-    submit, _, _, repository, _, _, _ = _system()
+    submit, _, _, _repository, _, _, _ = _system()
     first = submit.submit(
         caller_id="agent:alice",
         idempotency_key="replay-me",
@@ -127,7 +126,7 @@ def test_idempotent_submit_replay_returns_original_despite_quota() -> None:
 
 
 def test_cancel_before_claim_is_terminal_and_queue_is_empty() -> None:
-    submit, worker, _, repository, queue, service, _ = _system()
+    submit, _worker, _, repository, queue, service, _ = _system()
     run = submit.submit(
         caller_id="agent:a",
         idempotency_key="cancel-me",
@@ -149,7 +148,7 @@ def test_cancel_before_claim_is_terminal_and_queue_is_empty() -> None:
 
 
 def test_cancel_during_lease_prevents_successful_seal() -> None:
-    submit, worker, runtime, repository, queue, service, _ = _system()
+    submit, worker, _runtime, repository, queue, service, _ = _system()
     run = submit.submit(
         caller_id="agent:a",
         idempotency_key="lease-cancel",
@@ -166,7 +165,7 @@ def test_cancel_during_lease_prevents_successful_seal() -> None:
 
 
 def test_unauthorized_cancel_and_result_do_not_leak_other_callers() -> None:
-    submit, worker, _, repository, _, service, _ = _system()
+    submit, _worker, _, _repository, _, service, _ = _system()
     run = submit.submit(
         caller_id="agent:alice",
         idempotency_key="private",

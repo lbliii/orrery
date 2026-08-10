@@ -24,10 +24,12 @@ class ManagedAdmissionRejected(ValueError):
 
 
 class ManagedStarService:
-    def __init__(self, submission: ManagedRunSubmission, runs: Any, *, worker: Any | None = None) -> None:
+    def __init__(
+        self, submission: ManagedRunSubmission, runs: Any, *, worker: Any | None = None
+    ) -> None:
         self._submission = submission
         self._runs = runs
-        self._worker = worker or submission._worker  # noqa: SLF001 — test seam
+        self._worker = worker if worker is not None else submission.worker
 
     def submit(
         self,

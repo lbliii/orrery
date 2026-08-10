@@ -92,7 +92,7 @@ def test_success_seals_run_receipt_then_removes_only_current_lease() -> None:
 
 def test_cancel_drops_queue_entry_and_is_idempotent() -> None:
     clock = Clock()
-    worker, runs = _worker(clock)
+    worker, _runs = _worker(clock)
     worker.enqueue("run-1")
     cancelled = worker.cancel("run-1", caller_id="agent:a")
     assert cancelled is not None and cancelled.state is RunState.CANCELLED

@@ -16,6 +16,10 @@ class ManagedRunSubmission:
     def __init__(self, worker: ManagedRunWorker) -> None:
         self._worker = worker
 
+    @property
+    def worker(self) -> ManagedRunWorker:
+        return self._worker
+
     def submit(
         self, *, caller_id: str, idempotency_key: str, kind: str, input: Mapping[str, Any]
     ) -> RunRecord:
