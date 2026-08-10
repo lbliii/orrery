@@ -154,7 +154,61 @@ def test_constellation_cards_include_run_contract() -> None:
     assert card.run_contract is not None
     assert card.run_contract["entry_tool"] == "run"
     assert card.graph_summary
+    assert card.dispositions
+    assert "ready" in card.dispositions
+    assert card.member_stars
+    assert any(m["name"] == "orrery/html-to-pdf" for m in card.member_stars)
     assert "run_contract" in card.as_dict()
+    assert "dispositions" in card.as_dict()
+
+
+def test_public_constellation_cards_expose_run_contract() -> None:
+    for name in ("orrery/stale-proof", "orrery/ship-check", "orrery/table-fresh"):
+        card = require_card(name)
+        assert card.run_contract is not None
+        assert card.graph_summary
+        assert card.dispositions == (
+            "ready",
+            "not-ready",
+            "stale",
+            "blocked",
+        )
+        assert card.member_stars is not None
+
+
+def test_inputs_summary_prefers_run_contract_for_constellations() -> None:
+    card = require_card("orrery/ship-check")
+    summary = inputs_summary(card)
+    assert "package*" in summary
+    assert "source_digest" in summary
+
+
+def test_gaze_describe_public_constellation_includes_run_contract(example_app) -> None:
+    described = CATALOG.describe("orrery/stale-proof")
+    assert described["status"] == "ok"
+    assert described["kind"] == "constellation"
+    assert described["run_contract"]["entry_tool"] == "run"
+    assert described["graph_summary"]
+    assert "ready" in described["dispositions"]
+    assert described["agent_card"]["run_contract"]["entry_tool"] == "run"
+
+
+def test_explain_policy_aligns_with_agent_card_fields() -> None:
+    from catalog.constellation_run import explain_policy
+
+    explained = explain_policy("acme/launch-gate")
+    assert explained["status"] == "ok"
+    assert explained["graph_summary"]
+    assert explained["input_schema"]["type"] == "object"
+    assert "bundle" in explained["input_schema"]["required"]
+    assert explained["dispositions"] == [
+        "ready",
+        "not-ready",
+        "stale",
+        "blocked",
+    ]
+    assert explained["run_contract"]["entry_tool"] == "run"
+    assert any(m["name"] == "orrery/html-to-pdf" for m in explained["member_stars"])
 
 
 async def test_well_known_agent_card_schema_route(example_app) -> None:

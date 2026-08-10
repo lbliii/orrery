@@ -801,6 +801,69 @@ class TestConstellation:
             assert "html-to-pdf*" in r.text
             assert "Composite receipt" in r.text
             assert "Reliability console" in r.text
+            assert "What to pass" in r.text
+            assert "What you get" in r.text
+            # Run-contract IO appears above the SVG.
+            assert r.text.index("What to pass") < r.text.index("data-constellation")
+
+
+@pytest.mark.issue(220)
+class TestConstellationRunContracts:
+    async def test_constellation_page_shows_pass_and_get(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/constellations?name=orrery/stale-proof")
+            assert r.status == 200
+            assert "What to pass" in r.text
+            assert "What you get" in r.text
+            assert "source_digest" in r.text
+            assert "world-time → source-watch → seal" in r.text
+
+    async def test_connect_mentions_constellations_for_agents(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/connect")
+            assert r.status == 200
+            assert "Constellations for agents" in r.text
+            assert "gaze_describe" in r.text
+            assert "explain_policy" in r.text
+
+    async def test_explain_policy_mcp_returns_card_aligned_fields(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            called = await client.post(
+                "/mcp",
+                json={
+                    "jsonrpc": "2.0",
+                    "method": "tools/call",
+                    "id": 220,
+                    "params": _modern_mcp_params(
+                        name="explain_policy",
+                        arguments={"name": "acme/launch-gate"},
+                    ),
+                },
+                headers=_modern_mcp_headers("tools/call", "explain_policy"),
+            )
+            text = json.loads(called.text)["result"]["content"][0]["text"]
+            assert "graph_summary" in text
+            assert "dispositions" in text
+            assert "input_schema" in text
+            assert "run_contract" in text
+
+    async def test_run_tool_schema_mentions_doc_bundle(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            listed = await client.post(
+                "/mcp",
+                json={
+                    "jsonrpc": "2.0",
+                    "method": "tools/list",
+                    "id": 221,
+                    "params": _modern_mcp_params(),
+                },
+                headers=_modern_mcp_headers("tools/list"),
+            )
+            tools = {t["name"]: t for t in json.loads(listed.text)["result"]["tools"]}
+            run = tools["run"]
+            assert "pages" in run["description"].lower() or "bundle" in run["description"].lower()
+            props = run["inputSchema"]["properties"]
+            assert {"pages", "links", "examples"} <= set(props)
 
 
 @pytest.mark.issue(31)

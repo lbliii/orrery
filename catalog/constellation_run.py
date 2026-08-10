@@ -98,11 +98,20 @@ def _sign_gate_envelope(
 
 
 def explain_policy(name: str = "acme/launch-gate") -> dict[str, Any]:
-    """Plain-language gates, repair loops, and fan-in for a constellation."""
+    """Plain-language gates, repair loops, and fan-in for a constellation.
+
+    Aligns with Agent Card constellation fields (#220): ``graph_summary``,
+    input schema, ``dispositions``, ``run_contract``, and ``member_stars``.
+    When invoked through the MCP ``explain_policy`` tool, Chirp seals this
+    payload in a signed Envelope.
+    """
+    from catalog.agent_card import DEFAULT_DISPOSITIONS, card_for, member_stars_from_policy
+
     graph = policy_for(name)
     if graph is None:
         return {"error": "not_found", "name": name, "status": "not_found"}
 
+    card = card_for(name)
     gate_nodes = sorted(
         (n for n in graph.nodes if n.node_kind in ("gate", "witness")),
         key=lambda n: n.step,
@@ -117,8 +126,17 @@ def explain_policy(name: str = "acme/launch-gate") -> dict[str, Any]:
         (n.label for n in graph.nodes if n.node_kind == "composite"),
         "release",
     )
+    graph_summary = (
+        None
+        if card is None or card.graph_summary is None
+        else card.graph_summary
+    )
+    if not graph_summary:
+        graph_summary = " → ".join(n.label for n in gate_nodes) + f" → {terminal}"
+
     narrative: list[str] = [
         f"Constellation {name} evaluates {len(gate_nodes)} gates before {terminal}.",
+        f"Graph: {graph_summary}.",
         "Gate order: " + " → ".join(n.label for n in gate_nodes) + f" → {terminal}.",
     ]
     if name == "orrery/stale-proof":
@@ -138,9 +156,42 @@ def explain_policy(name: str = "acme/launch-gate") -> dict[str, Any]:
         f"Release composite is signed under {graph.release_key_id} ({graph.release_digest})."
     )
 
+    inputs = [] if card is None else [item.as_dict() for item in card.inputs]
+    run_contract = None if card is None or card.run_contract is None else dict(card.run_contract)
+    dispositions = (
+        list(DEFAULT_DISPOSITIONS)
+        if card is None or card.dispositions is None
+        else list(card.dispositions)
+    )
+    members = (
+        [dict(item) for item in card.member_stars]
+        if card is not None and card.member_stars is not None
+        else [dict(item) for item in member_stars_from_policy(name)]
+    )
+
     return {
         "constellation": name,
         "status": "ok",
+        "graph_summary": graph_summary,
+        "inputs": inputs,
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                item["name"]: {
+                    "type": item.get("type", "string"),
+                    **(
+                        {"description": item["note"]}
+                        if isinstance(item.get("note"), str)
+                        else {}
+                    ),
+                }
+                for item in inputs
+            },
+            "required": [item["name"] for item in inputs if item.get("required")],
+        },
+        "dispositions": dispositions,
+        "run_contract": run_contract,
+        "member_stars": members,
         "gates": [n.label for n in gate_nodes],
         "repair_loop": {
             "from": repair.source if repair else None,
