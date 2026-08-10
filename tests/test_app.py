@@ -15,6 +15,8 @@ import pytest
 from chirp.skill.publish import run_publish_gate
 from chirp.testing import TestClient
 
+from pages.page import public_capability_counts
+
 _META_PROTOCOL_VERSION = "io.modelcontextprotocol/protocolVersion"
 N_DOGFOOD_SKILLS = 6
 
@@ -61,6 +63,10 @@ class TestOrreryHostFoundation:
             assert "gaze" in home.text
             assert "resolve" in home.text
             assert "star" in home.text
+            star_count, constellation_count = public_capability_counts()
+            assert f"{star_count} Stars" in home.text
+            assert f"{constellation_count} constellations" in home.text
+            assert "direct MCP" in home.text
             # Branded page uses inline <style> + Google Fonts; default secure_stack
             # CSP blanked production until style-src/font-src were relaxed.
             csp = dict(home.headers).get("content-security-policy", "")
