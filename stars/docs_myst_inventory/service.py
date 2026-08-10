@@ -8,7 +8,7 @@ import unicodedata
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-from .contract import MAX_ENTRIES, MAX_ENTRY_BYTES, MAX_FINDINGS, MAX_MESSAGE_BYTES, FeatureClass
+from .contract import MAX_ENTRIES, MAX_ENTRY_BYTES, MAX_FINDINGS, MAX_MESSAGE_BYTES
 from .parser import RawFinding, scan_document
 
 FEATURE_CLASSES: frozenset[str] = frozenset(
