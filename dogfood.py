@@ -25,9 +25,9 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from catalog import CATALOG, GAZE_DEFAULT_LIMIT, GAZE_MAX_LIMIT
 from catalog.constellation_run import explain_policy, run_constellation, status_for_run
-from stars.decision_bind.service import bind as bind_decision
 from catalog.coverage import check_coverage, describe_coverage
 from public_keys import key_set_url
+from stars.decision_bind.service import bind as bind_decision
 from stars.html_to_pdf.skill import build_skill as build_html_to_pdf_star
 from stars.source_watch.skill import build_skill as build_source_watch_star
 from stars.world_time.service import fetch_live_utc as _fetch_live_utc
