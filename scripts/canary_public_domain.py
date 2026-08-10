@@ -74,7 +74,9 @@ def require_security_txt(body: bytes, origin: str) -> None:
 
 def require_trust_document(body: bytes, origin: str) -> None:
     document = json.loads(body)
-    facts = document.get("facts") if isinstance(document, dict) else None
+    if not isinstance(document, dict):
+        raise ValueError("trust document has invalid top-level shape")
+    facts = document.get("facts")
     if document.get("version") != 1 or not isinstance(facts, list):
         raise ValueError("trust document has invalid version or facts")
     joined = "\n".join(item for item in facts if isinstance(item, str))

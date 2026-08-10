@@ -67,6 +67,14 @@ def test_canary_fails_closed_for_missing_or_incorrect_public_facts(
         run(ORIGIN, opener=_opener(pages))
 
 
+def test_canary_rejects_non_object_trust_document() -> None:
+    pages = _pages()
+    pages[f"{ORIGIN}/.well-known/orrery/trust.json"] = b"[]"
+
+    with pytest.raises(ValueError, match="top-level shape"):
+        run(ORIGIN, opener=_opener(pages))
+
+
 @pytest.mark.parametrize("origin", ["http://orrery.lol", "https://orrery.lol/path", "https://"])
 def test_origin_must_use_normal_bare_https_hostname(origin: str) -> None:
     with pytest.raises(ValueError, match="bare HTTPS"):
