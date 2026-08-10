@@ -61,7 +61,7 @@ Their manifests are the source of truth: [`stars/`](./stars/). The live product 
 
 ## The horizon
 
-The public sky can grow with publishers owning their direct endpoints, while private namespaces organize tenant and capability surfaces. Constellations can compose stars into reusable policy graphs; managed execution and commerce can evolve around verified results. See the [vending-machine sky plan](./docs/plan/vending-machine-sky.md), the [tree-handling rim plan](./docs/plan/tree-handling-rim.md) (sealed leaves for agent task trees), and the [publisher direct-call ADR](./docs/adr/0004-publisher-direct-call.md).
+The public sky can grow with publishers owning their direct endpoints, while private namespaces organize tenant and capability surfaces. Constellations are frozen planner subgraphs ([ADR 0007](./docs/adr/0007-constellation-subtree-contract.md)); managed execution and commerce can evolve around verified results. See the [vending-machine sky plan](./docs/plan/vending-machine-sky.md), the [tree-handling rim plan](./docs/plan/tree-handling-rim.md) (sealed leaves for agent task trees), and the [publisher direct-call ADR](./docs/adr/0004-publisher-direct-call.md).
 
 ## Direct stars and the aggregate host
 
