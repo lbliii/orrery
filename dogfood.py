@@ -25,6 +25,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from catalog import CATALOG, GAZE_DEFAULT_LIMIT, GAZE_MAX_LIMIT
 from catalog.constellation_run import explain_policy, run_constellation, status_for_run
+from stars.decision_bind.service import bind as bind_decision
 from catalog.coverage import check_coverage, describe_coverage
 from public_keys import key_set_url
 from stars.html_to_pdf.skill import build_skill as build_html_to_pdf_star
@@ -259,12 +260,26 @@ def build_launch_gate_skill(*, private_key: Any | None = None) -> Skill:
         links: list[str] | None = None,
         examples: list[str] | None = None,
         constellation: str = "acme/launch-gate",
+        decision_id: str = "",
+        decision_statement: str = "",
     ) -> dict[str, object]:
         bundle = {
             "pages": list(pages or []),
             "links": list(links or []),
             "examples": list(examples or []),
         }
+        cites: list[str] | None = None
+        if decision_id.strip() or decision_statement.strip():
+            if not decision_id.strip() or not decision_statement.strip():
+                return {
+                    "error": "decision_incomplete",
+                    "status": "invalid",
+                    "note": "Provide both decision_id and decision_statement to cite a freeze.",
+                }
+            bound = bind_decision(decision_id.strip(), decision_statement)
+            if "error" in bound:
+                return {"status": "invalid", **bound}
+            cites = [str(bound["decision_digest"])]
         return run_constellation(
             bundle,
             constellation=constellation,
@@ -272,6 +287,7 @@ def build_launch_gate_skill(*, private_key: Any | None = None) -> Skill:
             skill_version=skill.version,
             key_id=skill.key_id,
             private_key=private,
+            cites=cites,
         )
 
     @skill.tool(
