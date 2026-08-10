@@ -179,7 +179,9 @@ class TestStarDetail:
             assert "data-star-facet" in r.text
             assert "data-result-count" in r.text
 
-    async def test_canonical_star_page_has_docs_relationships_and_actions(self, example_app) -> None:
+    async def test_canonical_star_page_has_docs_relationships_and_actions(
+        self, example_app
+    ) -> None:
         async with TestClient(example_app) as client:
             r = await client.get("/star/orrery/world-time")
             assert r.status == 200

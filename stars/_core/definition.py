@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 from typing import Any, Final
 
+from .execution import ManagedCPUExecutionPolicy, ManagedCPUExecutionPolicyError, ManagedCPUWorkload
 
 CAPABILITY_FAMILY_LABELS: Final[dict[str, str]] = {
     "document_processing": "Document processing",
@@ -18,8 +19,6 @@ CAPABILITY_FAMILY_LABELS: Final[dict[str, str]] = {
     "security": "Security",
 }
 CAPABILITY_FAMILIES = frozenset(CAPABILITY_FAMILY_LABELS)
-
-from .execution import ManagedCPUExecutionPolicy, ManagedCPUExecutionPolicyError, ManagedCPUWorkload
 
 
 class StarManifestError(ValueError):
@@ -231,4 +230,6 @@ def _validate_unique(values: tuple[str, ...], field: str) -> None:
 def _validate_capability_families(values: tuple[str, ...]) -> None:
     unknown = set(values) - CAPABILITY_FAMILIES
     if unknown:
-        raise StarManifestError(f"star.capability_families contains unknown families: {sorted(unknown)!r}")
+        raise StarManifestError(
+            f"star.capability_families contains unknown families: {sorted(unknown)!r}"
+        )
