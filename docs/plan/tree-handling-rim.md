@@ -56,6 +56,12 @@ subtree contracts, gaze/cards that name leaves without owning routing.
 5. **Thin harness / distributed load** — Same as ADR 0005; this plan only adds
    rim SKUs and contracts.
 
+**Process vs product:** How *we* burn down the Orrery GitHub backlog lives in
+[`AGENTS.md`](../../AGENTS.md) and [issue-lifecycle.md](./issue-lifecycle.md).
+That workflow is **not** a public star. Stars/constellations are only for
+sealed results any external agent would hang on *its* tree (see the table in
+`AGENTS.md`).
+
 ## Non-goals
 
 - Agent swarm VCS, merge reconciler, or megafile decomposer
