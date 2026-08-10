@@ -2,6 +2,15 @@
 
 from .console_links import console_href_for
 from .constellation import LAUNCH_GATE_POLICY, STALE_PROOF_POLICY, policy_for
+from .coverage import (
+    COVERAGE_GAPS,
+    check_coverage,
+    coverage_href,
+    coverage_index,
+    describe_coverage,
+    list_coverage_stars,
+    resolve_coverage,
+)
 from .dns import DEFAULT_MCP_HOST, mcp_host, mcp_url
 from .gaze import (
     GAZE_DEFAULT_LIMIT,
@@ -16,6 +25,7 @@ from .store import CATALOG, Catalog
 
 __all__ = [
     "CATALOG",
+    "COVERAGE_GAPS",
     "DEFAULT_MCP_HOST",
     "GAZE_DEFAULT_LIMIT",
     "GAZE_MAX_LIMIT",
@@ -27,10 +37,16 @@ __all__ = [
     "ProviderCard",
     "QualificationResult",
     "ResolveRecord",
+    "check_coverage",
     "clamp_gaze_limit",
     "console_href_for",
+    "coverage_href",
+    "coverage_index",
+    "describe_coverage",
+    "list_coverage_stars",
     "mcp_host",
     "mcp_url",
     "policy_for",
     "qualify_direct_mcp",
+    "resolve_coverage",
 ]

@@ -115,6 +115,7 @@ class TestOrreryHostFoundation:
                 "gaze_search",
                 "gaze_describe",
                 "gaze_list_constellations",
+                "coverage_check",
                 "resolve_name",
                 "convert",
                 "submit",

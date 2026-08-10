@@ -2,7 +2,7 @@
 
 Gaze / Resolve / html-to-pdf / world-time / source-watch share one aggregated ``/mcp`` with
 unique tool names. Gaze discovers skills (``gaze_match`` / ``gaze_search`` /
-``gaze_describe`` / ``gaze_list_constellations``); Resolve returns Skill DNS
+``gaze_describe`` / ``gaze_list_constellations`` / ``coverage_check``); Resolve returns Skill DNS
 via ``resolve_name``; html-to-pdf is the Call / Envelope plumbing demo (issues
 #25-#27); world-time is the Wave 1 reactive expertise spike (#37) — live UTC
 payload sealed at call time. Source Watch observes an allowlisted official
@@ -25,6 +25,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from catalog import CATALOG, GAZE_DEFAULT_LIMIT, GAZE_MAX_LIMIT
 from catalog.constellation_run import explain_policy, run_constellation, status_for_run
+from catalog.coverage import check_coverage, describe_coverage
 from public_keys import key_set_url
 from stars.html_to_pdf.skill import build_skill as build_html_to_pdf_star
 from stars.source_watch.skill import build_skill as build_source_watch_star
@@ -128,6 +129,54 @@ def build_gaze_skill(*, private_key: Any | None = None) -> Skill:
             "hits": [h.as_dict() for h in hits],
             "status": "ok",
         }
+
+    @skill.tool(
+        "coverage_check",
+        description=(
+            "Preflight an allowlist-gated star: pass star (or short id) plus the "
+            "check param (repo, package, target, host, …). Returns {allowed, reason}."
+        ),
+    )
+    def coverage_check_tool(
+        star: str,
+        repo: str = "",
+        package: str = "",
+        target: str = "",
+        host: str = "",
+        document: str = "",
+        dataset: str = "",
+        source: str = "",
+        pep: str = "",
+        rfc: str = "",
+        section: str = "",
+        license_id: str = "",
+        profile: str = "",
+    ) -> dict[str, object]:
+        params = {
+            key: value
+            for key, value in {
+                "repo": repo,
+                "package": package,
+                "target": target,
+                "host": host,
+                "document": document,
+                "dataset": dataset,
+                "source": source,
+                "pep": pep,
+                "rfc": rfc,
+                "section": section,
+                "license_id": license_id,
+                "profile": profile,
+            }.items()
+            if value
+        }
+        # Prefer membership check when any param is set; otherwise describe.
+        if params:
+            return check_coverage(star, params=params)
+        described = describe_coverage(star)
+        if described is None:
+            return {"allowed": False, "reason": "unknown_star", "star": star}
+        return described
 
     return skill
 
