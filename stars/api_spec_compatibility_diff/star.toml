@@ -1,0 +1,26 @@
+[star]
+name = "orrery/api-spec-compatibility-diff"
+version = "0.1.0"
+description = "Compare OpenAPI source vs target under ADR 0008 compatibility_policy"
+publisher = "orrery"
+publisher_key_id_env = "ORRERY_API_SPEC_COMPATIBILITY_DIFF_KEY_ID"
+direct_mcp_path = "/stars/api-spec-compatibility-diff/mcp"
+tools = ["diff"]
+capability_families = ["migration"]
+[pricing]
+unit = "call"
+price_per_call = "0.00"
+currency = "USD"
+[runtime]
+python_package = "stars.api_spec_compatibility_diff"
+skill_factory = "stars.api_spec_compatibility_diff.skill:build_skill"
+[policy]
+allowed_egress = []
+freshness = "static_profile"
+redirects = "deny"
+max_response_bytes = 65536
+[receipt]
+schema_version = "1"
+algorithm = "Ed25519"
+[publish]
+corpus = "stars.api_spec_compatibility_diff.corpus:CORPUS"
