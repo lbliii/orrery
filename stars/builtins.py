@@ -35,6 +35,9 @@ BUILTIN_STAR_PACKAGES = (
     "stars.manifest_bind",
     "stars.manifest_preflight",
     "stars.patch_capture",
+    "stars.write_authority_check",
+    "stars.link_check_bounded",
+    "stars.structure_audit",
 )
 
 

@@ -1,0 +1,26 @@
+[star]
+name = "orrery/write-authority-check"
+version = "0.1.0"
+description = "Verify an explicit write grant covers intended paths"
+publisher = "orrery"
+publisher_key_id_env = "ORRERY_WRITE_AUTHORITY_CHECK_KEY_ID"
+direct_mcp_path = "/stars/write-authority-check/mcp"
+tools = ["check"]
+capability_families = ["security"]
+[pricing]
+unit = "call"
+price_per_call = "0.00"
+currency = "USD"
+[runtime]
+python_package = "stars.write_authority_check"
+skill_factory = "stars.write_authority_check.skill:build_skill"
+[policy]
+allowed_egress = []
+freshness = "caller_provided"
+redirects = "deny"
+max_response_bytes = 65536
+[receipt]
+schema_version = "1"
+algorithm = "Ed25519"
+[publish]
+corpus = "stars.write_authority_check.corpus:CORPUS"
