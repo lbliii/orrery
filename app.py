@@ -50,6 +50,7 @@ from chirp.skill.smoke import render_faithful_answer
 
 from artifacts import safe_attachment_filename
 from catalog import CATALOG
+from catalog.coverage import check_coverage, coverage_index, describe_coverage
 from catalog.sync import refresh_catalog
 from commerce import charge_on_verify, refund_on_forge
 from discovery import (
@@ -332,6 +333,49 @@ def api_resolve(request: Request) -> JSONResponse:
         return JSONResponse.from_value({"error": "not_found", "name": name}, status=404)
     payload = record.as_dict()
     payload["public_key_url"] = key_set_url(_orrery_origin(request))
+    return JSONResponse.from_value(payload)
+
+
+# ---------------------------------------------------------------------------
+# Coverage — public allowlist preflight for agents (#221)
+# Agent Cards (#217) link here via coverage_href; card schema is out of scope.
+# ---------------------------------------------------------------------------
+
+
+def _coverage_query_params(request: Request) -> dict[str, str]:
+    """Flatten request query values to stripped strings."""
+    params: dict[str, str] = {}
+    for key in request.query:
+        value = request.query.get(key)
+        if value is None:
+            continue
+        params[str(key)] = str(value).strip()
+    return params
+
+
+@app.route("/coverage", referenced=True)
+def api_coverage_index(_request: Request) -> JSONResponse:
+    """List public allowlist-gated stars and known coverage gaps."""
+    return JSONResponse.from_value(coverage_index())
+
+
+@app.route("/coverage/{star_or_family}/check", referenced=True)
+def api_coverage_check(request: Request, star_or_family: str) -> JSONResponse:
+    """Membership check: ``?{param}=…`` → ``{allowed, reason}``."""
+    result = check_coverage(star_or_family, params=_coverage_query_params(request))
+    status = 404 if result.get("reason") == "unknown_star" else 200
+    return JSONResponse.from_value(result, status=status)
+
+
+@app.route("/coverage/{star_or_family}", referenced=True)
+def api_coverage_describe(_request: Request, star_or_family: str) -> JSONResponse:
+    """Allowlist metadata for one public star (entries + check href)."""
+    payload = describe_coverage(star_or_family)
+    if payload is None:
+        return JSONResponse.from_value(
+            {"error": "not_found", "star": star_or_family},
+            status=404,
+        )
     return JSONResponse.from_value(payload)
 
 

@@ -48,6 +48,13 @@ MCP_TOOLS: tuple[dict[str, str], ...] = (
         "description": "List drawn policy graphs (constellations).",
     },
     {
+        "name": "coverage_check",
+        "description": (
+            "Preflight allowlist membership for a public star "
+            "(repo/package/target/…). Returns {allowed, reason}."
+        ),
+    },
+    {
         "name": "resolve_name",
         "description": "Resolve a Skill DNS name to endpoint, digest, key, price.",
     },
