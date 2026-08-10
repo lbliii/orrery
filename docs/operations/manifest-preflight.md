@@ -37,5 +37,3 @@ check files before run without Orrery hosting the caller's tree.
 - No egress; policies are static named rules.
 - Publisher key env: `ORRERY_MANIFEST_PREFLIGHT_KEY_ID` (or shared `ORRERY_STAR_*`).
 - Acceptance: `uv run pytest tests/stars/test_manifest_preflight.py -q`
-- **Deferral:** Agent Card / gaze intents ("check files before run") deferred
-  pending catalog carve-out (epic #238).

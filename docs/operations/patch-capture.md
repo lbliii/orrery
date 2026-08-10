@@ -33,5 +33,3 @@ receipt.
 - No egress; pure transform over caller bytes.
 - Publisher key env: `ORRERY_PATCH_CAPTURE_KEY_ID` (or shared `ORRERY_STAR_*`).
 - Acceptance: `uv run pytest tests/stars/test_patch_capture.py -q`
-- **Deferral:** Agent Card / gaze intents ("capture patch receipt") deferred
-  pending catalog carve-out (epic #238).

@@ -34,6 +34,3 @@ the whole call when at least the list shape is valid.
 - No egress; pure seal over caller bytes.
 - Publisher key env: `ORRERY_MANIFEST_BIND_KEY_ID` (or shared `ORRERY_STAR_*`).
 - Acceptance: `uv run pytest tests/stars/test_manifest_bind.py -q`
-- **Deferral:** Agent Card / gaze intent fixtures live in `catalog/agent_card.py`
-  and `tests/gaze-intents.v1.json` (outside this leaf's owned paths; epic #238
-  allows documented deferrals until a catalog carve-out).
