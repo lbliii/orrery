@@ -6,6 +6,7 @@ publisher = "orrery"
 publisher_key_id_env = "ORRERY_WELL_KNOWN_KEY_ID"
 direct_mcp_path = "/stars/well-known/mcp"
 tools = ["read"]
+capability_families = ["web_metadata"]
 [pricing]
 unit = "call"
 price_per_call = "0.00"

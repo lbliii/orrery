@@ -1,0 +1,54 @@
+{% extends "_layout.html" %}
+
+{% block content %}
+<div class="star-page">
+  <aside class="entity-rail">
+    <a class="back-link" href="/stars">← All Stars</a>
+    <p class="kicker">Star</p>
+    <p class="entity-name mono">{{ rec.name }}</p>
+    <nav aria-label="Star sections">
+      <a href="#overview" aria-current="page">Overview</a>
+      <a href="#tools">Tools</a>
+      <a href="#constellations">In constellations</a>
+      <a href="#trust">Trust &amp; activity</a>
+    </nav>
+  </aside>
+
+  <article class="star-reading">
+    <header id="overview" class="detail-hero">
+      <p class="kicker">{{ rec.visibility }} Star · {{ rec.version or "current" }}</p>
+      <h1>{{ rec.name }}</h1>
+      <p class="star-intro">{{ intro }}</p>
+    </header>
+    <section class="reading-section">
+      <p class="kicker">How it works</p>
+      <p>Point an MCP-capable agent at this Star, call the tool it exposes, then verify the signed Envelope returned with the result. Nothing needs to be cloned or installed.</p>
+    </section>
+    <section id="tools" class="reading-section">
+      <p class="kicker">Tools</p>
+      {% for tool in rec.tools %}<div class="tool-line"><code>{{ tool }}</code><span>Callable through this Star’s direct MCP endpoint.</span></div>{% end %}
+    </section>
+    <section id="constellations" class="reading-section">
+      <p class="kicker">In constellations</p>
+      <p class="muted">A constellation is a policy graph that can coordinate several Stars.</p>
+      {% if constellations %}<div class="relation-list">{% for constellation in constellations %}<a href="{{ constellation.href }}"><strong>{{ constellation.name }}</strong><span>{{ constellation.description }}</span><b>↗</b></a>{% end %}</div>{% else %}<p class="muted">No constellation references this Star yet.</p>{% end %}
+    </section>
+    {% if related %}<section class="reading-section"><p class="kicker">Nearby Stars</p><div class="relation-list">{% for star in related %}<a href="/star/{{ star.namespace }}/{{ star.short_name }}"><strong>{{ star.name }}</strong><span>{{ star.description }}</span><b>↗</b></a>{% end %}</div></section>{% end %}
+  </article>
+
+  <aside class="action-rail" id="trust">
+    <div class="panel action-panel">
+      <p class="kicker">Point an agent here</p>
+      <code class="endpoint mono">{{ rec.endpoint }}</code>
+      <button type="button" class="btn" data-copy-mcp data-mcp-url="{{ rec.endpoint }}">Copy MCP URL</button>
+      <a class="text-action" href="/connect">Connection guide →</a>
+    </div>
+    <div class="trust-card">
+      <p class="kicker">Trust signal</p>
+      <p><span class="pill {{ oracle.pill_class }}">{{ oracle.pill_text }}</span></p>
+      <dl><dt>Version</dt><dd>{{ rec.version or "current" }}</dd><dt>Digest</dt><dd><code>{{ rec.content_digest }}</code></dd><dt>Key</dt><dd><code>{{ rec.key_id }} · {{ rec.alg }}</code></dd></dl>
+      <a class="text-action" href="{{ console_href }}">View operational record →</a>
+    </div>
+  </aside>
+</div>
+{% end %}

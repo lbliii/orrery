@@ -6,6 +6,7 @@ publisher = "orrery"
 publisher_key_id_env = "ORRERY_HTTP_HEAD_KEY_ID"
 direct_mcp_path = "/stars/http-head/mcp"
 tools = ["head"]
+capability_families = ["web_metadata"]
 [pricing]
 unit = "call"
 price_per_call = "0.00"

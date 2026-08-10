@@ -6,6 +6,7 @@ publisher = "orrery"
 publisher_key_id_env = "ORRERY_CERT_EXPIRY_KEY_ID"
 direct_mcp_path = "/stars/cert-expiry/mcp"
 tools = ["inspect"]
+capability_families = ["security"]
 [pricing]
 unit = "call"
 price_per_call = "0.00"

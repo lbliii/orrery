@@ -22,6 +22,7 @@ def _manifest(**overrides: str) -> str:
             'publisher_key_id_env = "ORRERY_SOURCE_WATCH_KEY_ID"',
             'direct_mcp_path = "/stars/source-watch/mcp"',
             'tools = ["observe", "diff"]',
+            'capability_families = ["source_monitoring"]',
         ],
         "pricing": ['unit = "call"', 'price_per_call = "0.25"', 'currency = "USD"'],
         "runtime": [
@@ -72,6 +73,7 @@ def test_loader_returns_immutable_definition_from_canonical_nested_manifest(tmp_
     assert definition.receipt_algorithm == "Ed25519"
     assert definition.publish_corpus == "stars.source_watch.corpus:CORPUS"
     assert definition.tools == ("observe", "diff")
+    assert definition.capability_families == ("source_monitoring",)
 
 
 @pytest.mark.parametrize(

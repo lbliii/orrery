@@ -6,6 +6,7 @@ publisher = "orrery"
 publisher_key_id_env = "ORRERY_SOURCE_WATCH_KEY_ID"
 direct_mcp_path = "/stars/source-watch/mcp"
 tools = ["observe", "diff", "answer"]
+capability_families = ["source_monitoring"]
 
 [pricing]
 unit = "call"

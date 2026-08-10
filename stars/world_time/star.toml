@@ -6,6 +6,7 @@ publisher = "orrery"
 publisher_key_id_env = "ORRERY_WORLD_TIME_KEY_ID"
 direct_mcp_path = "/stars/world-time/mcp"
 tools = ["fetch", "get", "answer"]
+capability_families = ["time_and_date"]
 
 [pricing]
 unit = "call"

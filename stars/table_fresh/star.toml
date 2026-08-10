@@ -7,6 +7,7 @@ publisher = "orrery"
 publisher_key_id_env = "ORRERY_TABLE_FRESH_KEY_ID"
 direct_mcp_path = "/constellations/table-fresh/mcp"
 tools = ["run"]
+capability_families = ["data"]
 [pricing]
 unit = "call"
 price_per_call = "0.00"

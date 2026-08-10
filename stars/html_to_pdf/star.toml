@@ -6,6 +6,7 @@ publisher = "orrery"
 publisher_key_id_env = "ORRERY_PDF_KEY_ID"
 direct_mcp_path = "/stars/html-to-pdf/mcp"
 tools = ["convert", "submit", "result", "health"]
+capability_families = ["document_processing"]
 
 [pricing]
 unit = "call"

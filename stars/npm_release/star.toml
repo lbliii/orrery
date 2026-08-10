@@ -6,6 +6,7 @@ publisher="orrery"
 publisher_key_id_env="ORRERY_NPM_RELEASE_KEY_ID"
 direct_mcp_path="/stars/npm-release/mcp"
 tools=["get"]
+capability_families = ["source_monitoring"]
 [pricing]
 unit="call"
 price_per_call="0.00"

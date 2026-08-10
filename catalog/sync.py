@@ -67,6 +67,8 @@ def build_star_records(
                     health="verified",
                     tool_context_budget=min(len(skill.tools), 12),
                 ),
+                capability_families=definition.capability_families,
+                freshness=definition.freshness,
             )
         )
     return tuple(records)
@@ -83,6 +85,17 @@ def refresh_catalog(
 
     from trust.oracle import oracle_ok_for_record
 
+    def memberships(name: str) -> tuple[str, ...]:
+        from .constellation import policy_for
+
+        return tuple(
+            constellation.name
+            for constellation in records
+            if constellation.kind == "constellation"
+            and (policy := policy_for(constellation.name)) is not None
+            and any(node.star_ref == name for node in policy.nodes)
+        )
+
     enriched = tuple(
         ResolveRecord(
             name=r.name,
@@ -98,6 +111,9 @@ def refresh_catalog(
             oracle_ok=oracle_ok_for_record(r),
             tools=r.tools,
             provider_card=r.provider_card,
+            capability_families=r.capability_families,
+            freshness=r.freshness,
+            constellation_memberships=memberships(r.name) if r.kind == "star" else (),
         )
         for r in records
     )

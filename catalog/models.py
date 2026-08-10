@@ -40,6 +40,9 @@ class ResolveRecord:
     oracle_ok: bool = True
     tools: tuple[str, ...] = field(default_factory=tuple)
     provider_card: ProviderCard | None = None
+    capability_families: tuple[str, ...] = field(default_factory=tuple)
+    freshness: str | None = None
+    constellation_memberships: tuple[str, ...] = field(default_factory=tuple)
 
     @property
     def short_name(self) -> str:
@@ -54,6 +57,8 @@ class ResolveRecord:
     @property
     def href(self) -> str:
         """Detail-page path for this record (star vs constellation)."""
+        if self.kind == "star" and self.namespace:
+            return f"/star/{self.namespace}/{self.short_name}"
         base = "/constellations" if self.kind == "constellation" else "/stars"
         return f"{base}?name={self.name}"
 
@@ -95,4 +100,7 @@ class ResolveRecord:
             "oracle_ok": self.oracle_ok,
             "tools": list(self.tools),
             "provider_card": self.provider_card.as_dict() if self.provider_card else None,
+            "capability_families": list(self.capability_families),
+            "freshness": self.freshness,
+            "constellation_memberships": list(self.constellation_memberships),
         }

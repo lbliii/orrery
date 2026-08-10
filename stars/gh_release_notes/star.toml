@@ -6,6 +6,7 @@ publisher="orrery"
 publisher_key_id_env="ORRERY_GH_RELEASE_NOTES_KEY_ID"
 direct_mcp_path="/stars/gh-release-notes/mcp"
 tools=["observe"]
+capability_families = ["source_monitoring"]
 [pricing]
 unit="call"
 price_per_call="0.00"

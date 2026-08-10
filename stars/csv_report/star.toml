@@ -6,6 +6,7 @@ publisher = "orrery"
 publisher_key_id_env = "ORRERY_CPU_KEY_ID"
 direct_mcp_path = "/stars/csv-report/mcp"
 tools = ["submit", "result"]
+capability_families = ["data", "document_processing"]
 [pricing]
 unit = "call"
 price_per_call = "0.00"
