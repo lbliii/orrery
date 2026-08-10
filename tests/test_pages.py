@@ -189,7 +189,8 @@ class TestStarDetail:
             assert "/static/styles.css" in r.text
             assert 'class="topbar"' in r.text
             assert "orrery/world-time" in r.text
-            assert "How it works" in r.text
+            assert "Use this when" in r.text
+            assert "Example" in r.text
             assert "In constellations" in r.text
             assert "Copy MCP URL" in r.text
             assert "Trust signal" in r.text
