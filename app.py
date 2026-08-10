@@ -70,7 +70,6 @@ from discovery import (
     dumps as discovery_dumps,
 )
 from dogfood import DOGFOOD_CORPUS, build_dogfood_skills, verify_receipt
-from mcp_compat import StandardMcpCompatibilityMiddleware
 from public_keys import KEY_SET_CACHE_CONTROL, key_set_url, public_key_set
 from stars._core.corpus import corpus_ok_by_star, validate_public_star_corpora
 from stars._core.direct_mcp import mount_direct_mcp
@@ -135,13 +134,6 @@ for middleware in secure_stack(
     headers=SecurityHeadersConfig(content_security_policy=_ORRERY_CSP),
 ):
     app.add_middleware(middleware)
-
-# MCP 2025-06-18 uses only the protocol header plus standard JSON-RPC body
-# fields.  Chirp's current routing extension needs internal copies of those
-# fields, supplied by this boundary without changing the public wire contract.
-app.add_middleware(
-    StandardMcpCompatibilityMiddleware({"/mcp", *_DIRECT_STAR_MCP_PATHS}), priority=1
-)
 
 
 # ---------------------------------------------------------------------------
