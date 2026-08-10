@@ -22,6 +22,14 @@ from .models import ResolveRecord
 if TYPE_CHECKING:
     from trust.oracle import OracleView
 
+
+def _inputs_summary_for(record: ResolveRecord) -> str | None:
+    from .agent_card import inputs_summary
+
+    if record.agent_card is None:
+        return None
+    return inputs_summary(record.agent_card)
+
 #: Token splitter for ``match(intent)`` / ``search(query)``.
 _TOKEN_RE = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*", re.IGNORECASE)
 
@@ -89,6 +97,9 @@ class GazeHit:
     oracle_ok: bool = False
     console_href: str = "/console"
     oracle: OracleView | None = None
+    summary: str | None = None
+    use_when: tuple[str, ...] = ()
+    inputs_summary: str | None = None
 
     @property
     def pricing_label(self) -> str:
@@ -125,6 +136,9 @@ class GazeHit:
             "oracle_ok": self.oracle_ok,
             "console_href": self.console_href,
             "trust": {"oracle": trust_oracle},
+            "summary": self.summary,
+            "use_when": list(self.use_when),
+            "inputs_summary": self.inputs_summary,
         }
 
 
@@ -162,8 +176,10 @@ def hit_from_record(record: ResolveRecord) -> GazeHit:
     from trust.oracle import oracle_for
 
     toll = record.pricing_label
-    blurb = f"{record.description} · {toll}" if record.description else toll
+    blurb_source = record.resolved_description() or ""
+    blurb = f"{blurb_source} · {toll}" if blurb_source else toll
     view = oracle_for(record)
+    card = record.agent_card
     return GazeHit(
         name=record.name,
         kind=record.kind,
@@ -177,6 +193,9 @@ def hit_from_record(record: ResolveRecord) -> GazeHit:
         oracle_ok=record.oracle_ok,
         console_href=console_href_for(record),
         oracle=view,
+        summary=None if card is None else card.summary,
+        use_when=() if card is None else card.use_when[:3],
+        inputs_summary=_inputs_summary_for(record),
     )
 
 
@@ -211,7 +230,8 @@ def score_record(record: ResolveRecord, tokens: tuple[str, ...]) -> int:
         return 1
     name = record.name.lower()
     short = record.short_name.lower()
-    desc = (record.description or "").lower()
+    desc = (record.resolved_description() or "").lower()
+    card_text = record.agent_card.searchable_text() if record.agent_card is not None else ""
     score = 0
     for token in tokens:
         if token in (short, name):
@@ -219,6 +239,8 @@ def score_record(record: ResolveRecord, tokens: tuple[str, ...]) -> int:
         elif token in name:
             score += 3
         if token in desc:
+            score += 2
+        if token in card_text:
             score += 2
         # Light boosts for common intent vocabulary.
         if token in {"pdf", "html", "render", "convert"} and "pdf" in name:

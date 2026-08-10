@@ -29,6 +29,8 @@ def build_star_records(
     receipt: PublishReceipt | None = None,
 ) -> tuple[ResolveRecord, ...]:
     """Build public records from Star manifests and their canonical direct skills."""
+    from .agent_card import card_for
+
     _ = receipt  # The package manifest is catalog truth; aggregate smoke is trust evidence.
     records: list[ResolveRecord] = []
     for definition in stars:
@@ -67,6 +69,7 @@ def build_star_records(
                     health="verified",
                     tool_context_budget=min(len(skill.tools), 12),
                 ),
+                agent_card=card_for(definition.name),
                 capability_families=definition.capability_families,
                 freshness=definition.freshness,
             )
@@ -111,6 +114,7 @@ def refresh_catalog(
             oracle_ok=oracle_ok_for_record(r),
             tools=r.tools,
             provider_card=r.provider_card,
+            agent_card=r.agent_card,
             capability_families=r.capability_families,
             freshness=r.freshness,
             constellation_memberships=memberships(r.name) if r.kind == "star" else (),

@@ -115,17 +115,22 @@ class Catalog:
         node: str | None = None,
         limit: int | None = None,
     ) -> tuple[GazeHit, ...]:
-        """Substring search over name + description (bounded shortlist)."""
+        """Substring search over name + description + agent card text."""
         cap = clamp_gaze_limit(limit)
         q = (query or "").strip().lower()
         pool = self.records_for_node(node) if node else self._records
         if not q:
             return tuple(hit_from_record(r) for r in pool[:cap])
-        hits = [
-            hit_from_record(r)
-            for r in pool
-            if q in r.name.lower() or q in (r.description or "").lower()
-        ]
+
+        def _matches(record: ResolveRecord) -> bool:
+            if q in record.name.lower():
+                return True
+            if q in (record.resolved_description() or "").lower():
+                return True
+            card = record.agent_card
+            return card is not None and q in card.searchable_text()
+
+        hits = [hit_from_record(r) for r in pool if _matches(r)]
         return tuple(hits[:cap])
 
     def describe(self, name: str) -> dict[str, object]:
@@ -138,7 +143,7 @@ class Catalog:
             "version": record.version,
             "kind": record.kind,
             "visibility": record.visibility,
-            "description": record.description,
+            "description": record.resolved_description(),
             "endpoint": record.endpoint,
             "content_digest": record.content_digest,
             "key_id": record.key_id,
@@ -147,6 +152,7 @@ class Catalog:
             "tools": list(record.tools),
             "href": record.href,
             "provider_card": record.provider_card.as_dict() if record.provider_card else None,
+            "agent_card": record.agent_card.as_dict() if record.agent_card else None,
             "status": "ok",
         }
         if record.kind == "constellation":

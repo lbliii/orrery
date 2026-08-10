@@ -92,7 +92,8 @@ def build_gaze_skill(*, private_key: Any | None = None) -> Skill:
     @skill.tool(
         "gaze_search",
         description=(
-            "Search catalog names and descriptions by substring "
+            "Search catalog names, descriptions, and agent-card text "
+            "(summary, use_when, example_intents) by substring "
             "(bounded shortlist with facets; no tool payloads). "
             f"Default limit {GAZE_DEFAULT_LIMIT}; explicit limit capped at {GAZE_MAX_LIMIT}."
         ),
@@ -113,7 +114,7 @@ def build_gaze_skill(*, private_key: Any | None = None) -> Skill:
 
     @skill.tool(
         "gaze_describe",
-        description="Describe a skill by name (manifest metadata, no execution)",
+        description="Describe a skill by name (manifest + full agent card, no execution)",
     )
     def gaze_describe(name: str) -> dict[str, object]:
         return CATALOG.describe(name)

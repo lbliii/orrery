@@ -6,6 +6,7 @@ publish-oracle freeze. Only constellations remain static until Wave 4.
 
 from __future__ import annotations
 
+from .agent_card import card_for
 from .dns import mcp_url
 from .models import ResolveRecord
 
@@ -21,6 +22,7 @@ CONSTELLATION_SEEDS: tuple[ResolveRecord, ...] = (
         price_per_call=None,
         oracle_ok=False,
         tools=("run", "status", "explain_policy"),
+        agent_card=card_for("acme/release-gate"),
     ),
     ResolveRecord(
         name="acme/launch-gate",
@@ -34,6 +36,7 @@ CONSTELLATION_SEEDS: tuple[ResolveRecord, ...] = (
         price_per_call=None,
         oracle_ok=False,
         tools=("run", "status", "explain_policy"),
+        agent_card=card_for("acme/launch-gate"),
     ),
 )
 
