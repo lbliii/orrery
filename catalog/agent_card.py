@@ -44,6 +44,12 @@ class AgentCardIO:
 #: Sealed composite outcomes agents should expect from constellation runs.
 DEFAULT_DISPOSITIONS: tuple[str, ...] = ("ready", "not-ready", "stale", "blocked")
 CONTENT_READINESS_DISPOSITIONS: tuple[str, ...] = ("ready", "needs-work", "inconclusive")
+AUTHORIZED_CONTENT_PATCH_DISPOSITIONS: tuple[str, ...] = (
+    "authorized",
+    "denied",
+    "needs-work",
+    "inconclusive",
+)
 
 #: ADR 0007 lease invariant — paused runs never hold a worker/MCP lease.
 LEASE_RULE = "waiting_never_holds_worker_lease"
@@ -1210,6 +1216,107 @@ _STAR_CARDS: dict[str, AgentCard] = {
         subtree_contract=subtree_contract_from_policy(
             "orrery/content-readiness",
             dispositions=CONTENT_READINESS_DISPOSITIONS,
+            pause_allowed=False,
+        ),
+    ),
+    "orrery/authorized-content-patch": _card(
+        summary=(
+            "Governed content edit path: readiness → write-authority → "
+            "patch-capture → sealed composite (never applies patches)."
+        ),
+        use_when=(
+            "You need authorized | denied over readiness + explicit write grant "
+            "+ sealed patch digest",
+            "You want a frozen edit-path subgraph seal, not a deploy or apply "
+            "button",
+        ),
+        not_for=(
+            "Applying patches to the caller filesystem",
+            "Publication / deploy (see publish-gate)",
+            "Durable pause / continuation (sync only)",
+            "Inventing grant schema beyond write-authority-check",
+        ),
+        example_intents=(
+            "authorized content patch",
+            "write authority then patch capture",
+            "governed docs edit receipt",
+        ),
+        tools=("run",),
+        coverage_slug="authorized-content-patch",
+        inputs=(
+            _io(
+                "before",
+                "array",
+                required=True,
+                note="[{path, content, format?}]; may be empty",
+            ),
+            _io(
+                "after",
+                "array",
+                required=True,
+                note="[{path, content, format?}] assessed for readiness",
+            ),
+            _io(
+                "authority",
+                "object",
+                required=True,
+                note="policy, allowed_paths, grant_digest, optional witness",
+            ),
+            _io(
+                "policy",
+                "string",
+                note="orrery/docs-only@v1 or orrery/max-100-files@v1",
+            ),
+            _io("max_link_count", "integer", note="1..50; default 20"),
+        ),
+        outputs=(
+            _io("disposition", "string"),
+            _io("stages", "object"),
+            *_ENVELOPE,
+        ),
+        run_contract={
+            "entry_tool": "run",
+            "required_inputs": ["before", "after", "authority"],
+            "optional_inputs": ["policy", "max_link_count"],
+            "composite_output": "signed-envelope-chain",
+            "input_bundle": {
+                "before": {
+                    "type": "array",
+                    "required": True,
+                    "note": "caller before bundle [{path, content, format?}]",
+                },
+                "after": {
+                    "type": "array",
+                    "required": True,
+                    "note": "caller after bundle [{path, content, format?}]",
+                },
+                "authority": {
+                    "type": "object",
+                    "required": True,
+                    "note": "explicit-paths grant (+ optional witness)",
+                },
+                "policy": {
+                    "type": "string",
+                    "required": False,
+                    "note": "named preflight policy; default orrery/docs-only@v1",
+                },
+                "max_link_count": {
+                    "type": "integer",
+                    "required": False,
+                    "note": "bounded link cap for link-check-bounded",
+                },
+            },
+        },
+        graph_summary=(
+            "manifest-bind → manifest-preflight → structure-audit → "
+            "link-check-bounded → write-authority-check → patch-capture → "
+            "artifact-seal"
+        ),
+        dispositions=AUTHORIZED_CONTENT_PATCH_DISPOSITIONS,
+        member_stars=member_stars_from_policy("orrery/authorized-content-patch"),
+        subtree_contract=subtree_contract_from_policy(
+            "orrery/authorized-content-patch",
+            dispositions=AUTHORIZED_CONTENT_PATCH_DISPOSITIONS,
             pause_allowed=False,
         ),
     ),
