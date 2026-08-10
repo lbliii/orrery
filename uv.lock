@@ -17,7 +17,7 @@ wheels = [
 [[package]]
 name = "bengal-chirp"
 version = "0.10.0"
-source = { git = "https://github.com/lbliii/chirp.git?rev=main#2a793c9e45813dca1c804edda7ef25efbc583d63" }
+source = { git = "https://github.com/lbliii/chirp.git?rev=main#d3247bd6f1daba4d664ba19dd05d016d852aa2b0" }
 dependencies = [
     { name = "anyio" },
     { name = "bengal-pounce" },
