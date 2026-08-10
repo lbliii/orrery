@@ -8,6 +8,9 @@
     <p class="entity-name mono">{{ rec.name }}</p>
     <nav aria-label="Star sections">
       <a href="#overview" aria-current="page">Overview</a>
+      <a href="#use-when">Use this when</a>
+      <a href="#inputs">Inputs / Outputs</a>
+      <a href="#example">Example</a>
       <a href="#tools">Tools</a>
       <a href="#constellations">In constellations</a>
       <a href="#trust">Trust &amp; activity</a>
@@ -19,15 +22,89 @@
       <p class="kicker">{{ rec.visibility }} Star · {{ rec.version or "current" }}</p>
       <h1>{{ rec.name }}</h1>
       <p class="star-intro">{{ intro }}</p>
+      <p class="muted star-resolve-link">
+        Machine-readable record:
+        <a class="mono" href="{{ card.resolve_href }}">{{ card.resolve_href }}</a>
+      </p>
     </header>
-    <section class="reading-section">
-      <p class="kicker">How it works</p>
-      <p>Point an MCP-capable agent at this Star, call the tool it exposes, then verify the signed Envelope returned with the result. Nothing needs to be cloned or installed.</p>
+
+    {% if card.use_when %}
+    <section id="use-when" class="reading-section">
+      <p class="kicker">Use this when</p>
+      <ul class="star-bullets">
+        {% for bullet in card.use_when %}<li>{{ bullet }}</li>{% end %}
+      </ul>
     </section>
+    {% end %}
+
+    {% if card.not_for %}
+    <section id="not-for" class="reading-section">
+      <p class="kicker">Not for</p>
+      <ul class="star-bullets">
+        {% for bullet in card.not_for %}<li>{{ bullet }}</li>{% end %}
+      </ul>
+    </section>
+    {% end %}
+
+    {% if card.inputs or card.outputs %}
+    <section id="inputs" class="reading-section">
+      <p class="kicker">Inputs / Outputs</p>
+      <div class="star-io">
+        {% if card.inputs %}
+        <div>
+          <p class="star-io-label">Inputs</p>
+          <table class="star-io-table">
+            <thead><tr><th>Name</th><th>Type</th><th>Notes</th></tr></thead>
+            <tbody>
+              {% for item in card.inputs %}
+              <tr>
+                <td><code class="mono">{{ item.name }}</code>{% if item.required %} <span class="star-required">required</span>{% end %}</td>
+                <td class="mono">{{ item.type }}</td>
+                <td>{% if item.note %}{{ item.note }}{% else %}—{% end %}</td>
+              </tr>
+              {% end %}
+            </tbody>
+          </table>
+        </div>
+        {% end %}
+        {% if card.outputs %}
+        <div>
+          <p class="star-io-label">Outputs</p>
+          <table class="star-io-table">
+            <thead><tr><th>Name</th><th>Type</th><th>Notes</th></tr></thead>
+            <tbody>
+              {% for item in card.outputs %}
+              <tr>
+                <td><code class="mono">{{ item.name }}</code></td>
+                <td class="mono">{{ item.type }}</td>
+                <td>{% if item.note %}{{ item.note }}{% else %}—{% end %}</td>
+              </tr>
+              {% end %}
+            </tbody>
+          </table>
+        </div>
+        {% end %}
+      </div>
+    </section>
+    {% end %}
+
+    <section id="example" class="reading-section">
+      <p class="kicker">Example</p>
+      <p class="muted">Minimal MCP <code class="mono">tools/call</code> against this Star’s direct endpoint.</p>
+      <pre class="mono star-example">{{ card.example_call_json }}</pre>
+    </section>
+
     <section id="tools" class="reading-section">
       <p class="kicker">Tools</p>
-      {% for tool in rec.tools %}<div class="tool-line"><code>{{ tool }}</code><span>Callable through this Star’s direct MCP endpoint.</span></div>{% end %}
+      {% for tool in card.tools %}
+      <div class="tool-line" id="tool-{{ tool.name }}">
+        <code>{{ tool.name }}</code>
+        <span>{{ tool.description }} · <a href="{{ tool.schema_fragment }}">schema</a></span>
+      </div>
+      <pre id="tool-{{ tool.name }}-schema" class="mono star-tool-schema muted">{{ tool.schema_json }}</pre>
+      {% end %}
     </section>
+
     <section id="constellations" class="reading-section">
       <p class="kicker">In constellations</p>
       <p class="muted">A constellation is a policy graph that can coordinate several Stars.</p>
@@ -41,12 +118,13 @@
       <p class="kicker">Point an agent here</p>
       <code class="endpoint mono">{{ rec.endpoint }}</code>
       <button type="button" class="btn" data-copy-mcp data-mcp-url="{{ rec.endpoint }}">Copy MCP URL</button>
+      <a class="text-action" href="{{ card.resolve_href }}">Resolve record →</a>
       <a class="text-action" href="/connect">Connection guide →</a>
     </div>
     <div class="trust-card">
       <p class="kicker">Trust signal</p>
       <p><span class="pill {{ oracle.pill_class }}">{{ oracle.pill_text }}</span></p>
-      <dl><dt>Version</dt><dd>{{ rec.version or "current" }}</dd><dt>Digest</dt><dd><code>{{ rec.content_digest }}</code></dd><dt>Key</dt><dd><code>{{ rec.key_id }} · {{ rec.alg }}</code></dd></dl>
+      <dl><dt>Version</dt><dd>{{ rec.version or "current" }}</dd><dt>Digest</dt><dd><code>{{ rec.content_digest }}</code></dd><dt>Key</dt><dd><code>{{ rec.key_id }} · {{ rec.alg }}</code></dd>{% if card.agent_card_version %}<dt>Agent card</dt><dd><code>v{{ card.agent_card_version }}</code></dd>{% end %}</dl>
       <a class="text-action" href="{{ console_href }}">View operational record →</a>
     </div>
   </aside>
