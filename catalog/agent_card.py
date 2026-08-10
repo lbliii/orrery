@@ -677,6 +677,99 @@ _STAR_CARDS: dict[str, AgentCard] = {
             *_ENVELOPE,
         ),
     ),
+    "orrery/write-authority-check": _card(
+        summary="Verify an explicit write grant covers the intended path set.",
+        use_when=(
+            "You need authorized/denied codes before applying a write",
+            "You have a grant_digest and optional signed witness envelope",
+        ),
+        not_for=(
+            "Writing files or applying patches",
+            "Multi-party witness ceremonies",
+            "Inventing policy names outside explicit-paths@v1",
+        ),
+        example_intents=(
+            "check write authority",
+            "verify write grant paths",
+            "authorize docs write grant",
+        ),
+        tools=("check",),
+        coverage_slug="write-authority-check",
+        inputs=(
+            _io("manifest_digest", "string", required=True, note="opaque hex digest"),
+            _io(
+                "authority",
+                "object",
+                required=True,
+                note="policy, allowed_paths, grant_digest, optional witness",
+            ),
+        ),
+        outputs=(
+            _io("authorized", "boolean"),
+            _io("codes", "array"),
+            _io("grant_digest", "string"),
+            *_ENVELOPE,
+        ),
+    ),
+    "orrery/link-check-bounded": _card(
+        summary="Bounded allowlisted link checks over markdown/html bundles.",
+        use_when=(
+            "You need per-link status with an explicit max_link_count cap",
+            "You want allowlisted HTTPS HEAD checks, not a general fetcher",
+        ),
+        not_for=(
+            "Unbounded crawl or arbitrary URL fetch",
+            "Named-target HTTP HEAD (use http-head)",
+            "Mutating documents",
+        ),
+        example_intents=(
+            "check markdown links bounded",
+            "verify docs links under cap",
+            "bounded html link check",
+            "allowlisted link status",
+            "fail loud over link cap",
+        ),
+        tools=("check",),
+        coverage_slug="link-check-bounded",
+        inputs=(
+            _io("files", "array", required=True, note="[{path, content, format?}]"),
+            _io("max_link_count", "integer", required=True, note="1..50; fail loud over cap"),
+        ),
+        outputs=(
+            _io("links", "array"),
+            _io("link_count", "integer"),
+            _io("passed", "boolean"),
+            *_ENVELOPE,
+        ),
+    ),
+    "orrery/structure-audit": _card(
+        summary="Pure markdown structure audit with coded findings.",
+        use_when=(
+            "You need heading gap / frontmatter / orphan findings on a markdown set",
+            "You want a pure sealed audit with no egress",
+        ),
+        not_for=(
+            "MyST inventory analyze-stage digests (use docs-myst-inventory)",
+            "Fetching docs from the network",
+            "Rewriting or fixing documents",
+        ),
+        example_intents=(
+            "audit markdown structure",
+            "find heading level skips",
+            "check frontmatter title errors",
+            "detect orphan markdown pages",
+            "structure findings for docs set",
+        ),
+        tools=("audit",),
+        coverage_slug="structure-audit",
+        inputs=(_io("files", "array", required=True, note="[{path, content}] markdown only"),),
+        outputs=(
+            _io("findings", "array"),
+            _io("finding_codes", "array"),
+            _io("passed", "boolean"),
+            *_ENVELOPE,
+        ),
+    ),
     "orrery/row-validate": _card(
         summary="Pure validation of one row against a named static source-aligned profile.",
         use_when=(

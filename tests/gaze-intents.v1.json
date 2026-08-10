@@ -334,6 +334,26 @@
       "expect_top3": ["orrery/manifest-bind"]
     },
     {
+      "intent": "check write authority",
+      "expect_top3": ["orrery/write-authority-check"]
+    },
+    {
+      "intent": "check markdown links bounded",
+      "expect_top3": ["orrery/link-check-bounded"]
+    },
+    {
+      "intent": "verify docs links under cap",
+      "expect_top3": ["orrery/link-check-bounded"]
+    },
+    {
+      "intent": "audit markdown structure",
+      "expect_top3": ["orrery/structure-audit"]
+    },
+    {
+      "intent": "detect orphan markdown pages",
+      "expect_top3": ["orrery/structure-audit"]
+    },
+    {
       "intent": "deploy kubernetes",
       "expect_top3": []
     },

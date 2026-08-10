@@ -1,0 +1,26 @@
+[star]
+name = "orrery/link-check-bounded"
+version = "0.1.0"
+description = "Bounded allowlisted link checks over markdown/html bundles"
+publisher = "orrery"
+publisher_key_id_env = "ORRERY_LINK_CHECK_BOUNDED_KEY_ID"
+direct_mcp_path = "/stars/link-check-bounded/mcp"
+tools = ["check"]
+capability_families = ["web_metadata"]
+[pricing]
+unit = "call"
+price_per_call = "0.00"
+currency = "USD"
+[runtime]
+python_package = "stars.link_check_bounded"
+skill_factory = "stars.link_check_bounded.skill:build_skill"
+[policy]
+allowed_egress = ["https://example.com", "https://docs.python.org"]
+freshness = "at_call"
+redirects = "deny"
+max_response_bytes = 65536
+[receipt]
+schema_version = "1"
+algorithm = "Ed25519"
+[publish]
+corpus = "stars.link_check_bounded.corpus:CORPUS"
