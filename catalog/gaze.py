@@ -220,8 +220,40 @@ def tool_hit(tool: str, *, constellation: ResolveRecord) -> GazeHit:
     )
 
 
+_STOPWORDS = frozenset(
+    {
+        "a",
+        "an",
+        "the",
+        "to",
+        "of",
+        "for",
+        "and",
+        "or",
+        "in",
+        "on",
+        "at",
+        "by",
+        "is",
+        "be",
+        "as",
+        "it",
+        "you",
+        "your",
+        "with",
+        "from",
+        "into",
+        "not",
+    }
+)
+
+
 def _tokens(text: str) -> tuple[str, ...]:
-    return tuple(m.group(0).lower() for m in _TOKEN_RE.finditer(text or ""))
+    return tuple(
+        token
+        for token in (m.group(0).lower() for m in _TOKEN_RE.finditer(text or ""))
+        if len(token) >= 3 and token not in _STOPWORDS
+    )
 
 
 def score_record(record: ResolveRecord, tokens: tuple[str, ...]) -> int:
