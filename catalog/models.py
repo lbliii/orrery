@@ -9,8 +9,12 @@ detail mock (``design/star.html``) and backs GitHub epic #4 (Resolve).
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
 from .provider import ProviderCard
+
+if TYPE_CHECKING:
+    from .agent_card import AgentCard
 
 #: A public star, or a private/constellation entry.
 Kind = str  # "star" | "constellation"
@@ -40,6 +44,7 @@ class ResolveRecord:
     oracle_ok: bool = True
     tools: tuple[str, ...] = field(default_factory=tuple)
     provider_card: ProviderCard | None = None
+    agent_card: AgentCard | None = None
     capability_families: tuple[str, ...] = field(default_factory=tuple)
     freshness: str | None = None
     constellation_memberships: tuple[str, ...] = field(default_factory=tuple)
@@ -85,6 +90,14 @@ class ResolveRecord:
         """First tool name, or a generic ``call`` fallback."""
         return self.tools[0] if self.tools else "call"
 
+    def resolved_description(self) -> str | None:
+        """Human/agent blurb: record description, else agent-card summary."""
+        if self.description:
+            return self.description
+        if self.agent_card is not None and self.agent_card.summary:
+            return self.agent_card.summary
+        return None
+
     def as_dict(self) -> dict[str, object]:
         """Serialize to the ``/api/resolve`` JSON contract."""
         return {
@@ -92,6 +105,7 @@ class ResolveRecord:
             "version": self.version,
             "kind": self.kind,
             "visibility": self.visibility,
+            "description": self.resolved_description(),
             "endpoint": self.endpoint,
             "key_id": self.key_id,
             "alg": self.alg,
@@ -100,6 +114,7 @@ class ResolveRecord:
             "oracle_ok": self.oracle_ok,
             "tools": list(self.tools),
             "provider_card": self.provider_card.as_dict() if self.provider_card else None,
+            "agent_card": self.agent_card.as_dict() if self.agent_card else None,
             "capability_families": list(self.capability_families),
             "freshness": self.freshness,
             "constellation_memberships": list(self.constellation_memberships),

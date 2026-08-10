@@ -1,5 +1,6 @@
 """Orrery resolve catalog — Skill DNS records and Gaze discovery."""
 
+from .agent_card import AgentCard, AgentCardError, agent_card_json_schema, card_for
 from .console_links import console_href_for
 from .constellation import LAUNCH_GATE_POLICY, STALE_PROOF_POLICY, policy_for
 from .coverage import (
@@ -31,12 +32,16 @@ __all__ = [
     "GAZE_MAX_LIMIT",
     "LAUNCH_GATE_POLICY",
     "STALE_PROOF_POLICY",
+    "AgentCard",
+    "AgentCardError",
     "Catalog",
     "GazeHit",
     "GazeNode",
     "ProviderCard",
     "QualificationResult",
     "ResolveRecord",
+    "agent_card_json_schema",
+    "card_for",
     "check_coverage",
     "clamp_gaze_limit",
     "console_href_for",

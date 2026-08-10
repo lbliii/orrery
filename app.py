@@ -225,9 +225,18 @@ def envelope_public_keys(request: Request) -> Response:
     )
 
 
+@app.route("/.well-known/orrery/agent-card.schema.json")
+def agent_card_schema(request: Request) -> Response:
+    """JSON Schema for versioned Agent Cards (#217)."""
+    from catalog.agent_card import agent_card_json_schema
+
+    return _discovery_json(agent_card_json_schema())
+
+
 @app.route("/.well-known/mcp")
 def mcp_well_known_manifest(request: Request) -> Response:
     return _discovery_json(mcp_manifest(_orrery_origin(request)))
+
 
 
 @app.route("/.well-known/mcp.json")

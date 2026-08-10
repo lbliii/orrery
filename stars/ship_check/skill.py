@@ -24,7 +24,15 @@ def build_skill(*, private_key: Any | None = None) -> Skill:
         public_key=private.public_key().public_bytes_raw(),
     )
 
-    @skill.tool("run", description="Gather fixed release and freshness evidence before reasoning")
+    @skill.tool(
+        "run",
+        description=(
+            "Gather fixed release and freshness evidence before reasoning. "
+            "Input bundle: package* (string), optional source_digest (string). "
+            "Returns signed evidence chain "
+            "(dispositions: ready | not-ready | stale | blocked)."
+        ),
+    )
     def run(package: str, source_digest: str = "") -> dict[str, object]:
         return run_check(package, source_digest)
 

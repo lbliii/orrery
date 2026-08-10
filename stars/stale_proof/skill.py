@@ -26,7 +26,15 @@ def build_skill(*, private_key: Any | None = None) -> Skill:
         public_key=private.public_key().public_bytes_raw(),
     )
 
-    @skill.tool("run", description="Seal live UTC and Python release-note digest evidence")
+    @skill.tool(
+        "run",
+        description=(
+            "Seal live UTC and Python release-note digest evidence. "
+            "Input bundle: optional source_digest (string). "
+            "Returns signed composite evidence "
+            "(dispositions: ready | not-ready | stale | blocked)."
+        ),
+    )
     def run(source_digest: str = "") -> dict[str, object]:
         return run_stale_proof(source_digest)
 
