@@ -94,6 +94,60 @@ async def test_llms_full_lists_tools(discovery_app) -> None:
 
 
 @pytest.mark.asyncio
+async def test_llms_full_indexes_public_catalog_from_agent_cards(discovery_app) -> None:
+    """Teaching trio stays first; each public Agent Card is indexed (#225)."""
+    from discovery import (
+        CAPABILITY_FAMILY_DESCRIPTIONS,
+        PUBLIC_CATALOG_RECIPES,
+        llms_full_txt,
+        public_star_catalog,
+        resolve_href,
+    )
+    from stars._core.definition import CAPABILITY_FAMILY_LABELS
+
+    origin = "https://orrery.lol"
+    async with TestClient(discovery_app) as client:
+        response = await client.get("/llms-full.txt", headers=HOST)
+        assert response.status == 200
+        body = response.text
+
+    # Served body matches generation from live catalog (drift guard).
+    generated = llms_full_txt(origin)
+    assert body.strip() == generated.strip()
+    assert body.endswith("\n")
+    teaching_pos = body.index("## Teaching trio")
+    catalog_pos = body.index("## Public catalog")
+    recipes_pos = body.index("## Recipes")
+    tools_pos = body.index("## MCP tools")
+    assert teaching_pos < catalog_pos < recipes_pos < tools_pos
+
+    entries = public_star_catalog()
+    assert len(entries) >= 19
+    for entry in entries:
+        name = str(entry["name"])
+        assert f"#### `{name}`" in body
+        assert str(entry["summary"]) in body
+        for bullet in entry["use_when"]:
+            assert bullet in body
+        for intent in entry["example_intents"]:
+            assert intent in body
+        assert resolve_href(origin, name) in body
+        family = str(entry["primary_family"])
+        label = CAPABILITY_FAMILY_LABELS[family]
+        assert f"### {label}" in body
+        assert CAPABILITY_FAMILY_DESCRIPTIONS[family] in body
+
+    for intent, sku in PUBLIC_CATALOG_RECIPES:
+        assert intent in body
+        assert f"`{sku}`" in body
+        assert sku in {str(item["name"]) for item in entries}
+
+    # No invented SKUs from the issue sketch.
+    assert "content-readiness" not in body
+    assert "authorized-content-patch" not in body
+
+
+@pytest.mark.asyncio
 async def test_mcp_server_card(discovery_app) -> None:
     async with TestClient(discovery_app) as client:
         response = await client.get("/.well-known/mcp/server-card.json", headers=HOST)
@@ -105,6 +159,8 @@ async def test_mcp_server_card(discovery_app) -> None:
         assert card["transport"]["endpoint"] == "https://orrery.lol/mcp"
         assert card["authentication"]["required"] is False
         assert card["envelope_keys"] == "https://orrery.lol/.well-known/orrery/keys.json"
+        assert card["documentation"] == "https://orrery.lol/llms.txt"
+        assert card["llms_full"] == "https://orrery.lol/llms-full.txt"
         names = {t["name"] for t in card["tools"]}
         assert names == {t["name"] for t in MCP_TOOLS}
 
@@ -121,6 +177,26 @@ async def test_mcp_manifest_and_alias(discovery_app) -> None:
         assert body["authentication"]["required"] is False
         assert json.loads(alias.text) == body
         assert body["envelope_keys"] == "https://orrery.lol/.well-known/orrery/keys.json"
+        assert body["llms_full"] == "https://orrery.lol/llms-full.txt"
+
+
+def test_public_catalog_recipes_only_reference_live_skus() -> None:
+    from discovery import PUBLIC_CATALOG_RECIPES, public_star_catalog
+
+    names = {str(item["name"]) for item in public_star_catalog()}
+    for _intent, sku in PUBLIC_CATALOG_RECIPES:
+        assert sku in names
+
+
+def test_llms_full_generation_covers_every_public_agent_card() -> None:
+    """Pure drift check without HTTP — registry cards must all render."""
+    from discovery import llms_full_txt, public_star_catalog
+
+    body = llms_full_txt("https://orrery.lol")
+    for entry in public_star_catalog():
+        assert f"#### `{entry['name']}`" in body
+        assert entry["summary"] in body
+
 
 
 @pytest.mark.asyncio

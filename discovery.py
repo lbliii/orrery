@@ -141,6 +141,46 @@ TEACHING_TRIO: tuple[dict[str, str], ...] = (
     },
 )
 
+#: Plain-language capability family blurbs for llms-full grouping (#225).
+CAPABILITY_FAMILY_DESCRIPTIONS: dict[str, str] = {
+    "time_and_date": (
+        "Seal live clock evidence at call time — offline clones go stale by definition."
+    ),
+    "source_monitoring": (
+        "Observe allowlisted official sources, digests, release notes, and normative sections."
+    ),
+    "document_processing": (
+        "Render trusted documents into short-lived artifacts with signed receipts."
+    ),
+    "data": ("Bounded CSV samples, lookups, validation, diffs, and table freshness verdicts."),
+    "web_metadata": ("Fresh HTTP headers and slices of allowlisted discovery documents."),
+    "security": ("TLS expiry, SPDX license text, and ship-check evidence bundles."),
+    "media": ("Bounded image transforms on Orrery's managed CPU worker."),
+}
+
+#: Common intents → recommended public SKUs only (no invented catalog names).
+PUBLIC_CATALOG_RECIPES: tuple[tuple[str, str], ...] = (
+    ("fresh timestamp for citation", "orrery/world-time"),
+    ("stale answer detection", "orrery/stale-proof"),
+    ("html → pdf with receipt", "orrery/html-to-pdf"),
+    ("observe allowlisted official source", "orrery/source-watch"),
+    ("ship-check evidence before reasoning", "orrery/ship-check"),
+    ("table freshness verdict", "orrery/table-fresh"),
+    ("pinned github file at commit", "orrery/gh-file-at-ref"),
+    ("tls certificate expiry", "orrery/cert-expiry"),
+)
+
+#: Stable family section order (teaching-adjacent first, then alpha by key).
+_FAMILY_SECTION_ORDER: tuple[str, ...] = (
+    "time_and_date",
+    "source_monitoring",
+    "document_processing",
+    "data",
+    "web_metadata",
+    "security",
+    "media",
+)
+
 DISCOVERY_CACHE_CONTROL = "public, max-age=3600"
 DISCOVERY_CORS = "*"
 GITHUB_REPO = "https://github.com/lbliii/orrery"
@@ -197,6 +237,7 @@ def server_card(origin: str) -> dict[str, Any]:
         ),
         "homepage": f"{origin}/connect",
         "documentation": f"{origin}/llms.txt",
+        "llms_full": f"{origin}/llms-full.txt",
         "envelope_keys": f"{origin}/.well-known/orrery/keys.json",
         "transport": {
             "type": "streamable-http",
@@ -247,6 +288,7 @@ def mcp_manifest(origin: str) -> dict[str, Any]:
         },
         "registration": {"dynamic": False},
         "documentation": f"{origin}/llms.txt",
+        "llms_full": f"{origin}/llms-full.txt",
         "homepage": f"{origin}/connect",
         "envelope_keys": f"{origin}/.well-known/orrery/keys.json",
     }
@@ -284,7 +326,7 @@ def llms_txt(origin: str) -> str:
         "## Discovery",
         "",
         f"- [llms.txt]({origin}/llms.txt): this file",
-        f"- [llms-full.txt]({origin}/llms-full.txt): tools, direct stars, curl recipe",
+        f"- [llms-full.txt]({origin}/llms-full.txt): full public catalog from Agent Cards",
         f"- [MCP server card]({origin}/.well-known/mcp/server-card.json): SEP-1649-shaped catalog",
         f"- [MCP manifest]({origin}/.well-known/mcp): SEP-1960-shaped connect",
         "",
@@ -304,8 +346,110 @@ def llms_txt(origin: str) -> str:
     return "\n".join(lines)
 
 
+def resolve_href(origin: str, name: str) -> str:
+    """Machine-facing resolve URL for a Skill DNS name."""
+    return f"{origin.rstrip('/')}/api/resolve?name={name}"
+
+
+def public_star_catalog() -> tuple[dict[str, Any], ...]:
+    """Public star entries projected from manifests + Agent Cards (#225).
+
+    Returns one dict per builtin public star with ``name``, ``families``,
+    ``family_labels``, ``summary``, ``use_when``, ``example_intents``.
+    """
+    from catalog.agent_card import require_card
+    from stars._core.definition import CAPABILITY_FAMILY_LABELS
+    from stars._core.registry import load_builtin_star_definition
+    from stars.builtins import BUILTIN_STAR_PACKAGES
+
+    entries: list[dict[str, Any]] = []
+    for package in BUILTIN_STAR_PACKAGES:
+        definition = load_builtin_star_definition(package)
+        card = require_card(definition.name)
+        families = tuple(definition.capability_families)
+        entries.append(
+            {
+                "name": definition.name,
+                "families": families,
+                "primary_family": families[0] if families else "source_monitoring",
+                "family_labels": tuple(
+                    CAPABILITY_FAMILY_LABELS.get(family, family.replace("_", " ").title())
+                    for family in families
+                ),
+                "summary": card.summary,
+                "use_when": tuple(card.use_when),
+                "example_intents": tuple(card.example_intents),
+            }
+        )
+    return tuple(sorted(entries, key=lambda item: str(item["name"])))
+
+
+def _family_section_keys(entries: tuple[dict[str, Any], ...]) -> tuple[str, ...]:
+    present = {str(item["primary_family"]) for item in entries}
+    ordered = [key for key in _FAMILY_SECTION_ORDER if key in present]
+    extras = sorted(present - set(_FAMILY_SECTION_ORDER))
+    return tuple(ordered + extras)
+
+
+def public_catalog_section(origin: str) -> str:
+    """Markdown section: full public sky grouped by capability family."""
+    from stars._core.definition import CAPABILITY_FAMILY_LABELS
+
+    entries = public_star_catalog()
+    lines: list[str] = [
+        "## Public catalog",
+        "",
+        "Indexed from Agent Cards (summary / use_when / example_intents). "
+        "Groupings follow each star's primary capability family.",
+        "",
+    ]
+    for family in _family_section_keys(entries):
+        label = CAPABILITY_FAMILY_LABELS.get(family, family.replace("_", " ").title())
+        description = CAPABILITY_FAMILY_DESCRIPTIONS.get(
+            family,
+            "Public skills in this capability family.",
+        )
+        lines.extend([f"### {label}", "", description, ""])
+        family_entries = [item for item in entries if item["primary_family"] == family]
+        for item in family_entries:
+            name = str(item["name"])
+            lines.extend(
+                [
+                    f"#### `{name}`",
+                    "",
+                    f"- Summary: {item['summary']}",
+                    "- Use when:",
+                    *[f"  - {bullet}" for bullet in item["use_when"]],
+                    "- Example intents: "
+                    + ", ".join(f"`{intent}`" for intent in item["example_intents"]),
+                    f"- Resolve: {resolve_href(origin, name)}",
+                    "",
+                ]
+            )
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def recipes_section() -> str:
+    """Markdown recipes table — common intents to existing public SKUs."""
+    public_names = {str(item["name"]) for item in public_star_catalog()}
+    unknown = sorted({sku for _, sku in PUBLIC_CATALOG_RECIPES if sku not in public_names})
+    if unknown:
+        raise ValueError(f"PUBLIC_CATALOG_RECIPES references unknown public SKUs: {unknown}")
+    lines = [
+        "## Recipes",
+        "",
+        "Common intent → try first (public sky SKUs only):",
+        "",
+        "| Intent | Try first |",
+        "|--------|-----------|",
+        *[f"| {intent} | `{sku}` |" for intent, sku in PUBLIC_CATALOG_RECIPES],
+        "",
+    ]
+    return "\n".join(lines)
+
+
 def llms_full_txt(origin: str) -> str:
-    """Expanded agent onboarding text."""
+    """Expanded agent onboarding text — teaching trio, then full public catalog."""
     endpoint = mcp_endpoint(origin)
     tool_lines = [f"- `{t['name']}`: {t['description']}" for t in MCP_TOOLS]
     star_lines = [
@@ -313,6 +457,10 @@ def llms_full_txt(origin: str) -> str:
     ]
     body = [
         llms_txt(origin).rstrip(),
+        "",
+        public_catalog_section(origin).rstrip(),
+        "",
+        recipes_section().rstrip(),
         "",
         "## MCP tools (aggregate /mcp)",
         "",
