@@ -87,8 +87,9 @@ Managed artifact bytes are held in private object storage; the API exposes the r
 
 Backlog work follows a swarm-ready issue tree: **saga → epic → design → leaf**.
 Workers claim only `leaf` + `ready` issues with owned paths and machine
-acceptance. Say simple invokes from [`AGENTS.md`](./AGENTS.md) (`board`,
-`burndown`, `claim #N`, …). Details:
+acceptance. Say simple invokes from [`AGENTS.md`](./AGENTS.md) — default **`swarm`** /
+**`drive`** (this chat orchestrates; subagents take leaves). Escape hatches:
+`board`, `claim #N`, …
 
 - [AGENTS.md](./AGENTS.md) — invoke phrases + mode contracts
 - [Issue lifecycle](./docs/plan/issue-lifecycle.md)
