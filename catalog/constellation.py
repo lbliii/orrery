@@ -664,6 +664,89 @@ AUTHORIZED_CONTENT_PATCH_POLICY = PolicyGraph(
     release_key_id="orrery-authorized-content-patch-1",
 )
 
+#: ADR 0007 — publish-gate (#216); prior envelope → publish grant → optional witness.
+PUBLISH_GATE_POLICY = PolicyGraph(
+    nodes=(
+        PolicyNode(
+            "prior-artifact",
+            "prior-artifact",
+            "gate",
+            160,
+            180,
+            0,
+            status_label="prior",
+        ),
+        PolicyNode(
+            "write-authority-check",
+            "write-authority-check",
+            "gate",
+            380,
+            180,
+            1,
+            "orrery/write-authority-check",
+            "grant",
+        ),
+        PolicyNode(
+            "human-witness",
+            "human-witness",
+            "witness",
+            600,
+            180,
+            2,
+            status_label="witness",
+            r=16,
+        ),
+        PolicyNode(
+            "artifact-seal",
+            "artifact-seal",
+            "composite",
+            820,
+            320,
+            3,
+            status_label="composite",
+            r=18,
+        ),
+    ),
+    edges=(
+        PolicyEdge(
+            "pg1",
+            "prior-artifact",
+            "write-authority-check",
+            "gate",
+            "M200 180 C260 180, 300 180, 340 180",
+            1,
+        ),
+        PolicyEdge(
+            "pg2",
+            "write-authority-check",
+            "human-witness",
+            "gate",
+            "M420 180 C480 180, 520 180, 560 180",
+            2,
+        ),
+        PolicyEdge(
+            "pg3",
+            "human-witness",
+            "artifact-seal",
+            "gate",
+            "M640 200 C700 260, 760 300, 800 310",
+            3,
+        ),
+    ),
+    repair_loop_max=None,
+    footnote=(
+        "Two-phase publish seam · pause_policy.allowed=true (awaiting_witness) · "
+        "no git push / pages deploy · lease_rule waiting_never_holds_worker_lease."
+    ),
+    composite_chain=(
+        CompositeStep(1, "prior-artifact", "Envelope ✓", "authorized edit prior"),
+        CompositeStep(2, "write-authority-check", "Envelope ✓", "publish profile grant"),
+        CompositeStep(3, "human-witness", "optional", "awaiting_witness if required"),
+    ),
+    release_digest="sha256:publish-gate…",
+    release_key_id="orrery-publish-gate-1",
+)
+
 POLICIES: dict[str, PolicyGraph] = {
     "acme/launch-gate": LAUNCH_GATE_POLICY,
     "orrery/stale-proof": STALE_PROOF_POLICY,
@@ -671,6 +754,7 @@ POLICIES: dict[str, PolicyGraph] = {
     "orrery/ship-check": SHIP_CHECK_POLICY,
     "orrery/content-readiness": CONTENT_READINESS_POLICY,
     "orrery/authorized-content-patch": AUTHORIZED_CONTENT_PATCH_POLICY,
+    "orrery/publish-gate": PUBLISH_GATE_POLICY,
 }
 
 
