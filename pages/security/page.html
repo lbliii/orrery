@@ -1,0 +1,12 @@
+{% block content %}
+<section class="panel">
+  <p class="kicker">Trust center</p>
+  <h1>Security</h1>
+  <p class="lede">Orrery is a hosted, public MCP catalog. Its security boundary is deliberately narrow: callers receive declared tools and signed results, not arbitrary command, filesystem, or deployment access.</p>
+  <h2>What we can substantiate</h2>
+  <ul class="meta-list">{% for fact in facts %}<li><span>•</span><span>{{ fact }}</span></li>{% end %}</ul>
+  <h2>Report a vulnerability</h2>
+  <p>Please use <a href="{{ security_contact }}">private GitHub Security Advisories</a> for vulnerabilities. Product questions and non-sensitive defects belong in the <a href="{{ repository }}/issues">public issue tracker</a>. Include the affected URL/tool, reproduction steps, impact, and any receipt or request identifiers that are safe to share.</p>
+  <p>Machine-readable disclosure metadata: <a class="mono" href="/.well-known/security.txt">/.well-known/security.txt</a>.</p>
+</section>
+{% end %}

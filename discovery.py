@@ -15,6 +15,13 @@ from urllib.parse import urlparse
 # Align with streamable-HTTP MCP clients common in 2025-2026.
 MCP_PROTOCOL_VERSION = "2025-06-18"
 SERVER_VERSION = "0.1.0"
+TRUST_FACTS = (
+    "Public Star and constellation results are signed Ed25519 Envelopes; public keys are at "
+    "/.well-known/orrery/keys.json.",
+    "Durable artifact downloads are authorized by stored metadata and expire after 15 minutes.",
+    "Public Stars expose bounded declared tools; Orrery does not provide arbitrary shell or "
+    "filesystem execution.",
+)
 
 # Static catalog for pre-connection probes (must stay in sync with aggregate /mcp).
 MCP_TOOLS: tuple[dict[str, str], ...] = (
@@ -131,6 +138,7 @@ DISCOVERY_CACHE_CONTROL = "public, max-age=3600"
 DISCOVERY_CORS = "*"
 GITHUB_REPO = "https://github.com/lbliii/orrery"
 SECURITY_CONTACT = f"{GITHUB_REPO}/security/advisories/new"
+SUPPORT_CONTACT = f"{GITHUB_REPO}/issues/new/choose"
 
 
 def configured_public_origin() -> str | None:
@@ -201,9 +209,7 @@ def server_card(origin: str) -> dict[str, Any]:
                 "the Skill DNS record when locking a star."
             ),
         },
-        "tools": [
-            {"name": t["name"], "description": t["description"]} for t in MCP_TOOLS
-        ],
+        "tools": [{"name": t["name"], "description": t["description"]} for t in MCP_TOOLS],
     }
 
 
@@ -242,9 +248,7 @@ def mcp_manifest(origin: str) -> dict[str, Any]:
 def llms_txt(origin: str) -> str:
     """Compact llms.txt for crawlers and agents (llmstxt.org-style)."""
     endpoint = mcp_endpoint(origin)
-    trio_lines = [
-        f"- [`{t['star']}`]({origin}{t['href']}): {t['job']}" for t in TEACHING_TRIO
-    ]
+    trio_lines = [f"- [`{t['star']}`]({origin}{t['href']}): {t['job']}" for t in TEACHING_TRIO]
     lines = [
         "# Orrery",
         "",
@@ -298,8 +302,7 @@ def llms_full_txt(origin: str) -> str:
     endpoint = mcp_endpoint(origin)
     tool_lines = [f"- `{t['name']}`: {t['description']}" for t in MCP_TOOLS]
     star_lines = [
-        f"- `{s['star']}` → `{origin}{s['path']}` ({s['tools']})"
-        for s in DIRECT_STAR_ENDPOINTS
+        f"- `{s['star']}` → `{origin}{s['path']}` ({s['tools']})" for s in DIRECT_STAR_ENDPOINTS
     ]
     body = [
         llms_txt(origin).rstrip(),
@@ -336,12 +339,12 @@ def llms_full_txt(origin: str) -> str:
         'curl -sS "$BASE/mcp" \\',
         "  -H 'Content-Type: application/json' \\",
         "  -H 'mcp-protocol-version: 2025-06-18' \\",
-        "  -d '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\",\"params\":{}}'",
+        '  -d \'{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}\'',
         "",
         'curl -sS "$BASE/mcp" \\',
         "  -H 'Content-Type: application/json' \\",
         "  -H 'mcp-protocol-version: 2025-06-18' \\",
-        "  -d '{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/call\",\"params\":{",
+        '  -d \'{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{',
         '        "name":"gaze_match",',
         '        "arguments":{"intent":"html pdf convert","node":"public"}',
         "      }}'",
@@ -378,7 +381,7 @@ def robots_txt(origin: str) -> str:
             "Allow: /ready",
             "Allow: /static/",
             "Disallow: /console",
-            f"Sitemap: {origin}/llms.txt",
+            f"Sitemap: {origin}/sitemap.xml",
             "",
         ]
     )
@@ -390,7 +393,8 @@ def security_txt(origin: str) -> str:
             f"Contact: {SECURITY_CONTACT}",
             f"Canonical: {origin}/.well-known/security.txt",
             "Preferred-Languages: en",
-            f"Policy: {GITHUB_REPO}/security",
+            f"Policy: {origin}/security",
+            "Expires: 2027-01-01T00:00:00.000Z",
             "",
         ]
     )
