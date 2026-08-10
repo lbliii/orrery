@@ -301,30 +301,120 @@ TABLE_FRESH_POLICY = PolicyGraph(
     release_key_id="orrery-table-fresh-1",
 )
 
+#: Dual-mode ship-check / content-ship-check (#214): metadata path + content-
+#: readiness stage vocabulary; mode selected via run input; sync only.
 SHIP_CHECK_POLICY = PolicyGraph(
     nodes=(
-        PolicyNode("release", "release metadata", "gate", 130, 180, 0, status_label="release"),
+        PolicyNode("release", "release metadata", "gate", 100, 120, 0, status_label="release"),
         PolicyNode(
-            "source-watch", "source-watch", "gate", 390, 180, 1, "orrery/source-watch", "fresh"
+            "source-watch", "source-watch", "gate", 300, 120, 1, "orrery/source-watch", "fresh"
         ),
-        PolicyNode("world-time", "world-time", "gate", 630, 180, 2, "orrery/world-time", "UTC"),
-        PolicyNode("reason", "reason", "composite", 820, 300, 3, status_label="composite", r=18),
+        PolicyNode("world-time", "world-time", "gate", 500, 120, 2, "orrery/world-time", "UTC"),
+        PolicyNode(
+            "manifest-bind",
+            "manifest-bind",
+            "gate",
+            100,
+            280,
+            3,
+            "orrery/manifest-bind",
+            "bind",
+        ),
+        PolicyNode(
+            "manifest-preflight",
+            "manifest-preflight",
+            "gate",
+            300,
+            280,
+            4,
+            "orrery/manifest-preflight",
+            "preflight",
+        ),
+        PolicyNode(
+            "structure-audit",
+            "structure-audit",
+            "gate",
+            500,
+            280,
+            5,
+            "orrery/structure-audit",
+            "audit",
+        ),
+        PolicyNode(
+            "link-check-bounded",
+            "link-check-bounded",
+            "gate",
+            700,
+            280,
+            6,
+            "orrery/link-check-bounded",
+            "links",
+        ),
+        PolicyNode(
+            "artifact-seal",
+            "artifact-seal",
+            "composite",
+            820,
+            200,
+            7,
+            status_label="composite",
+            r=18,
+        ),
     ),
     edges=(
         PolicyEdge(
-            "sc1", "release", "source-watch", "gate", "M170 180 C250 180, 290 180, 350 180", 1
+            "sc1", "release", "source-watch", "gate", "M140 120 C200 120, 240 120, 260 120", 1
         ),
         PolicyEdge(
-            "sc2", "source-watch", "world-time", "gate", "M430 180 C510 180, 550 180, 590 180", 2
+            "sc2", "source-watch", "world-time", "gate", "M340 120 C400 120, 440 120, 460 120", 2
         ),
-        PolicyEdge("sc3", "world-time", "reason", "gate", "M670 200 C730 250, 770 280, 790 290", 3),
+        PolicyEdge(
+            "sc3", "world-time", "artifact-seal", "gate", "M540 140 C640 160, 740 180, 790 190", 3
+        ),
+        PolicyEdge(
+            "sc4",
+            "manifest-bind",
+            "manifest-preflight",
+            "gate",
+            "M140 280 C200 280, 240 280, 260 280",
+            4,
+        ),
+        PolicyEdge(
+            "sc5",
+            "manifest-preflight",
+            "structure-audit",
+            "gate",
+            "M340 280 C400 280, 440 280, 460 280",
+            5,
+        ),
+        PolicyEdge(
+            "sc6",
+            "structure-audit",
+            "link-check-bounded",
+            "gate",
+            "M540 280 C600 280, 640 280, 660 280",
+            6,
+        ),
+        PolicyEdge(
+            "sc7",
+            "link-check-bounded",
+            "artifact-seal",
+            "gate",
+            "M740 260 C780 240, 800 220, 810 210",
+            7,
+        ),
     ),
     repair_loop_max=None,
-    footnote="Release metadata + source change evidence + UTC; never deploy approval.",
+    footnote=(
+        "Dual mode (run input): metadata = release→source-watch→world-time→seal; "
+        "content-bundle = content-readiness stages→seal. Sync only; never deploy."
+    ),
     composite_chain=(
-        CompositeStep(1, "release", "Envelope ✓", "PyPI/npm latest"),
+        CompositeStep(1, "release", "Envelope ✓", "PyPI/npm latest (metadata)"),
         CompositeStep(2, "source-watch", "Envelope ✓", "Python notes diff"),
         CompositeStep(3, "world-time", "Envelope ✓", "UTC evidence"),
+        CompositeStep(4, "manifest-bind", "Envelope ✓", "content-bundle inventory"),
+        CompositeStep(5, "link-check-bounded", "Envelope ✓", "bounded HTTPS"),
     ),
     release_digest="sha256:ship-check…",
     release_key_id="orrery-ship-check-1",

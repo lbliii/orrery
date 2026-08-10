@@ -2,7 +2,7 @@
 name="orrery/ship-check"
 kind="constellation"
 version="0.1.0"
-description = "Pre-ship check: fresh time + release freshness + evidence you can cite"
+description = "Seal ship-check evidence: metadata release+UTC or content-bundle readiness stages"
 publisher="orrery"
 publisher_key_id_env="ORRERY_SHIP_CHECK_KEY_ID"
 direct_mcp_path="/constellations/ship-check/mcp"
@@ -16,7 +16,7 @@ currency="USD"
 python_package="stars.ship_check"
 skill_factory="stars.ship_check.skill:build_skill"
 [policy]
-allowed_egress=["https://pypi.org","https://registry.npmjs.org","https://docs.python.org"]
+allowed_egress=["https://pypi.org","https://registry.npmjs.org","https://docs.python.org","https://example.com"]
 freshness="at_call"
 redirects="deny"
 max_response_bytes=1048576
