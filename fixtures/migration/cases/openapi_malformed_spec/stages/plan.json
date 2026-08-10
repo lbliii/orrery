@@ -1,0 +1,9 @@
+{
+  "analysis_digest": "ac47e5c6e50e06dbd7d7a58c57aff22c665d9f8514f93c2e4af053c8cafd1d3c",
+  "profile_digest": "3b28715a83ef94fd4adfc81b98f2d938327bc8236eddd8efa6e39491f2b24339",
+  "compatibility_policy": {
+    "policy_id": "openapi-client-server-v1"
+  },
+  "planned_ops": [],
+  "plan_digest": "b689ce455f0e0b1f273445b2d0428f4b37000f414be2a9b055203a2a45ce89ae"
+}

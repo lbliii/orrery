@@ -1,0 +1,15 @@
+{
+  "case_id": "myst_unsupported_include",
+  "profile": "docs/myst-to-mdx-baseline",
+  "coverage": [
+    "unsupported_semantics"
+  ],
+  "description": "Include directive flagged decision_required",
+  "stage_digests": {
+    "analysis_digest": "cf2a12482eef4c12d7eee96248277a62217358f6a1e03a0756ee0318029844af",
+    "plan_digest": "fc7f71bc5e77847461ee77809ff6af59c8e8a000118bd198f9a784f20df9fd05",
+    "bundle_digest": "1eebb6d72447f92de44c63bda2bed1ca9f95d7ddace1f1bc9c5782f1e8a60b34",
+    "validation_digest": "177ec8c05ab7b095ebd818f2ec508dbfd7084946b0e33475ce89734a99877920",
+    "replay_key": "fa1dd95b7822af3d1d45b70310f45d47fccfd91b78b832aef8917c7542db9f51"
+  }
+}

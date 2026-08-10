@@ -1,0 +1,15 @@
+{
+  "case_id": "myst_source_redaction",
+  "profile": "docs/myst-to-mdx-baseline",
+  "coverage": [
+    "source_redaction"
+  ],
+  "description": "Composite receipt binds digests only, not source bytes",
+  "stage_digests": {
+    "analysis_digest": "d1ddb179c1c804f57251104c50a0326df8e79dbf47649fde3b42384d4aa41a94",
+    "plan_digest": "cd68fe740aa48bda5e8547e8d57fbf8e80238b7203df73bcad21cf3844431914",
+    "bundle_digest": "6bfb9a7199f6c07457f489b9fd2cb46252c4d03f543a595f1b6888e26b3cb0e3",
+    "validation_digest": "bcb0b9f1f71c8b3a63b7a517318a3b9e1924ee2966d21c5fce2a8d1a4d722b68",
+    "replay_key": "c12fca7d3c259df6242e46e9faec5f81bc0dcecfd928e460f3d63483a822156c"
+  }
+}

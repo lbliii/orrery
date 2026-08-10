@@ -1,0 +1,83 @@
+{
+  "version": 1,
+  "description": "Synthetic unsafe / edge cases for migration profile regression",
+  "cases": [
+    {
+      "case_id": "myst_safe_heading",
+      "coverage": [
+        "safe_transform"
+      ],
+      "expect_block": false
+    },
+    {
+      "case_id": "myst_unsupported_include",
+      "coverage": [
+        "unsupported_semantics"
+      ],
+      "expect_block": true
+    },
+    {
+      "case_id": "myst_malformed_directive",
+      "coverage": [
+        "malformed_input"
+      ],
+      "expect_block": true
+    },
+    {
+      "case_id": "myst_cross_file_ref",
+      "coverage": [
+        "cross_file_refs"
+      ],
+      "expect_block": false
+    },
+    {
+      "case_id": "myst_extension_metadata",
+      "coverage": [
+        "extension_metadata"
+      ],
+      "expect_block": false
+    },
+    {
+      "case_id": "openapi_safe_schema_upgrade",
+      "coverage": [
+        "safe_transform"
+      ],
+      "expect_block": false
+    },
+    {
+      "case_id": "openapi_unsupported_discriminator",
+      "coverage": [
+        "unsupported_semantics"
+      ],
+      "expect_block": true
+    },
+    {
+      "case_id": "openapi_malformed_spec",
+      "coverage": [
+        "malformed_input"
+      ],
+      "expect_block": true
+    },
+    {
+      "case_id": "openapi_validator_failure",
+      "coverage": [
+        "validator_failure"
+      ],
+      "expect_block": true
+    },
+    {
+      "case_id": "myst_replay_compatible",
+      "coverage": [
+        "replay"
+      ],
+      "expect_block": false
+    },
+    {
+      "case_id": "myst_source_redaction",
+      "coverage": [
+        "source_redaction"
+      ],
+      "expect_block": false
+    }
+  ]
+}

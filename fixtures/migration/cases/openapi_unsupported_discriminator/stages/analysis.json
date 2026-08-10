@@ -1,0 +1,13 @@
+{
+  "source_manifest_digest": "9e78b8b0848f563e46908b4090cbede48222f241e495612a1afc2ec83289a8db",
+  "findings": [
+    {
+      "feature_id": "openapi.discriminator.mapping",
+      "class": "unsupported",
+      "path": "openapi.json",
+      "message": "discriminator mapping unsupported",
+      "finding_digest": "96a348198139d0b16972ca67bbb6cffa23af37312f8fe0e01369e4b1ea444dae"
+    }
+  ],
+  "analysis_digest": "2a6ca8b60778f8d8c636b5366a7535f7510eae09a36fc778408bacc310361904"
+}

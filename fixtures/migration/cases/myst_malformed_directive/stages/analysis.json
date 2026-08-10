@@ -1,0 +1,13 @@
+{
+  "source_manifest_digest": "39e67e3d5a857afee9f2db64b875ebac105e7e60e404c0d86240d919f1180e4d",
+  "findings": [
+    {
+      "feature_id": "myst.directive.admonition",
+      "class": "malformed",
+      "path": "broken.md",
+      "message": "unclosed admonition fence",
+      "finding_digest": "53398133d2dc102e6202a46d710a3324e086bb748dbc251ce202b3730b0d8c8a"
+    }
+  ],
+  "analysis_digest": "d07b4c38ac27aeeaa05cb0a91e45b69ff75490944dd55eabc731bc03b65fce56"
+}

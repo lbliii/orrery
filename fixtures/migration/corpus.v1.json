@@ -1,0 +1,97 @@
+{
+  "version": 1,
+  "schema": "orrery/migration-corpus/v1",
+  "profiles": {
+    "docs_myst_to_mdx_baseline": "profiles/docs_myst_to_mdx_baseline.json",
+    "api_spec_openapi_3_0_to_3_1_safe": "profiles/api_spec_openapi_3_0_to_3_1_safe.json"
+  },
+  "required_coverage": [
+    "safe_transform",
+    "unsupported_semantics",
+    "malformed_input",
+    "cross_file_refs",
+    "extension_metadata",
+    "validator_failure",
+    "replay",
+    "source_redaction"
+  ],
+  "cases": [
+    {
+      "case_id": "myst_safe_heading",
+      "profile": "docs/myst-to-mdx-baseline",
+      "coverage": [
+        "safe_transform"
+      ]
+    },
+    {
+      "case_id": "myst_unsupported_include",
+      "profile": "docs/myst-to-mdx-baseline",
+      "coverage": [
+        "unsupported_semantics"
+      ]
+    },
+    {
+      "case_id": "myst_malformed_directive",
+      "profile": "docs/myst-to-mdx-baseline",
+      "coverage": [
+        "malformed_input"
+      ]
+    },
+    {
+      "case_id": "myst_cross_file_ref",
+      "profile": "docs/myst-to-mdx-baseline",
+      "coverage": [
+        "cross_file_refs"
+      ]
+    },
+    {
+      "case_id": "myst_extension_metadata",
+      "profile": "docs/myst-to-mdx-baseline",
+      "coverage": [
+        "extension_metadata"
+      ]
+    },
+    {
+      "case_id": "openapi_safe_schema_upgrade",
+      "profile": "api-spec/openapi-3-0-to-3-1-safe",
+      "coverage": [
+        "safe_transform"
+      ]
+    },
+    {
+      "case_id": "openapi_unsupported_discriminator",
+      "profile": "api-spec/openapi-3-0-to-3-1-safe",
+      "coverage": [
+        "unsupported_semantics"
+      ]
+    },
+    {
+      "case_id": "openapi_malformed_spec",
+      "profile": "api-spec/openapi-3-0-to-3-1-safe",
+      "coverage": [
+        "malformed_input"
+      ]
+    },
+    {
+      "case_id": "openapi_validator_failure",
+      "profile": "api-spec/openapi-3-0-to-3-1-safe",
+      "coverage": [
+        "validator_failure"
+      ]
+    },
+    {
+      "case_id": "myst_replay_compatible",
+      "profile": "docs/myst-to-mdx-baseline",
+      "coverage": [
+        "replay"
+      ]
+    },
+    {
+      "case_id": "myst_source_redaction",
+      "profile": "docs/myst-to-mdx-baseline",
+      "coverage": [
+        "source_redaction"
+      ]
+    }
+  ]
+}

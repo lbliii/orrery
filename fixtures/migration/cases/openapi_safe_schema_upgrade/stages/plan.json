@@ -1,0 +1,16 @@
+{
+  "analysis_digest": "2e1ae5c40d3638c526ee30ab0ab6ee4efc9ef2c2fadd5d2b011bb8add8a428c2",
+  "profile_digest": "3b28715a83ef94fd4adfc81b98f2d938327bc8236eddd8efa6e39491f2b24339",
+  "compatibility_policy": {
+    "policy_id": "openapi-client-server-v1"
+  },
+  "planned_ops": [
+    {
+      "op": "bump_openapi",
+      "path": "openapi.json",
+      "from": "3.0.3",
+      "to": "3.1.0"
+    }
+  ],
+  "plan_digest": "e19576405c1ba552848933bebf40ffe71c2142e9d2347425792c21fad57f245c"
+}

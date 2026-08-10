@@ -1,0 +1,13 @@
+{
+  "source_manifest_digest": "37bf36840b2638bdcc99c739aea1b59f5cdf72ab2f6ad9fbb6ec64bf99079d55",
+  "findings": [
+    {
+      "feature_id": "breaking.path.remove",
+      "class": "unsupported",
+      "path": "openapi.json",
+      "message": "path marked for removal",
+      "finding_digest": "0ac9f6b4a1099a699ea37810b3c25d5b7c786ac1e6498adff2aa86d6e4949f62"
+    }
+  ],
+  "analysis_digest": "b639d9be52efc341ecb2138ee073b73e5ea8fef845af89c8941eb8665d6d2571"
+}

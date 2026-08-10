@@ -1,0 +1,20 @@
+{
+  "bundle_digest": "e13cd48405a3190947e61991d86fe304868f0de4192c4ef9d11e9208eedf35fe",
+  "validator": {
+    "name": "orrery/docs-mdx-validate",
+    "version": "1.0.0",
+    "digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "passed": false,
+  "findings": [
+    {
+      "feature_id": "myst.directive.admonition",
+      "class": "malformed",
+      "path": "broken.md",
+      "message": "parse error",
+      "finding_digest": "35101eff88e0a2b57a3e53cef0c0423e9888f62799f6ffce134b98d054cb8aa1"
+    }
+  ],
+  "diagnostics_digest": "db587eec8f3e39178a2e0c2bf77e5274fd9bc1b0040bd48ff2fb4e10ee1a8589",
+  "validation_digest": "9bba1101683a6ef7618d46e77033fefd9567f8b3b02a26781236c5a31065ed47"
+}

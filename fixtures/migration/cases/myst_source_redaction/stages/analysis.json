@@ -1,0 +1,13 @@
+{
+  "source_manifest_digest": "db4dcbc92a6707d1f0de38ea409ef3bee035dcf62495b9d5903b5168b16d65f4",
+  "findings": [
+    {
+      "feature_id": "md.heading",
+      "class": "safe",
+      "path": "secret.md",
+      "message": "redacted receipt omits body",
+      "finding_digest": "ed8e28eb1172618d7a912f49eaf1d25ccf6bb8ba45c8b937a2b56b691397b0ac"
+    }
+  ],
+  "analysis_digest": "d1ddb179c1c804f57251104c50a0326df8e79dbf47649fde3b42384d4aa41a94"
+}

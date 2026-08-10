@@ -1,0 +1,15 @@
+{
+  "case_id": "openapi_validator_failure",
+  "profile": "api-spec/openapi-3-0-to-3-1-safe",
+  "coverage": [
+    "validator_failure"
+  ],
+  "description": "Validator rejects breaking path removal",
+  "stage_digests": {
+    "analysis_digest": "b639d9be52efc341ecb2138ee073b73e5ea8fef845af89c8941eb8665d6d2571",
+    "plan_digest": "33ae186c9ad004647fff35e53cceda445ea6c93ab6ed1c5a1054ddb03534e314",
+    "bundle_digest": "8bff4cf2ce43a6769d0112ab30bc60f5c0222ab8e99e40ef23b7b45d8eeccb4f",
+    "validation_digest": "c2fc82523d36325a54b5f7ea953261faf07235120b5ece64b918fb4a5db6b733",
+    "replay_key": "2cfc7d951545d378df698e0efe2c3b084d9bd1bb2f7713a937f136388dbc0131"
+  }
+}

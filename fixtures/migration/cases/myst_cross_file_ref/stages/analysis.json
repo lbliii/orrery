@@ -1,0 +1,20 @@
+{
+  "source_manifest_digest": "112e80fa56019b92938131c9c050dcb6f23d40243bd67706bce02e3ac37d05d4",
+  "findings": [
+    {
+      "feature_id": "myst.directive.include",
+      "class": "decision_required",
+      "path": "index.md",
+      "message": "cross-file include to partial.md",
+      "finding_digest": "6a1d997e752c34dfb3c85660af60a089241a3c8633eb52a234b0811db5bf999f"
+    },
+    {
+      "feature_id": "md.heading",
+      "class": "safe",
+      "path": "partial.md",
+      "message": "referenced snippet has no headings",
+      "finding_digest": "ff39f17198b7a6b475d942462243acd0e67be408143b0be7e257d61f25effccc"
+    }
+  ],
+  "analysis_digest": "dfbab0838cc64f6783c70c3940bb9b9698bf5b6f9cc3eecdb6c26bb7df9857d4"
+}

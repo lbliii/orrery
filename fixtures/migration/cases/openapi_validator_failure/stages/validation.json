@@ -1,0 +1,21 @@
+{
+  "bundle_digest": "8bff4cf2ce43a6769d0112ab30bc60f5c0222ab8e99e40ef23b7b45d8eeccb4f",
+  "validator": {
+    "name": "orrery/openapi-validate",
+    "version": "1.0.0",
+    "digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  },
+  "passed": false,
+  "findings": [
+    {
+      "id": "breaking.path.remove",
+      "severity": "breaking",
+      "action": "block",
+      "path": "openapi.json",
+      "message": "breaking path removal blocked",
+      "finding_digest": "aa0e74bb3530983c5b6e2d81dcb1092c6ac5d79ddd1e057a4ad2f80ca715df56"
+    }
+  ],
+  "diagnostics_digest": "739352d240db65196af54ace95f2499cb669726446a746b1e3e607b0857643ea",
+  "validation_digest": "c2fc82523d36325a54b5f7ea953261faf07235120b5ece64b918fb4a5db6b733"
+}

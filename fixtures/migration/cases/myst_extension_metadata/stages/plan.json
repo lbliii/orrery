@@ -1,0 +1,15 @@
+{
+  "analysis_digest": "b6d047951bd838c825d5711ba112faa278f37886f306110e7031b32fe8d11828",
+  "profile_digest": "9ac8aaab94e6041edf459e96d27973a722773e0dda2fa272edb62a6be96ed82b",
+  "compatibility_policy": {
+    "policy_id": "docs-mdx-baseline-v1"
+  },
+  "planned_ops": [
+    {
+      "op": "preserve_extension",
+      "path": "page.md",
+      "extension": "demo-widget"
+    }
+  ],
+  "plan_digest": "5619fc9d6bd01764d2d026f17c468fd25c5667aac9a54ff1fea2902e82934a18"
+}

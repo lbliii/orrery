@@ -1,0 +1,10 @@
+{
+  "receipt_excludes_by_default": [
+    "source_bytes",
+    "target_bytes",
+    "full_patch_text",
+    "private_paths"
+  ],
+  "forbidden_present": [],
+  "source_byte_leak": false
+}
