@@ -118,6 +118,14 @@ class InMemoryRunRepository:
     def get(self, run_id: str) -> RunRecord | None:
         return self._records.get(run_id)
 
+    def list_by_states(self, *states: RunState) -> tuple[RunRecord, ...]:
+        wanted = frozenset(states)
+        return tuple(
+            record
+            for run_id, record in sorted(self._records.items())
+            if record.state in wanted
+        )
+
     def transition(
         self, run_id: str, *, from_state: RunState, to_state: RunState
     ) -> RunRecord | None:
@@ -272,6 +280,17 @@ class PostgresRunRepository:
         row = self._read(f"SELECT {self._select_fields} FROM runs WHERE run_id = %s", (run_id,))
         return self._record_from_row(row) if row is not None else None
 
+    def list_by_states(self, *states: RunState) -> tuple[RunRecord, ...]:
+        if not states:
+            return ()
+        placeholders = ", ".join(["%s"] * len(states))
+        rows = self._read_all(
+            f"SELECT {self._select_fields} FROM runs WHERE state IN ({placeholders}) "
+            "ORDER BY run_id",
+            tuple(state.value for state in states),
+        )
+        return tuple(self._record_from_row(row) for row in rows)
+
     def transition(
         self, run_id: str, *, from_state: RunState, to_state: RunState
     ) -> RunRecord | None:
@@ -348,6 +367,16 @@ class PostgresRunRepository:
         try:
             cursor.execute(query, params)
             return cursor.fetchone()
+        finally:
+            cursor.close()
+            connection.close()
+
+    def _read_all(self, query: str, params: tuple[Any, ...]) -> tuple[Any, ...]:
+        connection = self._connection_factory()
+        cursor = connection.cursor()
+        try:
+            cursor.execute(query, params)
+            return tuple(cursor.fetchall())
         finally:
             cursor.close()
             connection.close()

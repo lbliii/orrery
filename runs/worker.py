@@ -20,10 +20,13 @@ from datetime import timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Protocol
 
-from .domain import PostgresRunRepository, RunRecord, RunState
+from .diagnostics import CleanupLag, build_operator_health
+from .domain import PostgresRunRepository, RunConflictError, RunRecord, RunState
 from .queue import ManagedRunWorker, QueueLease, RedisQueueBackend
+from .reconcile import InMemoryAuditLog, RunReconciler
 
 logger = logging.getLogger(__name__)
+_HEALTH_RUNTIME: RunWorkerRuntime | None = None
 
 
 class WorkerConfigurationError(ValueError):
@@ -139,29 +142,59 @@ class RunWorkerRuntime:
         *,
         artifact_cleanup: ArtifactCleanup | None = None,
         monotonic: Any = time.monotonic,
+        reconciler: RunReconciler | None = None,
+        audit: InMemoryAuditLog | None = None,
     ) -> None:
         self._worker = worker
         self._registry = registry
         self._settings = settings
         self._artifact_cleanup, self._monotonic = artifact_cleanup, monotonic
         self._next_artifact_cleanup = 0.0
+        self._audit = audit or InMemoryAuditLog()
+        self._reconciler = reconciler or RunReconciler(
+            worker.runs, worker.queue, self._audit
+        )
+        self._cleanup_lag = CleanupLag()
+        self._lease_losses = 0
+        self._worker_failures = 0
 
     def process_once(self) -> bool:
         self._cleanup_artifacts_if_due()
         recovered = self._worker.queue.recover_expired(max_attempts=self._settings.max_attempts)
         if recovered:
             logger.warning("recovered expired run leases", extra={"recovered": recovered})
-        self._seal_recovered_dead_letters()
+        repaired = self._reconciler.reconcile_once()
+        if repaired:
+            logger.warning(
+                "reconciled run disagreements",
+                extra={"count": len(repaired), "kinds": [event.kind for event in repaired]},
+            )
         lease = self._worker.claim(self._settings.worker_id)
         if lease is None:
             return False
         logger.info("claimed run", extra={"run_id": lease.run_id, "attempt": lease.attempt})
+        self._reconciler.record_attempt(lease, worker_id=self._settings.worker_id)
         record = self._worker.runs.get(lease.run_id)
         if record is None:
             # Defensive: claim normally detects this, but never execute unknown state.
             self._dead_letter(lease, "run_not_found")
             return True
         return self._execute(lease, record)
+
+    def operator_health(self) -> dict[str, Any]:
+        health = build_operator_health(
+            queue=self._worker.queue,
+            audit=self._audit,
+            cleanup=self._cleanup_lag,
+            artifact_bytes_total=None,
+        )
+        payload = health.as_dict()
+        payload["audits"] = {
+            **payload["audits"],
+            "lease_loss": int(payload["audits"].get("lease_loss", 0)),
+            "worker_failures": self._worker_failures,
+        }
+        return payload
 
     def _cleanup_artifacts_if_due(self) -> None:
         if self._artifact_cleanup is None or self._monotonic() < self._next_artifact_cleanup:
@@ -171,6 +204,12 @@ class RunWorkerRuntime:
         )
         result = self._artifact_cleanup.cleanup_once(
             batch_size=self._settings.artifact_cleanup_batch_size
+        )
+        self._cleanup_lag = CleanupLag(
+            claimed=int(getattr(result, "claimed", 0) or 0),
+            deleted=int(getattr(result, "deleted", 0) or 0),
+            failed=int(getattr(result, "failed", 0) or 0),
+            last_batch_at=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         )
         if result.failed:
             logger.warning("artifact cleanup deferred failures", extra={"failed": result.failed})
@@ -195,8 +234,10 @@ class RunWorkerRuntime:
         try:
             receipt = self._registry.execute(record)
         except UnknownJobError as error:
+            self._worker_failures += 1
             self._dead_letter(lease, str(error))
         except Exception:
+            self._worker_failures += 1
             logger.exception(
                 "run handler failed", extra={"run_id": lease.run_id, "attempt": lease.attempt}
             )
@@ -214,12 +255,41 @@ class RunWorkerRuntime:
         else:
             if lease_lost.is_set():
                 logger.warning("run finished after lease loss", extra={"run_id": lease.run_id})
-            elif not self._worker.succeed(lease, receipt=receipt):
-                logger.warning("could not seal/ack successful run", extra={"run_id": lease.run_id})
             else:
-                logger.info(
-                    "run succeeded", extra={"run_id": lease.run_id, "attempt": lease.attempt}
-                )
+                try:
+                    sealed = self._worker.succeed(lease, receipt=receipt)
+                except RunConflictError:
+                    existing = self._worker.runs.get(lease.run_id)
+                    self._reconciler.record_seal_race(
+                        lease,
+                        detail="terminal_receipt_conflict",
+                        terminal_state=None if existing is None else existing.state.value,
+                    )
+                    self._worker.queue.drop(lease.run_id)
+                    logger.warning(
+                        "terminal receipt race converged",
+                        extra={"run_id": lease.run_id, "attempt": lease.attempt},
+                    )
+                else:
+                    if not sealed:
+                        existing = self._worker.runs.get(lease.run_id)
+                        if existing is not None and existing.is_terminal:
+                            self._reconciler.record_seal_race(
+                                lease,
+                                detail="ack_after_terminal",
+                                terminal_state=existing.state.value,
+                            )
+                            self._worker.queue.drop(lease.run_id)
+                        else:
+                            logger.warning(
+                                "could not seal/ack successful run",
+                                extra={"run_id": lease.run_id},
+                            )
+                    else:
+                        logger.info(
+                            "run succeeded",
+                            extra={"run_id": lease.run_id, "attempt": lease.attempt},
+                        )
         finally:
             stopped.set()
             heartbeat.join(timeout=1)
@@ -233,6 +303,8 @@ class RunWorkerRuntime:
         while not stopped.wait(every):
             if not self._worker.heartbeat(lease):
                 lease_lost.set()
+                self._lease_losses += 1
+                self._reconciler.record_lease_loss(lease, worker_id=self._settings.worker_id)
                 logger.error(
                     "run lease lost", extra={"run_id": lease.run_id, "attempt": lease.attempt}
                 )
@@ -248,42 +320,22 @@ class RunWorkerRuntime:
             max_attempts=lease.attempt,
         )
         if disposition.dead_lettered:
-            self._worker.runs.finalize(
-                lease.run_id,
-                from_state=RunState.RUNNING,
-                state=RunState.FAILED,
-                reason=reason,
-                receipt={"kind": "dead_letter", "attempt": lease.attempt},
-            )
+            try:
+                self._worker.runs.finalize(
+                    lease.run_id,
+                    from_state=RunState.RUNNING,
+                    state=RunState.FAILED,
+                    reason=reason,
+                    receipt={"kind": "dead_letter", "attempt": lease.attempt},
+                )
+            except RunConflictError:
+                self._reconciler.record_seal_race(
+                    lease, detail="dead_letter_terminal_conflict"
+                )
         logger.error(
             "run dead-lettered",
             extra={"run_id": lease.run_id, "attempt": lease.attempt, "reason": reason},
         )
-
-    def _seal_recovered_dead_letters(self) -> None:
-        """Bring Postgres current when Redis expires the final worker lease.
-
-        Queue ownership intentionally wins during a crash; this reconciliation
-        is idempotent and only seals a still-running record.
-        """
-        for dead in self._worker.queue.dead_letters():
-            run_id, reason = dead.get("run_id"), dead.get("terminal_reason")
-            if not isinstance(run_id, str) or not isinstance(reason, str):
-                continue
-            record = self._worker.runs.get(run_id)
-            if record is None or record.state is not RunState.RUNNING:
-                continue
-            finalized = self._worker.runs.finalize(
-                run_id,
-                from_state=RunState.RUNNING,
-                state=RunState.FAILED,
-                reason=reason,
-                receipt={"kind": "dead_letter", "attempt": dead.get("attempts")},
-            )
-            if finalized is not None:
-                logger.error(
-                    "recovered dead-letter sealed", extra={"run_id": run_id, "reason": reason}
-                )
 
 
 def build_runtime(
@@ -361,6 +413,8 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     logging.basicConfig(level=os.environ.get("ORRERY_WORKER_LOG_LEVEL", "INFO"))
     runtime = build_runtime(WorkerSettings.from_env())
+    global _HEALTH_RUNTIME
+    _HEALTH_RUNTIME = runtime
     if args.once:
         return 0 if runtime.process_once() else 1
     _start_health_server()
@@ -369,7 +423,7 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def _start_health_server() -> None:
-    """Expose only a private liveness probe when Railway assigns ``PORT``.
+    """Expose a private liveness + bounded operator summary when ``PORT`` is set.
 
     The worker has no public domain, but sharing the repository-level Railway
     healthcheck with the web service means it must answer a lightweight probe.
@@ -382,10 +436,16 @@ def _start_health_server() -> None:
 
     class HealthHandler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:
-            if self.path != "/health":
+            if self.path not in {"/health", "/ops/runs-health"}:
                 self.send_error(404)
                 return
-            body = b'{"status":"ok","role":"managed-worker"}'
+            runtime = _HEALTH_RUNTIME
+            if runtime is None:
+                body = b'{"status":"ok","role":"managed-worker"}'
+            else:
+                import json
+
+                body = json.dumps(runtime.operator_health(), separators=(",", ":")).encode()
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(body)))
