@@ -1,0 +1,15 @@
+{
+  "case_id": "myst_extension_metadata",
+  "profile": "docs/myst-to-mdx-baseline",
+  "coverage": [
+    "extension_metadata"
+  ],
+  "description": "Frontmatter extension metadata carried in analysis",
+  "stage_digests": {
+    "analysis_digest": "b6d047951bd838c825d5711ba112faa278f37886f306110e7031b32fe8d11828",
+    "plan_digest": "5619fc9d6bd01764d2d026f17c468fd25c5667aac9a54ff1fea2902e82934a18",
+    "bundle_digest": "917605e4f53177096583a78151a6e90429fd832f860a53c0e02eddc67440200d",
+    "validation_digest": "36aae6e373958493f5f41177e071311000838e63701ef55ad9fa806cd5f759de",
+    "replay_key": "a4beb8b859f8d029e5cfcbf42812126c7320b81da87bf74470157aabbaf724ee"
+  }
+}

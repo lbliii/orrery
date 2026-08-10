@@ -1,0 +1,15 @@
+{
+  "case_id": "openapi_malformed_spec",
+  "profile": "api-spec/openapi-3-0-to-3-1-safe",
+  "coverage": [
+    "malformed_input"
+  ],
+  "description": "Truncated OpenAPI JSON",
+  "stage_digests": {
+    "analysis_digest": "ac47e5c6e50e06dbd7d7a58c57aff22c665d9f8514f93c2e4af053c8cafd1d3c",
+    "plan_digest": "b689ce455f0e0b1f273445b2d0428f4b37000f414be2a9b055203a2a45ce89ae",
+    "bundle_digest": "ab807d40f1a238de6684136ee0bd9b5b78de79529c624654c5805c1d1e5d592e",
+    "validation_digest": "97793094171255f2d5e3af2bd63e6f1a17e30a825721ca4e09eecf1d40c40485",
+    "replay_key": "a80a8f891c36347def8be60ce38d570c6e85a9a31284b2183ce645472c969743"
+  }
+}

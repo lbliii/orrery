@@ -1,0 +1,13 @@
+{
+  "source_manifest_digest": "24ac3efa2354fad6f05a88a2e4335c1e37e951447509e1855a4abd08befbd259",
+  "findings": [
+    {
+      "feature_id": "openapi.json_schema.draft2020",
+      "class": "malformed",
+      "path": "openapi.json",
+      "message": "truncated JSON document",
+      "finding_digest": "9d45a0831819fc317e9ebe74bc946aa449386ab2d2503dee334ff8d039ed94df"
+    }
+  ],
+  "analysis_digest": "ac47e5c6e50e06dbd7d7a58c57aff22c665d9f8514f93c2e4af053c8cafd1d3c"
+}

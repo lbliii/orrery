@@ -1,0 +1,72 @@
+{
+  "schema_version": "migration-profile/v1",
+  "profile_id": "api-spec/openapi-3-0-to-3-1-safe",
+  "version": "1.0.0",
+  "title": "OpenAPI 3.0.3 to 3.1.0 safe upgrade",
+  "source": {
+    "kind": "openapi",
+    "version": "3.0.3"
+  },
+  "target": {
+    "kind": "openapi",
+    "version": "3.1.0"
+  },
+  "feature_vocabulary": {
+    "supported": [
+      {
+        "id": "openapi.json_schema.draft2020",
+        "class": "transformable"
+      }
+    ],
+    "unsupported": [
+      {
+        "id": "openapi.discriminator.mapping",
+        "class": "unsupported"
+      }
+    ]
+  },
+  "compatibility_policy": {
+    "policy_id": "openapi-client-server-v1",
+    "default_action": "report",
+    "rules": [
+      {
+        "id": "breaking.path.remove",
+        "severity": "breaking",
+        "action": "block"
+      },
+      {
+        "id": "info.description.change",
+        "severity": "informational",
+        "action": "allow"
+      }
+    ]
+  },
+  "execution_locality": "agent_local",
+  "transformer": {
+    "name": "orrery/openapi-upgrade-safe",
+    "version": "1.0.0",
+    "digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+  },
+  "validator": {
+    "name": "orrery/openapi-validate",
+    "version": "1.0.0",
+    "digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  },
+  "retention_redaction": {
+    "receipt_includes": [
+      "digests",
+      "safe_metadata",
+      "tool_versions",
+      "findings_summary"
+    ],
+    "receipt_excludes_by_default": [
+      "source_bytes",
+      "target_bytes",
+      "full_patch_text",
+      "private_paths"
+    ],
+    "max_finding_message_bytes": 512,
+    "max_diagnostics_bytes": 65536
+  },
+  "profile_digest": "3b28715a83ef94fd4adfc81b98f2d938327bc8236eddd8efa6e39491f2b24339"
+}

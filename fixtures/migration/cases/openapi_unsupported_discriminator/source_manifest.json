@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "path": "openapi.json",
+      "digest": "39dd12f35b110052a1d30be57800634e12cab1aff8a137fb70c77740729f8a39"
+    }
+  ],
+  "manifest_digest": "9e78b8b0848f563e46908b4090cbede48222f241e495612a1afc2ec83289a8db"
+}

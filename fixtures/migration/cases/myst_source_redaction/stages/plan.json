@@ -1,0 +1,14 @@
+{
+  "analysis_digest": "d1ddb179c1c804f57251104c50a0326df8e79dbf47649fde3b42384d4aa41a94",
+  "profile_digest": "9ac8aaab94e6041edf459e96d27973a722773e0dda2fa272edb62a6be96ed82b",
+  "compatibility_policy": {
+    "policy_id": "docs-mdx-baseline-v1"
+  },
+  "planned_ops": [
+    {
+      "op": "copy_heading",
+      "path": "secret.md"
+    }
+  ],
+  "plan_digest": "cd68fe740aa48bda5e8547e8d57fbf8e80238b7203df73bcad21cf3844431914"
+}

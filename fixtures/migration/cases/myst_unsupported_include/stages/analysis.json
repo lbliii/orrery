@@ -1,0 +1,13 @@
+{
+  "source_manifest_digest": "952c75d7c071412474e1517b056fefdd2806a3cc47cc5b4fac2f2edb3e649870",
+  "findings": [
+    {
+      "feature_id": "myst.directive.include",
+      "class": "decision_required",
+      "path": "index.md",
+      "message": "include directive needs human decision",
+      "finding_digest": "3d5ded1ee27e02bd2804e15bcbe02df75fbc081463e6283c6c15b0e4474e6878"
+    }
+  ],
+  "analysis_digest": "cf2a12482eef4c12d7eee96248277a62217358f6a1e03a0756ee0318029844af"
+}

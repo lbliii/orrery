@@ -1,0 +1,13 @@
+{
+  "files": [
+    {
+      "path": "index.md",
+      "digest": "9b5caa7761781c3d0a7c97458674af94daf441ae29474162bd36508d555b260d"
+    },
+    {
+      "path": "partial.md",
+      "digest": "d807cf86850ebe8c9215028d7e58d1e52cc2503edcbb605e715f8521be3120d5"
+    }
+  ],
+  "manifest_digest": "112e80fa56019b92938131c9c050dcb6f23d40243bd67706bce02e3ac37d05d4"
+}

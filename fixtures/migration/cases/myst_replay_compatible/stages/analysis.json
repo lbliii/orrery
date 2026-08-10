@@ -1,0 +1,13 @@
+{
+  "source_manifest_digest": "d1ee62426cd8ab7fe902156f08f09fbabaa6084277ca657796998beb1981c6d9",
+  "findings": [
+    {
+      "feature_id": "md.heading",
+      "class": "safe",
+      "path": "index.md",
+      "message": "replay-compatible heading",
+      "finding_digest": "78b8bc31ce07bc3016739d2ca70444e0bdaaea585e7fd31be6707e4153c02675"
+    }
+  ],
+  "analysis_digest": "f90fcb8fd09075f8b5377646e5b7d6baf424e2a74b804250a1dd36e423e6d786"
+}

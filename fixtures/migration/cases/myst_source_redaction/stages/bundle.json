@@ -1,0 +1,14 @@
+{
+  "plan_digest": "cd68fe740aa48bda5e8547e8d57fbf8e80238b7203df73bcad21cf3844431914",
+  "patch_digest": "e54b74eb9192b48055c48d2062bffdd23469ef7d70f960ff1293a47f86c8eba2",
+  "file_entries": [
+    {
+      "path": "secret.md",
+      "source_digest": "f9c11fd005bbc28c116a02eabaf5e263d54a9520e33ab0c402202cd1eb4f40c3",
+      "target_digest": "f9c11fd005bbc28c116a02eabaf5e263d54a9520e33ab0c402202cd1eb4f40c3"
+    }
+  ],
+  "mapping_digest": "ed339f3513fb96a2943df4b1d6e1f911ab273fe1fdf3e0acf4ce500edc8bc8c4",
+  "warnings": [],
+  "bundle_digest": "6bfb9a7199f6c07457f489b9fd2cb46252c4d03f543a595f1b6888e26b3cb0e3"
+}

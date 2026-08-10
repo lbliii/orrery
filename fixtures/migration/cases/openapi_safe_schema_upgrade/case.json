@@ -1,0 +1,15 @@
+{
+  "case_id": "openapi_safe_schema_upgrade",
+  "profile": "api-spec/openapi-3-0-to-3-1-safe",
+  "coverage": [
+    "safe_transform"
+  ],
+  "description": "Safe OpenAPI schema draft upgrade",
+  "stage_digests": {
+    "analysis_digest": "2e1ae5c40d3638c526ee30ab0ab6ee4efc9ef2c2fadd5d2b011bb8add8a428c2",
+    "plan_digest": "e19576405c1ba552848933bebf40ffe71c2142e9d2347425792c21fad57f245c",
+    "bundle_digest": "65b4de22c22863f1ce97055b2e89da68fa19d17b14215cfafaca37a2057dbec3",
+    "validation_digest": "0da4aa7ce80f111401043be9785ea33a5c8071716e2692420e9a718730d879a9",
+    "replay_key": "6529a25915e5186cd7c37bad4eb93064588441c94e629fe3bce6a4ebfe016908"
+  }
+}

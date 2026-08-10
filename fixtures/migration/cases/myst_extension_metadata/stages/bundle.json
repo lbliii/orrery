@@ -1,0 +1,14 @@
+{
+  "plan_digest": "5619fc9d6bd01764d2d026f17c468fd25c5667aac9a54ff1fea2902e82934a18",
+  "patch_digest": "e8cb49fcea8ea53c74870ecb2220e0684a4a967142f1a20021fcd47114288beb",
+  "file_entries": [
+    {
+      "path": "page.md",
+      "source_digest": "afa513f138e18a25597d142b885be0c195c253f663bda2f336583c448beaec3b",
+      "target_digest": "afa513f138e18a25597d142b885be0c195c253f663bda2f336583c448beaec3b"
+    }
+  ],
+  "mapping_digest": "fc46f3cdfe959d4c45f82d7f467f6d5d7448d8bb8d5d9d1cc76ba9266238bbe7",
+  "warnings": [],
+  "bundle_digest": "917605e4f53177096583a78151a6e90429fd832f860a53c0e02eddc67440200d"
+}

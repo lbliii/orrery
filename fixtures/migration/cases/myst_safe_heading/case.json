@@ -1,0 +1,15 @@
+{
+  "case_id": "myst_safe_heading",
+  "profile": "docs/myst-to-mdx-baseline",
+  "coverage": [
+    "safe_transform"
+  ],
+  "description": "Safe md.heading copy-through for MyST→MDX baseline",
+  "stage_digests": {
+    "analysis_digest": "86f9eb74f314e5a9a2d8284bf5e58107b8fb68dd7080913384f211de59b001f7",
+    "plan_digest": "770ece9e8f037fc75961a9d3c6d937e2038aeed3f132ee9f634ec2a1acd71dcf",
+    "bundle_digest": "e3ddd673539d74c6c173c26db293885bc99b332215d221301c8255f134d1621e",
+    "validation_digest": "ce4952548682f52d654435240b1c62469c3befd9ebd64a5c50661066aa154cec",
+    "replay_key": "34bf3fad908ab89c496ac7e7d7068d3e0340da2833c8806006e9c280aae2bb48"
+  }
+}

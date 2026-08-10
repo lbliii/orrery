@@ -1,0 +1,14 @@
+{
+  "plan_digest": "438f3992a52336891948897bab57b4ad6595a73d0310e68b39cecf6c056faf10",
+  "patch_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "file_entries": [
+    {
+      "path": "openapi.json",
+      "source_digest": "39dd12f35b110052a1d30be57800634e12cab1aff8a137fb70c77740729f8a39",
+      "target_digest": "39dd12f35b110052a1d30be57800634e12cab1aff8a137fb70c77740729f8a39"
+    }
+  ],
+  "mapping_digest": "9a2e0f92c68706bd9b926be91a7bf43fc0a5bd7f79b9c323ce14fd0f56db980b",
+  "warnings": [],
+  "bundle_digest": "91bf9d4abe5f3f90f410f8a34a41ebea90bf8136c47de78338666faf4f5b967f"
+}

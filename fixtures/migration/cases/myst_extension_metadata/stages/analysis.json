@@ -1,0 +1,13 @@
+{
+  "source_manifest_digest": "e9835d10f0508e3c19284825924ac96e3ee6647b06b71dcdbf6bcbe94658f003",
+  "findings": [
+    {
+      "feature_id": "md.heading",
+      "class": "safe",
+      "path": "page.md",
+      "message": "heading with extension frontmatter",
+      "finding_digest": "d296abc52c8963c264630634d0a0d547e77150e2eba89367faed49e9352ef823"
+    }
+  ],
+  "analysis_digest": "b6d047951bd838c825d5711ba112faa278f37886f306110e7031b32fe8d11828"
+}

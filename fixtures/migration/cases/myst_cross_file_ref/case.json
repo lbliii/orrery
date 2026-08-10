@@ -1,0 +1,15 @@
+{
+  "case_id": "myst_cross_file_ref",
+  "profile": "docs/myst-to-mdx-baseline",
+  "coverage": [
+    "cross_file_refs"
+  ],
+  "description": "Include spans two synthetic files",
+  "stage_digests": {
+    "analysis_digest": "dfbab0838cc64f6783c70c3940bb9b9698bf5b6f9cc3eecdb6c26bb7df9857d4",
+    "plan_digest": "dff7d5759cf863ce53f5682e500081178e77ed7be70c4105783856b1e8b10ca0",
+    "bundle_digest": "51a9516afaaea166507c8dd4971f899f06f09051df83c5ff959d7e7055483be8",
+    "validation_digest": "c0f707f3437b3e8428628cf7d41e1bc68c494d0af992a2e9e845870730636039",
+    "replay_key": "1e44b8d9cd59614a5c5fc3aa6667d91c6dc761143bbacb5cec1ebfcbd621dad7"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "analysis_digest": "b639d9be52efc341ecb2138ee073b73e5ea8fef845af89c8941eb8665d6d2571",
+  "profile_digest": "3b28715a83ef94fd4adfc81b98f2d938327bc8236eddd8efa6e39491f2b24339",
+  "compatibility_policy": {
+    "policy_id": "openapi-client-server-v1"
+  },
+  "planned_ops": [
+    {
+      "op": "remove_path",
+      "path": "/gone",
+      "severity": "breaking"
+    }
+  ],
+  "plan_digest": "33ae186c9ad004647fff35e53cceda445ea6c93ab6ed1c5a1054ddb03534e314"
+}

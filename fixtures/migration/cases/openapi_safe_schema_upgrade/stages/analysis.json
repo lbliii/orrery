@@ -1,0 +1,13 @@
+{
+  "source_manifest_digest": "f3f0345c3a1bedc80431a82a264d47006cd65bf470bd4a7a75647f734b3713c1",
+  "findings": [
+    {
+      "feature_id": "openapi.json_schema.draft2020",
+      "class": "transformable",
+      "path": "openapi.json",
+      "message": "schema draft bump",
+      "finding_digest": "ef82857cde4e222c080352b466ea8ef5b1a9b9a625fafd6c7a98cd3db2b910cc"
+    }
+  ],
+  "analysis_digest": "2e1ae5c40d3638c526ee30ab0ab6ee4efc9ef2c2fadd5d2b011bb8add8a428c2"
+}

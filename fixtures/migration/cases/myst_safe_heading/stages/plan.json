@@ -1,0 +1,15 @@
+{
+  "analysis_digest": "86f9eb74f314e5a9a2d8284bf5e58107b8fb68dd7080913384f211de59b001f7",
+  "profile_digest": "9ac8aaab94e6041edf459e96d27973a722773e0dda2fa272edb62a6be96ed82b",
+  "compatibility_policy": {
+    "policy_id": "docs-mdx-baseline-v1"
+  },
+  "planned_ops": [
+    {
+      "op": "copy_heading",
+      "path": "index.md",
+      "feature_id": "md.heading"
+    }
+  ],
+  "plan_digest": "770ece9e8f037fc75961a9d3c6d937e2038aeed3f132ee9f634ec2a1acd71dcf"
+}

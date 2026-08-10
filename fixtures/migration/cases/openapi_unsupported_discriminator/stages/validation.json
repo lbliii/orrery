@@ -1,0 +1,12 @@
+{
+  "bundle_digest": "91bf9d4abe5f3f90f410f8a34a41ebea90bf8136c47de78338666faf4f5b967f",
+  "validator": {
+    "name": "orrery/openapi-validate",
+    "version": "1.0.0",
+    "digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  },
+  "passed": true,
+  "findings": [],
+  "diagnostics_digest": "b21c94a134c3718655aee7d3fa2619c7638698e385aa82ac44e14bc3930df46b",
+  "validation_digest": "0bdd5f21438a8d1c381cee930ca4d3a3553fde3b440f70f5365996fc1640c89a"
+}

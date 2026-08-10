@@ -1,0 +1,15 @@
+{
+  "case_id": "openapi_unsupported_discriminator",
+  "profile": "api-spec/openapi-3-0-to-3-1-safe",
+  "coverage": [
+    "unsupported_semantics"
+  ],
+  "description": "Discriminator mapping marked unsupported",
+  "stage_digests": {
+    "analysis_digest": "2a6ca8b60778f8d8c636b5366a7535f7510eae09a36fc778408bacc310361904",
+    "plan_digest": "438f3992a52336891948897bab57b4ad6595a73d0310e68b39cecf6c056faf10",
+    "bundle_digest": "91bf9d4abe5f3f90f410f8a34a41ebea90bf8136c47de78338666faf4f5b967f",
+    "validation_digest": "0bdd5f21438a8d1c381cee930ca4d3a3553fde3b440f70f5365996fc1640c89a",
+    "replay_key": "3cf157992647fdcae1b26b1946cb0d54d89b30d2445e1e0d053b24e5a80ad6b7"
+  }
+}

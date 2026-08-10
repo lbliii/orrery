@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "path": "secret.md",
+      "digest": "f9c11fd005bbc28c116a02eabaf5e263d54a9520e33ab0c402202cd1eb4f40c3"
+    }
+  ],
+  "manifest_digest": "db4dcbc92a6707d1f0de38ea409ef3bee035dcf62495b9d5903b5168b16d65f4"
+}

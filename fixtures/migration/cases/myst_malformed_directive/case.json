@@ -1,0 +1,15 @@
+{
+  "case_id": "myst_malformed_directive",
+  "profile": "docs/myst-to-mdx-baseline",
+  "coverage": [
+    "malformed_input"
+  ],
+  "description": "Malformed admonition fence",
+  "stage_digests": {
+    "analysis_digest": "d07b4c38ac27aeeaa05cb0a91e45b69ff75490944dd55eabc731bc03b65fce56",
+    "plan_digest": "921c73485f19a01b1cfa08184060b28a4e26554e7820bfa7a68ef6d48258acf0",
+    "bundle_digest": "e13cd48405a3190947e61991d86fe304868f0de4192c4ef9d11e9208eedf35fe",
+    "validation_digest": "9bba1101683a6ef7618d46e77033fefd9567f8b3b02a26781236c5a31065ed47",
+    "replay_key": "1e30af820a4b7096a1638ebcb84013a90332fc1e12f3b2470d0c180e818e59b4"
+  }
+}

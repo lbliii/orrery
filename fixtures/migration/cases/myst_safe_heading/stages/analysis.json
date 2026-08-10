@@ -1,0 +1,17 @@
+{
+  "source_manifest_digest": "284610adda458b887f414ab863ede7d0cea83a6507ecc4c07f4571a45c2eb45f",
+  "findings": [
+    {
+      "feature_id": "md.heading",
+      "class": "safe",
+      "path": "index.md",
+      "message": "heading converts without semantic change",
+      "span": {
+        "start": 0,
+        "end": 9
+      },
+      "finding_digest": "b719217ac85e98ce78ae3ebacbf19d9c58a4f21705da74bd551af90b51863e16"
+    }
+  ],
+  "analysis_digest": "86f9eb74f314e5a9a2d8284bf5e58107b8fb68dd7080913384f211de59b001f7"
+}

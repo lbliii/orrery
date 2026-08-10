@@ -1,0 +1,16 @@
+{
+  "analysis_digest": "dfbab0838cc64f6783c70c3940bb9b9698bf5b6f9cc3eecdb6c26bb7df9857d4",
+  "profile_digest": "9ac8aaab94e6041edf459e96d27973a722773e0dda2fa272edb62a6be96ed82b",
+  "compatibility_policy": {
+    "policy_id": "docs-mdx-baseline-v1"
+  },
+  "planned_ops": [
+    {
+      "op": "link",
+      "from": "index.md",
+      "to": "partial.md",
+      "feature_id": "myst.directive.include"
+    }
+  ],
+  "plan_digest": "dff7d5759cf863ce53f5682e500081178e77ed7be70c4105783856b1e8b10ca0"
+}

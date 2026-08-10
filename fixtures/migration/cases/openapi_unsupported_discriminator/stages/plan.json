@@ -1,0 +1,15 @@
+{
+  "analysis_digest": "2a6ca8b60778f8d8c636b5366a7535f7510eae09a36fc778408bacc310361904",
+  "profile_digest": "3b28715a83ef94fd4adfc81b98f2d938327bc8236eddd8efa6e39491f2b24339",
+  "compatibility_policy": {
+    "policy_id": "openapi-client-server-v1"
+  },
+  "planned_ops": [
+    {
+      "op": "block",
+      "path": "openapi.json",
+      "feature_id": "openapi.discriminator.mapping"
+    }
+  ],
+  "plan_digest": "438f3992a52336891948897bab57b4ad6595a73d0310e68b39cecf6c056faf10"
+}

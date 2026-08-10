@@ -1,0 +1,12 @@
+{
+  "bundle_digest": "51a9516afaaea166507c8dd4971f899f06f09051df83c5ff959d7e7055483be8",
+  "validator": {
+    "name": "orrery/docs-mdx-validate",
+    "version": "1.0.0",
+    "digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "passed": true,
+  "findings": [],
+  "diagnostics_digest": "21eebac3df2fe40d7f81595a968d50356c46b3590e74269258625f0be1b3a0de",
+  "validation_digest": "c0f707f3437b3e8428628cf7d41e1bc68c494d0af992a2e9e845870730636039"
+}

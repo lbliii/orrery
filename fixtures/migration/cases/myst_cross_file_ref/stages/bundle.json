@@ -1,0 +1,19 @@
+{
+  "plan_digest": "dff7d5759cf863ce53f5682e500081178e77ed7be70c4105783856b1e8b10ca0",
+  "patch_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "file_entries": [
+    {
+      "path": "index.md",
+      "source_digest": "9b5caa7761781c3d0a7c97458674af94daf441ae29474162bd36508d555b260d",
+      "target_digest": "9b5caa7761781c3d0a7c97458674af94daf441ae29474162bd36508d555b260d"
+    },
+    {
+      "path": "partial.md",
+      "source_digest": "d807cf86850ebe8c9215028d7e58d1e52cc2503edcbb605e715f8521be3120d5",
+      "target_digest": "d807cf86850ebe8c9215028d7e58d1e52cc2503edcbb605e715f8521be3120d5"
+    }
+  ],
+  "mapping_digest": "0603a5fc3605aedb527ec2d77b2ca359cb251a59b3098ebccf8d634300d6f5a8",
+  "warnings": [],
+  "bundle_digest": "51a9516afaaea166507c8dd4971f899f06f09051df83c5ff959d7e7055483be8"
+}

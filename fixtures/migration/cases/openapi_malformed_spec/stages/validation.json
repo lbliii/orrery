@@ -1,0 +1,20 @@
+{
+  "bundle_digest": "ab807d40f1a238de6684136ee0bd9b5b78de79529c624654c5805c1d1e5d592e",
+  "validator": {
+    "name": "orrery/openapi-validate",
+    "version": "1.0.0",
+    "digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  },
+  "passed": false,
+  "findings": [
+    {
+      "feature_id": "openapi.json_schema.draft2020",
+      "class": "malformed",
+      "path": "openapi.json",
+      "message": "json parse error",
+      "finding_digest": "5d6ab66c6249d20288555e72d34f26576819a1c3eb15ef7eb03a0dd9e5946376"
+    }
+  ],
+  "diagnostics_digest": "64b51a74f55b3ce4f469caff6e1a927754c3619339743b6fe6d4c9c8b0475094",
+  "validation_digest": "97793094171255f2d5e3af2bd63e6f1a17e30a825721ca4e09eecf1d40c40485"
+}

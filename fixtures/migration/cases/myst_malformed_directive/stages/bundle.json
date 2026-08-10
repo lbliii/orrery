@@ -1,0 +1,14 @@
+{
+  "plan_digest": "921c73485f19a01b1cfa08184060b28a4e26554e7820bfa7a68ef6d48258acf0",
+  "patch_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "file_entries": [
+    {
+      "path": "broken.md",
+      "source_digest": "7894c06ef85cf20c9d9d0e97c8e15fa7f1f723936ecda02dba0be859f18eb91e",
+      "target_digest": "7894c06ef85cf20c9d9d0e97c8e15fa7f1f723936ecda02dba0be859f18eb91e"
+    }
+  ],
+  "mapping_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+  "warnings": [],
+  "bundle_digest": "e13cd48405a3190947e61991d86fe304868f0de4192c4ef9d11e9208eedf35fe"
+}
