@@ -54,6 +54,7 @@ from commerce import charge_on_verify, refund_on_forge
 from discovery import (
     DISCOVERY_CACHE_CONTROL,
     DISCOVERY_CORS,
+    TRUST_FACTS,
     configured_public_origin,
     llms_full_txt,
     llms_txt,
@@ -231,6 +232,32 @@ def well_known_security(request: Request) -> Response:
         security_txt(_orrery_origin(request)),
         content_type="text/plain; charset=utf-8",
     )
+
+
+@app.route("/.well-known/orrery/trust.json")
+def trust_document(request: Request) -> Response:
+    origin = _orrery_origin(request)
+    return _discovery_json(
+        {
+            "version": 1,
+            "facts": TRUST_FACTS,
+            "security": f"{origin}/.well-known/security.txt",
+            "keys": f"{origin}/.well-known/orrery/keys.json",
+            "allowlist": f"{origin}/trust/allowlist",
+        }
+    )
+
+
+@app.route("/sitemap.xml")
+def sitemap_document(request: Request) -> Response:
+    origin = _orrery_origin(request)
+    urls = ("/", "/security", "/privacy", "/terms", "/contact", "/trust/allowlist", "/connect")
+    body = (
+        '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+        + "".join(f"<url><loc>{origin}{path}</loc></url>" for path in urls)
+        + "</urlset>"
+    )
+    return Response(body, content_type="application/xml; charset=utf-8")
 
 
 @app.route("/llms.txt")
