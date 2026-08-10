@@ -257,4 +257,8 @@ def score_record(record: ResolveRecord, tokens: tuple[str, ...]) -> int:
             "gate" in name or record.kind == "constellation"
         ):
             score += 2
+    # Prefer cards whose example_intents / use_when literally contain the intent.
+    phrase = " ".join(tokens)
+    if phrase and phrase in card_text:
+        score += 6
     return score

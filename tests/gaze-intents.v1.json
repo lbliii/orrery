@@ -1,0 +1,353 @@
+{
+  "version": 1,
+  "strong_min_score": 5,
+  "fixtures": [
+    {
+      "intent": "get README at commit",
+      "expect_top3": ["orrery/gh-file-at-ref"]
+    },
+    {
+      "intent": "fetch changelog at sha",
+      "expect_top3": ["orrery/gh-file-at-ref"]
+    },
+    {
+      "intent": "pinned file from github",
+      "expect_top3": ["orrery/gh-file-at-ref"]
+    },
+    {
+      "intent": "pinned github file at sha",
+      "expect_top3": ["orrery/gh-file-at-ref"]
+    },
+    {
+      "intent": "live utc now",
+      "expect_top3": ["orrery/world-time"]
+    },
+    {
+      "intent": "current time sealed",
+      "expect_top3": ["orrery/world-time"]
+    },
+    {
+      "intent": "fresh clock evidence",
+      "expect_top3": ["orrery/world-time"]
+    },
+    {
+      "intent": "sealed live utc timestamp",
+      "expect_top3": ["orrery/world-time", "orrery/stale-proof"]
+    },
+    {
+      "intent": "observe python release notes",
+      "expect_top3": ["orrery/source-watch"]
+    },
+    {
+      "intent": "diff official source digest",
+      "expect_top3": ["orrery/source-watch"]
+    },
+    {
+      "intent": "answer from live source",
+      "expect_top3": ["orrery/source-watch"]
+    },
+    {
+      "intent": "official source digest observe",
+      "expect_top3": ["orrery/source-watch", "orrery/stale-proof"]
+    },
+    {
+      "intent": "html to pdf",
+      "expect_top3": ["orrery/html-to-pdf"]
+    },
+    {
+      "intent": "render receipt pdf",
+      "expect_top3": ["orrery/html-to-pdf"]
+    },
+    {
+      "intent": "convert html document",
+      "expect_top3": ["orrery/html-to-pdf"]
+    },
+    {
+      "intent": "convert html into pdf receipt",
+      "expect_top3": ["orrery/html-to-pdf"]
+    },
+    {
+      "intent": "http head python docs",
+      "expect_top3": ["orrery/http-head"]
+    },
+    {
+      "intent": "fresh headers for target",
+      "expect_top3": ["orrery/http-head"]
+    },
+    {
+      "intent": "http headers for docs target",
+      "expect_top3": ["orrery/http-head"]
+    },
+    {
+      "intent": "read well-known document",
+      "expect_top3": ["orrery/well-known"]
+    },
+    {
+      "intent": "fresh discovery slice",
+      "expect_top3": ["orrery/well-known"]
+    },
+    {
+      "intent": "well-known discovery document slice",
+      "expect_top3": ["orrery/well-known"]
+    },
+    {
+      "intent": "cert expiry for host",
+      "expect_top3": ["orrery/cert-expiry"]
+    },
+    {
+      "intent": "tls notAfter inspect",
+      "expect_top3": ["orrery/cert-expiry"]
+    },
+    {
+      "intent": "tls certificate expiry check",
+      "expect_top3": ["orrery/cert-expiry"]
+    },
+    {
+      "intent": "rfc section text",
+      "expect_top3": ["orrery/rfc-section"]
+    },
+    {
+      "intent": "get allowlisted rfc clause",
+      "expect_top3": ["orrery/rfc-section"]
+    },
+    {
+      "intent": "rfc clause section get",
+      "expect_top3": ["orrery/rfc-section", "orrery/pep-section"]
+    },
+    {
+      "intent": "pep section text",
+      "expect_top3": ["orrery/pep-section"]
+    },
+    {
+      "intent": "get python pep clause",
+      "expect_top3": ["orrery/pep-section"]
+    },
+    {
+      "intent": "python pep section lookup",
+      "expect_top3": ["orrery/pep-section", "orrery/rfc-section"]
+    },
+    {
+      "intent": "spdx license text",
+      "expect_top3": ["orrery/spdx-license"]
+    },
+    {
+      "intent": "get mit license metadata",
+      "expect_top3": ["orrery/spdx-license"]
+    },
+    {
+      "intent": "spdx mit license text",
+      "expect_top3": ["orrery/spdx-license"]
+    },
+    {
+      "intent": "get flights csv sample",
+      "expect_top3": ["orrery/csv-url"]
+    },
+    {
+      "intent": "fresh allowlisted csv rows",
+      "expect_top3": ["orrery/csv-url"]
+    },
+    {
+      "intent": "csv flights sample rows",
+      "expect_top3": ["orrery/csv-url", "orrery/table-fresh"]
+    },
+    {
+      "intent": "lookup flight row",
+      "expect_top3": ["orrery/row-lookup"]
+    },
+    {
+      "intent": "exact csv key lookup",
+      "expect_top3": ["orrery/row-lookup"]
+    },
+    {
+      "intent": "exact row lookup in csv",
+      "expect_top3": ["orrery/row-lookup", "orrery/csv-url"]
+    },
+    {
+      "intent": "validate flight row",
+      "expect_top3": ["orrery/row-validate"]
+    },
+    {
+      "intent": "check row against profile",
+      "expect_top3": ["orrery/row-validate"]
+    },
+    {
+      "intent": "validate row against profile",
+      "expect_top3": ["orrery/row-validate"]
+    },
+    {
+      "intent": "diff two table snapshots",
+      "expect_top3": ["orrery/table-diff"]
+    },
+    {
+      "intent": "compare keyed rows",
+      "expect_top3": ["orrery/table-diff"]
+    },
+    {
+      "intent": "compare two table snapshots",
+      "expect_top3": ["orrery/table-diff", "orrery/table-fresh"]
+    },
+    {
+      "intent": "freshen flights sample",
+      "expect_top3": ["orrery/table-fresh"]
+    },
+    {
+      "intent": "table freshness verdict",
+      "expect_top3": ["orrery/table-fresh"]
+    },
+    {
+      "intent": "table freshness flights verdict",
+      "expect_top3": ["orrery/table-fresh", "orrery/table-diff"]
+    },
+    {
+      "intent": "pypi latest version",
+      "expect_top3": ["orrery/pypi-release"]
+    },
+    {
+      "intent": "allowlisted package release",
+      "expect_top3": ["orrery/pypi-release", "orrery/npm-release"]
+    },
+    {
+      "intent": "pypi package latest release",
+      "expect_top3": ["orrery/pypi-release", "orrery/npm-release"]
+    },
+    {
+      "intent": "npm latest dist-tag",
+      "expect_top3": ["orrery/npm-release"]
+    },
+    {
+      "intent": "allowlisted npm release",
+      "expect_top3": ["orrery/npm-release"]
+    },
+    {
+      "intent": "npm package dist-tag latest",
+      "expect_top3": ["orrery/npm-release"]
+    },
+    {
+      "intent": "github release notes",
+      "expect_top3": ["orrery/gh-release-notes"]
+    },
+    {
+      "intent": "observe latest release body",
+      "expect_top3": ["orrery/gh-release-notes"]
+    },
+    {
+      "intent": "observe github release body",
+      "expect_top3": ["orrery/gh-release-notes"]
+    },
+    {
+      "intent": "ship check evidence",
+      "expect_top3": ["orrery/ship-check"]
+    },
+    {
+      "intent": "release freshness utc bundle",
+      "expect_top3": ["orrery/ship-check"]
+    },
+    {
+      "intent": "ship check release evidence bundle",
+      "expect_top3": ["orrery/ship-check", "orrery/stale-proof"]
+    },
+    {
+      "intent": "stale proof seal",
+      "expect_top3": ["orrery/stale-proof"]
+    },
+    {
+      "intent": "live utc and release notes digest",
+      "expect_top3": ["orrery/stale-proof"]
+    },
+    {
+      "intent": "stale proof live utc digest",
+      "expect_top3": ["orrery/stale-proof", "orrery/world-time"]
+    },
+    {
+      "intent": "queue csv report",
+      "expect_top3": ["orrery/csv-report"]
+    },
+    {
+      "intent": "managed csv worker result",
+      "expect_top3": ["orrery/csv-report"]
+    },
+    {
+      "intent": "queue managed csv report worker",
+      "expect_top3": ["orrery/csv-report"]
+    },
+    {
+      "intent": "queue png transform",
+      "expect_top3": ["orrery/image-transform"]
+    },
+    {
+      "intent": "managed image worker result",
+      "expect_top3": ["orrery/image-transform"]
+    },
+    {
+      "intent": "queue png image transform worker",
+      "expect_top3": ["orrery/image-transform"]
+    },
+    {
+      "intent": "run release gate",
+      "expect_top3": ["acme/release-gate"],
+      "node": "acme"
+    },
+    {
+      "intent": "explain release policy",
+      "expect_top3": ["acme/release-gate", "acme/launch-gate"],
+      "node": "acme"
+    },
+    {
+      "intent": "run private release gate",
+      "expect_top3": ["acme/release-gate"],
+      "node": "acme"
+    },
+    {
+      "intent": "run launch gate",
+      "expect_top3": ["acme/launch-gate"],
+      "node": "acme"
+    },
+    {
+      "intent": "explain ship policy",
+      "expect_top3": ["acme/launch-gate"],
+      "node": "acme"
+    },
+    {
+      "intent": "constellation status",
+      "expect_top3": ["acme/launch-gate"],
+      "node": "acme"
+    },
+    {
+      "intent": "explain launch gate ship policy",
+      "expect_top3": ["acme/launch-gate", "acme/release-gate"],
+      "node": "acme"
+    },
+    {
+      "intent": "deploy kubernetes",
+      "expect_top3": []
+    },
+    {
+      "intent": "trade bitcoin options",
+      "expect_top3": []
+    },
+    {
+      "intent": "order pizza delivery",
+      "expect_top3": []
+    },
+    {
+      "intent": "translate latin poetry",
+      "expect_top3": []
+    },
+    {
+      "intent": "send email newsletter",
+      "expect_top3": []
+    },
+    {
+      "intent": "play chess online",
+      "expect_top3": []
+    },
+    {
+      "intent": "book hotel in tokyo",
+      "expect_top3": []
+    },
+    {
+      "intent": "compose jazz saxophone solo",
+      "expect_top3": []
+    }
+  ]
+}
