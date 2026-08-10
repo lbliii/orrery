@@ -592,6 +592,91 @@ _STAR_CARDS: dict[str, AgentCard] = {
             *_ENVELOPE,
         ),
     ),
+    "orrery/manifest-bind": _card(
+        summary="Bind caller-supplied file digests into a stable manifest_digest receipt.",
+        use_when=(
+            "You have path/sha256/size rows and need a sealed manifest digest",
+            "You want admitted/excluded counts without Orrery opening a repo",
+        ),
+        not_for=(
+            "Reading the caller's repository from disk",
+            "Mutating or writing files",
+            "Policy evaluation (use manifest-preflight)",
+        ),
+        example_intents=("bind file manifest digest", "seal caller file inventory"),
+        tools=("bind",),
+        coverage_slug="manifest-bind",
+        inputs=(_io("files", "array", required=True, note="[{path, sha256, size}]"),),
+        outputs=(
+            _io("manifest_digest", "string"),
+            _io("admitted_count", "integer"),
+            _io("excluded_count", "integer"),
+            *_ENVELOPE,
+        ),
+    ),
+    "orrery/manifest-preflight": _card(
+        summary="Preflight a caller file manifest against a named versioned policy.",
+        use_when=(
+            "You need to check files before run against a named policy",
+            "You want pass/fail plus violation codes with no egress",
+        ),
+        not_for=(
+            "Inventing new policy names at call time",
+            "Writing files or applying patches",
+            "Hosting the caller's repository",
+        ),
+        example_intents=(
+            "check files before run",
+            "docs-only preflight",
+            "max files policy check",
+        ),
+        tools=("check",),
+        coverage_slug="manifest-preflight",
+        inputs=(
+            _io("files", "array", required=True),
+            _io(
+                "policy",
+                "string",
+                required=True,
+                note="orrery/docs-only@v1 or orrery/max-100-files@v1",
+            ),
+            _io("manifest_digest", "string", note="optional digest claim"),
+        ),
+        outputs=(
+            _io("passed", "boolean"),
+            _io("violation_codes", "array"),
+            *_ENVELOPE,
+        ),
+    ),
+    "orrery/patch-capture": _card(
+        summary="Capture a sealed patch digest from before/after caller file snapshots.",
+        use_when=(
+            "You need to capture patch receipt evidence for a tree node",
+            "You have before/after manifests and want changed paths plus line stats",
+        ),
+        not_for=(
+            "Applying patches or writing files",
+            "Hosting unified diffs as a product surface",
+            "Unbounded repository walks",
+        ),
+        example_intents=(
+            "capture patch receipt",
+            "seal before after file diff",
+            "patch digest for changed paths",
+        ),
+        tools=("capture",),
+        coverage_slug="patch-capture",
+        inputs=(
+            _io("before", "object", required=True, note="snapshot with files[]"),
+            _io("after", "object", required=True, note="snapshot with files[]"),
+        ),
+        outputs=(
+            _io("patch_digest", "string"),
+            _io("changed_paths", "array"),
+            _io("line_stats", "object"),
+            *_ENVELOPE,
+        ),
+    ),
     "orrery/row-validate": _card(
         summary="Pure validation of one row against a named static source-aligned profile.",
         use_when=(

@@ -318,6 +318,22 @@
       "node": "acme"
     },
     {
+      "intent": "check files before run",
+      "expect_top3": ["orrery/manifest-preflight"]
+    },
+    {
+      "intent": "docs-only preflight",
+      "expect_top3": ["orrery/manifest-preflight"]
+    },
+    {
+      "intent": "capture patch receipt",
+      "expect_top3": ["orrery/patch-capture"]
+    },
+    {
+      "intent": "bind file manifest digest",
+      "expect_top3": ["orrery/manifest-bind"]
+    },
+    {
       "intent": "deploy kubernetes",
       "expect_top3": []
     },
