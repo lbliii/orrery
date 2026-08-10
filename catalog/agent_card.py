@@ -1214,38 +1214,160 @@ _STAR_CARDS: dict[str, AgentCard] = {
         ),
     ),
     "orrery/ship-check": _card(
-        summary="Bounded release, freshness, and UTC evidence for reasoning.",
-        use_when=(
-            "You need combined release + source + UTC evidence before reasoning",
-            "You want a sealed ship-check bundle, not a deploy button",
+        summary=(
+            "Seal ship-check evidence: metadata-only (release+UTC) or "
+            "content-bundle (content-readiness stages) — one composite receipt."
         ),
-        not_for=("Deploy approval", "Mutating registries", "Packages outside allowlists"),
+        use_when=(
+            "You need combined release + source + UTC evidence before reasoning "
+            "(mode=metadata, default)",
+            "You need a content-bundle readiness seal using content-readiness "
+            "stages (mode=content-bundle)",
+            "You want a sealed ship-check / content-ship-check receipt, not a "
+            "deploy button",
+        ),
+        not_for=(
+            "Deploy approval",
+            "Mutating registries",
+            "Packages outside allowlists (metadata mode)",
+            "Write-authority or patch application (see authorized-content-patch)",
+        ),
         example_intents=(
             "ship check evidence",
             "release freshness utc bundle",
+            "content ship check on docs bundle",
             "ship check release evidence bundle",
         ),
         tools=("run",),
         coverage_slug="ship-check",
         inputs=(
-            _io("package", "string", required=True),
+            _io("package", "string", required=True, note="required for mode=metadata"),
             _io("source_digest", "string"),
+            _io(
+                "mode",
+                "string",
+                note="metadata (default) | content-bundle",
+            ),
+            _io(
+                "files",
+                "array",
+                note="required for mode=content-bundle [{path, content, format?}]",
+            ),
+            _io("policy", "string", note="content-bundle preflight policy"),
+            _io("max_link_count", "integer", note="content-bundle link cap"),
         ),
         outputs=(_io("evidence", "object"), *_ENVELOPE),
         run_contract={
             "entry_tool": "run",
             "required_inputs": ["package"],
-            "optional_inputs": ["source_digest"],
+            "optional_inputs": [
+                "source_digest",
+                "mode",
+                "files",
+                "policy",
+                "max_link_count",
+            ],
             "composite_output": "signed-envelope-chain",
             "input_bundle": {
-                "package": {"type": "string", "required": True},
-                "source_digest": {"type": "string", "required": False},
+                "package": {
+                    "type": "string",
+                    "required": True,
+                    "note": "required for mode=metadata (default)",
+                },
+                "source_digest": {
+                    "type": "string",
+                    "required": False,
+                    "note": "prior digest for source-watch (metadata mode)",
+                },
+                "mode": {
+                    "type": "string",
+                    "required": False,
+                    "note": "metadata (default) | content-bundle",
+                },
+                "files": {
+                    "type": "array",
+                    "required": False,
+                    "note": "caller content bundle; required when mode=content-bundle",
+                },
+                "policy": {
+                    "type": "string",
+                    "required": False,
+                    "note": "named preflight policy; default orrery/docs-only@v1",
+                },
+                "max_link_count": {
+                    "type": "integer",
+                    "required": False,
+                    "note": "bounded link cap for link-check-bounded",
+                },
             },
         },
-        graph_summary="release metadata → source-watch → world-time → reason",
+        graph_summary=(
+            "mode=metadata: release metadata → source-watch → world-time → "
+            "artifact-seal; mode=content-bundle: manifest-bind → "
+            "manifest-preflight → structure-audit → link-check-bounded → "
+            "artifact-seal"
+        ),
         dispositions=DEFAULT_DISPOSITIONS,
         member_stars=member_stars_from_policy("orrery/ship-check"),
-        subtree_contract=subtree_contract_from_policy("orrery/ship-check"),
+        subtree_contract=subtree_contract_from_policy(
+            "orrery/ship-check",
+            pause_allowed=False,
+            stages=(
+                {
+                    "id": "release",
+                    "label": "release metadata",
+                    "role": "gate",
+                    "optional": True,
+                },
+                {
+                    "id": "source-watch",
+                    "label": "source-watch",
+                    "role": "gate",
+                    "star_ref": "orrery/source-watch",
+                    "optional": True,
+                },
+                {
+                    "id": "world-time",
+                    "label": "world-time",
+                    "role": "gate",
+                    "star_ref": "orrery/world-time",
+                    "optional": True,
+                },
+                {
+                    "id": "manifest-bind",
+                    "label": "manifest-bind",
+                    "role": "gate",
+                    "star_ref": "orrery/manifest-bind",
+                    "optional": True,
+                },
+                {
+                    "id": "manifest-preflight",
+                    "label": "manifest-preflight",
+                    "role": "gate",
+                    "star_ref": "orrery/manifest-preflight",
+                    "optional": True,
+                },
+                {
+                    "id": "structure-audit",
+                    "label": "structure-audit",
+                    "role": "gate",
+                    "star_ref": "orrery/structure-audit",
+                    "optional": True,
+                },
+                {
+                    "id": "link-check-bounded",
+                    "label": "link-check-bounded",
+                    "role": "gate",
+                    "star_ref": "orrery/link-check-bounded",
+                    "optional": True,
+                },
+                {
+                    "id": "artifact-seal",
+                    "label": "artifact-seal",
+                    "role": "composite",
+                },
+            ),
+        ),
     ),
     "orrery/stale-proof": _card(
         summary="Fresh UTC plus official Python release-note digest evidence.",

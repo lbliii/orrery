@@ -6,6 +6,7 @@ from chirp.skill import Skill
 
 from stars.signing import public_star_signing_key
 
+from .service import MODE_CONTENT_BUNDLE, MODE_METADATA
 from .service import run as run_check
 
 
@@ -27,13 +28,33 @@ def build_skill(*, private_key: Any | None = None) -> Skill:
     @skill.tool(
         "run",
         description=(
-            "Gather fixed release and freshness evidence before reasoning. "
-            "Input bundle: package* (string), optional source_digest (string). "
-            "Returns signed evidence chain "
-            "(dispositions: ready | not-ready | stale | blocked)."
+            "Ship-check / content-ship-check: sealed evidence before reasoning. "
+            "Modes via run input: metadata (default) — package* + optional "
+            "source_digest; content-bundle — files* using content-readiness "
+            "stages (manifest-bind → preflight → structure-audit → "
+            "link-check-bounded → seal). Returns one composite receipt "
+            "(signed-envelope-chain). Never deploy approval. Sync only."
         ),
     )
-    def run(package: str, source_digest: str = "") -> dict[str, object]:
-        return run_check(package, source_digest)
+    def run(
+        package: str = "",
+        source_digest: str = "",
+        mode: str = MODE_METADATA,
+        files: list[dict[str, object]] | None = None,
+        policy: str = "orrery/docs-only@v1",
+        max_link_count: int = 20,
+    ) -> dict[str, object]:
+        # Keep positional-only call for default metadata so signing fixtures
+        # that stub ``run_check(package, digest)`` remain valid.
+        if mode in (MODE_METADATA, ""):
+            return run_check(package, source_digest)
+        return run_check(
+            package,
+            source_digest,
+            mode=mode or MODE_CONTENT_BUNDLE,
+            files=files,
+            policy=policy,
+            max_link_count=max_link_count,
+        )
 
     return skill
