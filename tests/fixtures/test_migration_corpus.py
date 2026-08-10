@@ -70,14 +70,20 @@ def _normalize(obj: Any) -> Any:
     if isinstance(obj, str):
         return _nfc(obj)
     if isinstance(obj, dict):
-        return {_nfc(str(key)): _normalize(item) for key, item in sorted(obj.items(), key=lambda x: str(x[0]))}
+        items = sorted(obj.items(), key=lambda x: str(x[0]))
+        return {_nfc(str(key)): _normalize(item) for key, item in items}
     if isinstance(obj, list):
         return [_normalize(item) for item in obj]
     return obj
 
 
 def canonical_json(obj: Any) -> bytes:
-    return json.dumps(_normalize(obj), sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+    return json.dumps(
+        _normalize(obj),
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    ).encode()
 
 
 def sha256_hex(data: bytes) -> str:
@@ -125,7 +131,7 @@ class TestMigrationProfiles:
 
         assert profile["schema_version"] == "migration-profile/v1"
         root_keys = set(profile)
-        assert _REQUIRED_PROFILE_FIELDS <= root_keys
+        assert root_keys >= _REQUIRED_PROFILE_FIELDS
         assert root_keys - _REQUIRED_PROFILE_FIELDS <= _ALLOWED_OPTIONAL_PROFILE_FIELDS
         assert not (root_keys & _FORBIDDEN_ROOT_PROFILE_FIELDS)
 
@@ -144,7 +150,8 @@ class TestMigrationProfiles:
             assert set(tool) == {"name", "version", "digest"}
             assert len(tool["digest"]) == 64
 
-        computed = artifact_digest({k: v for k, v in profile.items() if k != "profile_digest"}, "profile_digest")
+        body = {k: v for k, v in profile.items() if k != "profile_digest"}
+        computed = artifact_digest(body, "profile_digest")
         assert profile["profile_digest"] == computed
 
     def test_myst_profile_matches_adr_example_a(self) -> None:
@@ -170,7 +177,7 @@ class TestMigrationCorpusManifest:
         covered: set[str] = set()
         for case in corpus_manifest["cases"]:
             covered.update(case["coverage"])
-        assert _REQUIRED_COVERAGE <= covered
+        assert covered >= _REQUIRED_COVERAGE
 
     def test_every_case_has_source_and_golden_stages(self, corpus_manifest: dict[str, Any]) -> None:
         for entry in corpus_manifest["cases"]:
@@ -223,7 +230,9 @@ class TestMigrationCorpusScenarios:
         assert replay["replay_key"] == _read_digest(case_dir / "stages" / "replay_key.digest")
         assert replay["reused_digest"] == stages["validation_digest"]
 
-    def test_source_redaction_receipt_omits_private_bytes(self, corpus_manifest: dict[str, Any]) -> None:
+    def test_source_redaction_receipt_omits_private_bytes(
+        self, corpus_manifest: dict[str, Any]
+    ) -> None:
         del corpus_manifest
         case_dir = _CORPUS_ROOT / "cases" / "myst_source_redaction"
         receipt = _load_json(case_dir / "receipt.json")
@@ -242,9 +251,18 @@ class TestMigrationCorpusScenarios:
         )
         assert receipt["receipt_digest"] == computed
 
-    def test_validator_failure_case_reports_not_passed(self, corpus_manifest: dict[str, Any]) -> None:
+    def test_validator_failure_case_reports_not_passed(
+        self, corpus_manifest: dict[str, Any]
+    ) -> None:
         del corpus_manifest
-        validation = _load_json(_CORPUS_ROOT / "cases" / "openapi_validator_failure" / "stages" / "validation.json")
+        path = (
+            _CORPUS_ROOT
+            / "cases"
+            / "openapi_validator_failure"
+            / "stages"
+            / "validation.json"
+        )
+        validation = _load_json(path)
         assert validation["passed"] is False
         breaking = [f for f in validation["findings"] if f.get("severity") == "breaking"]
         assert breaking
