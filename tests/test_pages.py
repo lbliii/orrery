@@ -247,7 +247,7 @@ class TestReactiveWorldTimeStar:
         wire = hit.as_dict()
         assert hit.price is None
         assert "Free" in hit.blurb
-        assert "Live UTC" in hit.blurb or "call time" in hit.blurb.lower()
+        assert "utc" in hit.blurb.lower() and "signed" in hit.blurb.lower()
         assert "payload" not in wire
         assert "datetime" not in wire
         assert "clone_warning" not in wire
@@ -980,13 +980,14 @@ class TestStaleProofConstellation:
         assert rec is not None
         assert rec.kind == "constellation"
         assert rec.visibility == "public"
-        assert "clone" in (rec.description or "").lower()
+        assert "prove" in (rec.description or "").lower()
+        assert "stale" in (rec.description or "").lower()
         described = CATALOG.describe("orrery/stale-proof")
         assert described["kind"] == "constellation"
-        blurbs = CATALOG.match("stale proof clone", node="public")
+        blurbs = CATALOG.match("stale proof live utc", node="public")
         assert any(h.name == "orrery/stale-proof" for h in blurbs)
         hit = next(h for h in blurbs if h.name == "orrery/stale-proof")
-        assert "clone" in hit.blurb.lower() or "live" in hit.blurb.lower()
+        assert "live" in hit.blurb.lower() or "stale" in hit.blurb.lower()
 
     async def test_constellation_page_explains_parable(self, example_app) -> None:
         async with TestClient(example_app) as client:

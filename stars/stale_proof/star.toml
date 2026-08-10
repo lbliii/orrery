@@ -2,7 +2,7 @@
 name="orrery/stale-proof"
 kind="constellation"
 version="0.1.0"
-description="Fresh UTC plus official Python release-note digest evidence; clones cannot mint live truth"
+description = "Prove an answer could be stale — live UTC + upstream digest change"
 publisher="orrery"
 publisher_key_id_env="ORRERY_STALE_PROOF_KEY_ID"
 direct_mcp_path="/constellations/stale-proof/mcp"

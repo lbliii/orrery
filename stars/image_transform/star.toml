@@ -1,7 +1,7 @@
 [star]
 name = "orrery/image-transform"
 version = "1.0.0"
-description = "Queue a safe PNG transform on Orrery's managed CPU worker"
+description = "Transform a PNG safely on managed compute"
 publisher = "orrery"
 publisher_key_id_env = "ORRERY_CPU_KEY_ID"
 direct_mcp_path = "/stars/image-transform/mcp"

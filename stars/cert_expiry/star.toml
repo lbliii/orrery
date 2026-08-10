@@ -1,7 +1,7 @@
 [star]
 name = "orrery/cert-expiry"
 version = "0.1.0"
-description = "TLS certificate expiry metadata for named allowlisted hosts"
+description = "Check TLS certificate expiry for a named host"
 publisher = "orrery"
 publisher_key_id_env = "ORRERY_CERT_EXPIRY_KEY_ID"
 direct_mcp_path = "/stars/cert-expiry/mcp"

@@ -2,7 +2,7 @@
 name = "orrery/table-fresh"
 kind = "constellation"
 version = "0.1.0"
-description = "Fresh bounded flights sample and deterministic table-diff verdict"
+description = "Sample live tabular data and diff against a baseline"
 publisher = "orrery"
 publisher_key_id_env = "ORRERY_TABLE_FRESH_KEY_ID"
 direct_mcp_path = "/constellations/table-fresh/mcp"

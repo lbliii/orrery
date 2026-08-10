@@ -1,7 +1,7 @@
 [star]
 name = "orrery/spdx-license"
 version = "0.1.0"
-description = "Bounded SPDX license text and metadata for named allowlisted identifiers"
+description = "Fetch SPDX license text and metadata by identifier"
 publisher = "orrery"
 publisher_key_id_env = "ORRERY_SPDX_LICENSE_KEY_ID"
 direct_mcp_path = "/stars/spdx-license/mcp"

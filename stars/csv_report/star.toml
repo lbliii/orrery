@@ -1,7 +1,7 @@
 [star]
 name = "orrery/csv-report"
 version = "1.0.0"
-description = "Queue a durable CSV report on Orrery's managed CPU worker"
+description = "Generate a durable CSV report on managed compute"
 publisher = "orrery"
 publisher_key_id_env = "ORRERY_CPU_KEY_ID"
 direct_mcp_path = "/stars/csv-report/mcp"

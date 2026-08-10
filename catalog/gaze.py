@@ -27,15 +27,15 @@ _TOKEN_RE = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*", re.IGNORECASE)
 
 #: Default blurbs when a constellation tool has no richer copy yet.
 _TOOL_BLURBS: dict[str, str] = {
-    "run": "Execute the constellation on an input bundle",
-    "status": "Composite receipt / in-flight chain",
-    "explain_policy": "Gates, loops, fan-in in plain language",
+    "run": "Run the constellation on an input bundle",
+    "status": "Get the composite receipt or in-flight chain",
+    "explain_policy": "Explain gates, loops, and fan-in in plain language",
     "check": "Run the star's primary check",
     "convert": "Convert input to the star's output format",
-    "health": "Liveness probe for the star",
+    "health": "Probe whether the star is live",
     "fetch": "Pull live source-backed data at call time",
     "get": "Get a live reading sealed in an Envelope",
-    "answer": "Answer with live truth (not a cached package)",
+    "answer": "Answer with live truth — not a cached package",
 }
 
 #: Stars whose value is live truth at call time (Wave 1 reactive spikes).

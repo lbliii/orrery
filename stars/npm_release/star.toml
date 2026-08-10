@@ -1,7 +1,7 @@
 [star]
 name="orrery/npm-release"
 version="0.1.0"
-description="Bounded latest dist-tag metadata for named allowlisted npm packages"
+description = "Get latest dist-tag metadata for an npm package"
 publisher="orrery"
 publisher_key_id_env="ORRERY_NPM_RELEASE_KEY_ID"
 direct_mcp_path="/stars/npm-release/mcp"

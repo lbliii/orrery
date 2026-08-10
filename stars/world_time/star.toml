@@ -1,7 +1,7 @@
 [star]
 name = "orrery/world-time"
 version = "0.1.0"
-description = "Live UTC truth at call time; offline clones are stale"
+description = "Get a signed, live UTC timestamp — stale copies cannot forge fresh truth"
 publisher = "orrery"
 publisher_key_id_env = "ORRERY_WORLD_TIME_KEY_ID"
 direct_mcp_path = "/stars/world-time/mcp"

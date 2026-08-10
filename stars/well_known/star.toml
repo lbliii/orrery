@@ -1,7 +1,7 @@
 [star]
 name = "orrery/well-known"
 version = "0.1.0"
-description = "Bounded fresh slices of named official discovery documents"
+description = "Read a fresh slice of an official discovery document"
 publisher = "orrery"
 publisher_key_id_env = "ORRERY_WELL_KNOWN_KEY_ID"
 direct_mcp_path = "/stars/well-known/mcp"

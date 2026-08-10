@@ -2,7 +2,7 @@
 name="orrery/ship-check"
 kind="constellation"
 version="0.1.0"
-description="Bounded release, freshness, and UTC evidence for reasoning"
+description = "Pre-ship check: fresh time + release freshness + evidence you can cite"
 publisher="orrery"
 publisher_key_id_env="ORRERY_SHIP_CHECK_KEY_ID"
 direct_mcp_path="/constellations/ship-check/mcp"

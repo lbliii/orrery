@@ -1,7 +1,7 @@
 [star]
 name = "orrery/row-validate"
 version = "0.1.0"
-description = "Pure validation of one row against a named static source-aligned profile"
+description = "Validate one row against a named schema profile"
 publisher = "orrery"
 publisher_key_id_env = "ORRERY_ROW_VALIDATE_KEY_ID"
 direct_mcp_path = "/stars/row-validate/mcp"

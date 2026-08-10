@@ -1,7 +1,7 @@
 [star]
 name = "orrery/csv-url"
 version = "0.1.0"
-description = "Bounded typed rows from named allowlisted public CSV datasets"
+description = "Fetch typed rows from a public CSV dataset"
 publisher = "orrery"
 publisher_key_id_env = "ORRERY_CSV_URL_KEY_ID"
 direct_mcp_path = "/stars/csv-url/mcp"
