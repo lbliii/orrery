@@ -1,7 +1,7 @@
 [star]
 name = "orrery/html-to-pdf"
 version = "1.2.0"
-description = "Render simple HTML to a downloadable PDF with signed receipts"
+description = "Turn HTML into a PDF with a signed receipt"
 publisher = "orrery"
 publisher_key_id_env = "ORRERY_PDF_KEY_ID"
 direct_mcp_path = "/stars/html-to-pdf/mcp"

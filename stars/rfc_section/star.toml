@@ -1,7 +1,7 @@
 [star]
 name = "orrery/rfc-section"
 version = "0.1.0"
-description = "Bounded sections from named allowlisted RFC Editor documents"
+description = "Pull a specific RFC section for standards-grounded answers"
 publisher = "orrery"
 publisher_key_id_env = "ORRERY_RFC_SECTION_KEY_ID"
 direct_mcp_path = "/stars/rfc-section/mcp"

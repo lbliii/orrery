@@ -1,7 +1,7 @@
 [star]
 name = "orrery/pep-section"
 version = "0.1.0"
-description = "Bounded sections from named canonical Python PEP documents"
+description = "Pull a specific Python PEP section for language-spec answers"
 publisher = "orrery"
 publisher_key_id_env = "ORRERY_PEP_SECTION_KEY_ID"
 direct_mcp_path = "/stars/pep-section/mcp"

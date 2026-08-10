@@ -1,7 +1,7 @@
 [star]
 name = "orrery/source-watch"
 version = "0.1.0"
-description = "Live official-source evidence, digest comparison, and bounded answers"
+description = "Re-check an official source and compare to a prior observation"
 publisher = "orrery"
 publisher_key_id_env = "ORRERY_SOURCE_WATCH_KEY_ID"
 direct_mcp_path = "/stars/source-watch/mcp"

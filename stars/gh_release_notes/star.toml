@@ -1,7 +1,7 @@
 [star]
 name="orrery/gh-release-notes"
 version="0.1.0"
-description="Bounded latest release notes for named allowlisted GitHub repositories"
+description = "Get the latest release notes for a GitHub repository"
 publisher="orrery"
 publisher_key_id_env="ORRERY_GH_RELEASE_NOTES_KEY_ID"
 direct_mcp_path="/stars/gh-release-notes/mcp"

@@ -1,7 +1,7 @@
 [star]
 name = "orrery/row-lookup"
 version = "0.1.0"
-description = "Exact typed row lookup in a named allowlisted public CSV dataset"
+description = "Look up an exact typed row in a public CSV dataset"
 publisher = "orrery"
 publisher_key_id_env = "ORRERY_ROW_LOOKUP_KEY_ID"
 direct_mcp_path = "/stars/row-lookup/mcp"

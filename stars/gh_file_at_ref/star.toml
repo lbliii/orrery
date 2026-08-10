@@ -1,7 +1,7 @@
 [star]
 name="orrery/gh-file-at-ref"
 version="0.1.0"
-description="Bounded fixed GitHub file retrieval pinned to a full commit SHA"
+description = "Fetch a public repo file at an exact commit — for review, citation, or diffing"
 publisher="orrery"
 publisher_key_id_env="ORRERY_GH_FILE_AT_REF_KEY_ID"
 direct_mcp_path="/stars/gh-file-at-ref/mcp"

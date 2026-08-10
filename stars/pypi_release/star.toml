@@ -1,7 +1,7 @@
 [star]
 name="orrery/pypi-release"
 version="0.1.0"
-description="Bounded current release metadata for named allowlisted PyPI packages"
+description = "Get current release metadata for a PyPI package"
 publisher="orrery"
 publisher_key_id_env="ORRERY_PYPI_RELEASE_KEY_ID"
 direct_mcp_path="/stars/pypi-release/mcp"

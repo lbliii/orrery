@@ -1,7 +1,7 @@
 [star]
 name = "orrery/table-diff"
 version = "0.1.0"
-description = "Pure bounded comparison of two caller-provided tabular snapshots"
+description = "Compare two tables you provide and get a deterministic verdict"
 publisher = "orrery"
 publisher_key_id_env = "ORRERY_TABLE_DIFF_KEY_ID"
 direct_mcp_path = "/stars/table-diff/mcp"

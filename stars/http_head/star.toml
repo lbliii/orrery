@@ -1,7 +1,7 @@
 [star]
 name = "orrery/http-head"
 version = "0.1.0"
-description = "Fresh HTTP metadata for named allowlisted official targets"
+description = "Fetch fresh HTTP headers for an official URL"
 publisher = "orrery"
 publisher_key_id_env = "ORRERY_HTTP_HEAD_KEY_ID"
 direct_mcp_path = "/stars/http-head/mcp"
