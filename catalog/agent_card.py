@@ -50,6 +50,12 @@ AUTHORIZED_CONTENT_PATCH_DISPOSITIONS: tuple[str, ...] = (
     "needs-work",
     "inconclusive",
 )
+PUBLISH_GATE_DISPOSITIONS: tuple[str, ...] = (
+    "released",
+    "denied",
+    "awaiting_witness",
+    "inconclusive",
+)
 
 #: ADR 0007 lease invariant — paused runs never hold a worker/MCP lease.
 LEASE_RULE = "waiting_never_holds_worker_lease"
@@ -1318,6 +1324,101 @@ _STAR_CARDS: dict[str, AgentCard] = {
             "orrery/authorized-content-patch",
             dispositions=AUTHORIZED_CONTENT_PATCH_DISPOSITIONS,
             pause_allowed=False,
+        ),
+    ),
+    "orrery/publish-gate": _card(
+        summary=(
+            "Publication-authority seam: prior edit envelope → publish-profile "
+            "write-authority → optional human witness → release seal (no deploy)."
+        ),
+        use_when=(
+            "You need the publish half of the two-phase edit/publish model after "
+            "orrery/authorized-content-patch",
+            "You want a release seal over publish-profile write-authority without "
+            "git push or pages deploy",
+        ),
+        not_for=(
+            "Git push / pages deploy / upload adapters",
+            "Edit-path readiness or patch-capture (see authorized-content-patch)",
+            "Inventing pause modes beyond ADR 0007 awaiting_witness",
+            "Implementing resume MCP continue_run in this leaf",
+        ),
+        example_intents=(
+            "publish gate release seal",
+            "two-phase publish authority",
+            "awaiting witness publish seam",
+        ),
+        tools=("run",),
+        coverage_slug="publish-gate",
+        inputs=(
+            _io(
+                "prior_envelope",
+                "object",
+                required=True,
+                note="Chirp Envelope wire from authorized-content-patch",
+            ),
+            _io(
+                "authority",
+                "object",
+                required=True,
+                note="profile=publish + explicit-paths grant (+ optional witness)",
+            ),
+            _io(
+                "prior_public_key",
+                "string",
+                note="optional 64-char hex; verifies prior signature when set",
+            ),
+            _io(
+                "require_witness",
+                "boolean",
+                note="default false; true → awaiting_witness when missing",
+            ),
+        ),
+        outputs=(
+            _io("disposition", "string"),
+            _io("stages", "object"),
+            *_ENVELOPE,
+        ),
+        run_contract={
+            "entry_tool": "run",
+            "required_inputs": ["prior_envelope", "authority"],
+            "optional_inputs": ["prior_public_key", "require_witness"],
+            "composite_output": "signed-envelope-chain",
+            "input_bundle": {
+                "prior_envelope": {
+                    "type": "object",
+                    "required": True,
+                    "note": "prior authorized-content-patch Envelope wire",
+                },
+                "authority": {
+                    "type": "object",
+                    "required": True,
+                    "note": "publish profile grant (+ optional witness)",
+                },
+                "prior_public_key": {
+                    "type": "string",
+                    "required": False,
+                    "note": "hex Ed25519 public key for prior verify",
+                },
+                "require_witness": {
+                    "type": "boolean",
+                    "required": False,
+                    "note": "when true, missing witness seals awaiting_witness",
+                },
+            },
+        },
+        graph_summary=(
+            "prior-artifact → write-authority-check → human-witness → "
+            "artifact-seal"
+        ),
+        dispositions=PUBLISH_GATE_DISPOSITIONS,
+        member_stars=member_stars_from_policy("orrery/publish-gate"),
+        subtree_contract=subtree_contract_from_policy(
+            "orrery/publish-gate",
+            dispositions=PUBLISH_GATE_DISPOSITIONS,
+            pause_allowed=True,
+            pause_modes=("awaiting_witness",),
+            continuation_tools=("continue_run",),
         ),
     ),
     "orrery/ship-check": _card(

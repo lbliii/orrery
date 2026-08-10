@@ -1,0 +1,27 @@
+[star]
+name = "orrery/publish-gate"
+kind = "constellation"
+version = "0.1.0"
+description = "Publication-authority seam: prior artifact envelope → publish-profile write-authority → optional witness → release seal (no deploy)"
+publisher = "orrery"
+publisher_key_id_env = "ORRERY_PUBLISH_GATE_KEY_ID"
+direct_mcp_path = "/constellations/publish-gate/mcp"
+tools = ["run"]
+capability_families = ["document_processing"]
+[pricing]
+unit = "call"
+price_per_call = "0.00"
+currency = "USD"
+[runtime]
+python_package = "stars.publish_gate"
+skill_factory = "stars.publish_gate.skill:build_skill"
+[policy]
+allowed_egress = []
+freshness = "at_call"
+redirects = "deny"
+max_response_bytes = 262144
+[receipt]
+schema_version = "1"
+algorithm = "Ed25519"
+[publish]
+corpus = "stars.publish_gate.corpus:CORPUS"
