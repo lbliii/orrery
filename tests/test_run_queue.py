@@ -90,6 +90,18 @@ def test_success_seals_run_receipt_then_removes_only_current_lease() -> None:
     assert worker.claim("worker-b") is None
 
 
+def test_cancel_drops_queue_entry_and_is_idempotent() -> None:
+    clock = Clock()
+    worker, runs = _worker(clock)
+    worker.enqueue("run-1")
+    cancelled = worker.cancel("run-1", caller_id="agent:a")
+    assert cancelled is not None and cancelled.state is RunState.CANCELLED
+    assert worker.queue.stats().ready_depth == 0
+    replay = worker.cancel("run-1", caller_id="agent:a")
+    assert replay is not None and replay.state is RunState.CANCELLED
+    assert worker.cancel("run-1", caller_id="agent:other") is None
+
+
 def test_redis_adapter_submits_concrete_atomic_lua_and_handles_redis_py_bytes() -> None:
     clock = Clock()
     redis = _FakeRedis(

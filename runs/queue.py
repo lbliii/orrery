@@ -551,6 +551,9 @@ class ManagedRunWorker:
         return self.queue.heartbeat(lease, lease_for=self.lease_for)
 
     def succeed(self, lease: QueueLease, *, receipt: Mapping[str, Any]) -> bool:
+        record = self.runs.get(lease.run_id)
+        if record is not None and record.is_terminal and record.state is not RunState.SUCCEEDED:
+            return False
         finalized = self.runs.finalize(
             lease.run_id,
             from_state=RunState.RUNNING,
@@ -575,3 +578,20 @@ class ManagedRunWorker:
                 receipt={"kind": "dead_letter", "attempt": lease.attempt},
             )
         return disposition
+
+    def cancel(
+        self,
+        run_id: str,
+        *,
+        caller_id: str,
+        reason: str = "caller_cancelled",
+        receipt: Mapping[str, Any] | None = None,
+    ) -> RunRecord | None:
+        record = self.runs.get(run_id)
+        if record is None or record.caller_id != caller_id:
+            return None
+        terminal_receipt = receipt or {"kind": "cancel", "code": "caller_cancelled"}
+        cancelled = self.runs.cancel(run_id, reason=reason, receipt=terminal_receipt)
+        if cancelled is not None:
+            self.queue.drop(run_id)
+        return cancelled

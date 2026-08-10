@@ -49,6 +49,34 @@ def test_run_state_machine_rejects_skips_and_cancellation_is_terminal() -> None:
         repository.cancel("run-a", reason="different", receipt={"kind": "cancel"})
 
 
+def test_count_active_by_caller_ignores_terminal_runs() -> None:
+    repository = InMemoryRunRepository()
+    repository.create_or_get(_run(run_id="run-a", key="a"))
+    repository.create_or_get(_run(run_id="run-b", key="b"))
+    repository.transition("run-b", from_state=RunState.ACCEPTED, to_state=RunState.QUEUED)
+    repository.create_or_get(
+        RunRecord(
+            "run-c",
+            "agent:bob",
+            "c",
+            {"max_cents": 25},
+            "managed-cpu",
+        )
+    )
+    repository.create_or_get(_run(run_id="run-d", key="d"))
+    repository.transition("run-d", from_state=RunState.ACCEPTED, to_state=RunState.QUEUED)
+    repository.transition("run-d", from_state=RunState.QUEUED, to_state=RunState.RUNNING)
+    repository.finalize(
+        "run-d",
+        from_state=RunState.RUNNING,
+        state=RunState.SUCCEEDED,
+        reason="complete",
+        receipt={"ok": True},
+    )
+    assert repository.count_active_by_caller("agent:alice") == 2
+    assert repository.count_active_by_caller("agent:bob") == 1
+
+
 def test_terminal_receipt_is_idempotent_by_run_id() -> None:
     repository = InMemoryRunRepository()
     repository.create_or_get(_run())

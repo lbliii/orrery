@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
+from .admission import budget_snapshot, check_admission
 from .domain import RunRecord, new_run_id
 from .queue import ManagedRunWorker
 
@@ -18,14 +19,16 @@ class ManagedRunSubmission:
     def submit(
         self, *, caller_id: str, idempotency_key: str, kind: str, input: Mapping[str, Any]
     ) -> RunRecord:
-        if kind not in {"html-to-pdf", "csv-report", "image-transform"}:
-            raise ValueError("unsupported managed workload")
+        existing = self._worker.runs.get_by_replay_key(caller_id, idempotency_key)
+        if existing is not None:
+            return existing
+        check_admission(runs=self._worker.runs, caller_id=caller_id, kind=kind, input=input)
         record = self._worker.runs.create_or_get(
             RunRecord(
                 new_run_id(),
                 caller_id,
                 idempotency_key,
-                budget={"executor": "managed-cpu-worker"},
+                budget=budget_snapshot(kind),
                 executor="managed-cpu-worker",
                 job={"kind": kind, "input": dict(input)},
             )

@@ -118,12 +118,29 @@ class InMemoryRunRepository:
     def get(self, run_id: str) -> RunRecord | None:
         return self._records.get(run_id)
 
+    def get_by_replay_key(self, caller_id: str, idempotency_key: str) -> RunRecord | None:
+        existing_id = self._by_replay_key.get((caller_id, idempotency_key))
+        return self._records.get(existing_id) if existing_id is not None else None
+
     def list_by_states(self, *states: RunState) -> tuple[RunRecord, ...]:
         wanted = frozenset(states)
         return tuple(
             record
             for run_id, record in sorted(self._records.items())
             if record.state in wanted
+        )
+
+    def count_active_by_caller(self, caller_id: str) -> int:
+        active = frozenset(
+            {
+                RunState.ACCEPTED,
+                RunState.QUEUED,
+                RunState.RUNNING,
+                RunState.UPLOADING,
+            }
+        )
+        return sum(
+            1 for record in self._records.values() if record.caller_id == caller_id and record.state in active
         )
 
     def transition(
@@ -280,6 +297,10 @@ class PostgresRunRepository:
         row = self._read(f"SELECT {self._select_fields} FROM runs WHERE run_id = %s", (run_id,))
         return self._record_from_row(row) if row is not None else None
 
+    def get_by_replay_key(self, caller_id: str, idempotency_key: str) -> RunRecord | None:
+        row = self._read(self._select_by_replay_sql, (caller_id, idempotency_key))
+        return self._record_from_row(row) if row is not None else None
+
     def list_by_states(self, *states: RunState) -> tuple[RunRecord, ...]:
         if not states:
             return ()
@@ -290,6 +311,15 @@ class PostgresRunRepository:
             tuple(state.value for state in states),
         )
         return tuple(self._record_from_row(row) for row in rows)
+
+    def count_active_by_caller(self, caller_id: str) -> int:
+        row = self._read(
+            """SELECT COUNT(*) FROM runs
+               WHERE caller_id = %s
+                 AND state IN ('accepted', 'queued', 'running', 'uploading')""",
+            (caller_id,),
+        )
+        return int(row[0]) if row is not None else 0
 
     def transition(
         self, run_id: str, *, from_state: RunState, to_state: RunState
