@@ -2,175 +2,106 @@
 
 **Skills you point at, not install.**
 
-Gaze to discover, resolve to lock the record, call for a verified result — from any machine, any harness.
+![A brass orrery set against a sparse midnight sky.](./docs/assets/orrery-hero.png)
 
-Catalogs hand you a repo. Orrery hands you an endpoint, a digest, and a receipt — so the agent can keep moving.
+[Orrery](https://orrery.lol) is a public sky of small, bounded MCP capabilities that return current evidence and signed receipts. An agent can discover a capability, lock its exact record, call the advertised endpoint, and keep a verifiable result—without cloning a repository or trusting a catalog description as the result.
 
-## Status
+## Why Orrery
 
-The product surfaces are implemented as Chirp filesystem-routed pages in [`pages/`](./pages/), at parity with the frozen design mocks:
+An installed package is a copy: its source, data, and output can all be stale. Orrery is for work that needs a live, bounded answer and evidence of what happened at call time—current UTC, an official-source digest, release metadata, a certificate-expiry check, or a generated artifact.
 
-| Path | Surface |
-| --- | --- |
-| `/` | Brand hero + the gaze → resolve → call story + live invocation feed |
-| `/gaze` | Discovery console (public sky / namespace / constellation nodes) |
-| `/resolve` | Skill-DNS resolver zone table + lookup |
-| `/stars` | Star detail — manifest, price, signed Envelope receipt |
-| `/constellations` | Drawn policy graph + composite receipt |
-| `/namespaces` | Private tenancy pitch |
-| `/connect` | Agent onboarding — MCP endpoint, Cursor snippet, discovery links |
-| `/llms.txt` | Compact agent brief (llmstxt.org-style) |
-| `/llms-full.txt` | Tools, direct stars, curl recipe |
-| `/.well-known/mcp/server-card.json` | SEP-1649-shaped MCP server card |
-| `/.well-known/mcp` | SEP-1960-shaped MCP manifest (`/.well-known/mcp.json` alias) |
-| `/api/resolve?name=` | JSON resolve record (Skill DNS) |
+The public sky is deliberately narrow. Stars declare their tool surface, egress policy, freshness model, and receipt algorithm in [`stars/`](./stars/). Calls return only within that contract.
 
-The same process is also a dogfood MCP host ([#964](https://github.com/lbliii/chirp/issues/964) / [#985](https://github.com/lbliii/chirp/issues/985)): aggregated `/mcp`, discovery at `/skills`, dogfood skills (gaze, resolve, html-to-pdf, world-time, source-watch, launch-gate), and publish-oracle smoke. **Product trust** is the Resolve/Star oracle pill (`check · freeze · smoke`). Host ops live at `/console` (Chirp reliability console — not part of the night-observatory product chrome). Resolve records are synchronized from the Star registry after the publish gate.
+## Start here
 
-### Reactive star (`orrery/world-time`)
+Browse the live sky at [orrery.lol](https://orrery.lol), or give an MCP client the aggregate endpoint:
 
-Wave 1 spike ([#37](https://github.com/lbliii/orrery/issues/37)): tools `fetch` / `get` / `answer` pull a **live UTC** reading from a public clock API at call time and seal it in a signed Chirp Envelope. Gaze/resolve show price + blurb only — never the live payload.
+```text
+https://orrery.lol/mcp
+```
 
-**Why cloning fails the value test:** an offline copy of the tool code cannot mint a fresh UTC instant from the upstream clock. Any baked-in datetime is stale by definition; the product is live truth at call time, not a distributable package. `html-to-pdf` now provides the complementary tangible demo: simple HTML becomes a short-lived downloadable PDF whose checksum is sealed in the signed receipt.
+The HTTP transport is standard Streamable HTTP MCP. For a local instance:
 
-### Star packages and direct MCP
+```bash
+curl -s http://localhost:8000/mcp \
+  -H 'Content-Type: application/json' \
+  -H 'mcp-protocol-version: 2025-06-18' \
+  -d '{"jsonrpc":"2.0","method":"tools/list","id":1}'
+```
 
-Every callable Star lives in [`stars/`](./stars/) as a versioned capability package: a `star.toml` manifest, framework-free `service.py`, stable `contract.py`, Chirp/MCP `skill.py`, and publish corpus. The host loads those manifests to generate the public resolve records; adding a Star does not require a parallel catalog entry.
+For machine-readable entry points, see [`/connect`](https://orrery.lol/connect), [`/llms.txt`](https://orrery.lol/llms.txt), and the [MCP server card](https://orrery.lol/.well-known/mcp/server-card.json).
 
-Resolve records point at a Star's direct MCP endpoint, where its natural tool names are available without aggregate-host collisions:
+## The loop: gaze → resolve → call → seal
 
-| Star | Direct MCP endpoint | Canonical tools |
+1. **Gaze** narrows an intent to a bounded shortlist. It returns names, facets, blurbs, and trust labels—not the valuable tool result. Use `gaze_match`, `gaze_search`, `gaze_describe`, or the [Gaze console](https://orrery.lol/gaze).
+2. **Resolve** locks an exact name to its endpoint, manifest digest, publisher key, price label, and policy metadata. Use `resolve_name` or [`/api/resolve?name=orrery/world-time`](https://orrery.lol/api/resolve?name=orrery/world-time).
+3. **Call** the resolved star's MCP endpoint directly with its canonical tool name.
+4. **Seal** the returned Chirp Envelope with the result and its evidence. Public keys are available at [`/.well-known/orrery/keys.json`](https://orrery.lol/.well-known/orrery/keys.json); verification is exposed at `/api/envelope/verify`.
+
+Gaze is a shelf, not a router: the agent can re-rank the shortlist. Resolve is exact, so a chosen name has one locked record.
+
+## Public sky
+
+All currently registered public Stars are listed as free. That is a current catalog label, not a promise of future commercial terms.
+
+| Capability | Stars | What they do |
 | --- | --- | --- |
-| `orrery/html-to-pdf` | `/stars/html-to-pdf/mcp` | `convert`, `submit`, `result`, `health` |
-| `orrery/csv-report` | `/stars/csv-report/mcp` | `submit`, `result` |
-| `orrery/image-transform` | `/stars/image-transform/mcp` | `submit`, `result` |
-| `orrery/world-time` | `/stars/world-time/mcp` | `fetch`, `get`, `answer` |
-| `orrery/source-watch` | `/stars/source-watch/mcp` | `observe`, `diff`, `answer` |
+| Fresh evidence | `world-time`, `source-watch`, `http-head`, `well-known`, `cert-expiry` | Get live UTC, bounded official-source evidence and digests, HTTP metadata, discovery-document slices, or TLS expiry metadata from named allowlisted targets. |
+| Release & standards sources | `pypi-release`, `npm-release`, `gh-release-notes`, `gh-file-at-ref`, `pep-section`, `rfc-section`, `spdx-license` | Retrieve bounded current release, repository, standards, or license information from named official sources. |
+| Data checks | `csv-url`, `row-lookup`, `row-validate`, `table-diff` | Fetch bounded typed CSV rows, look up and validate a row, or compare caller-provided table snapshots. |
+| Managed artifacts | `html-to-pdf`, `csv-report`, `image-transform` | Render a PDF or queue a CSV report / safe PNG transform on Orrery's managed worker; `submit` creates a run and `result` retrieves its terminal receipt. |
 
-`/mcp` remains an aggregate compatibility/control-plane surface. It prefixes Source Watch's aggregate `answer` as `source_watch_answer` because world-time already owns that flat tool name; the direct Source Watch endpoint always exposes the canonical `answer`.
+The current direct callable constellations are:
 
-### Durable managed artifacts
+- `ship-check` — bounded release, freshness, and UTC evidence.
+- `stale-proof` — fresh UTC plus an official Python release-notes digest.
+- `table-fresh` — a fresh bounded flights sample and deterministic table-diff verdict.
 
-`submit` creates an asynchronous run; `result` returns `queued` until the
-private worker produces a terminal Chirp-signed receipt. The initial managed
-workloads are HTML→PDF, CSV report, and image transform. Their bytes live in
-Railway Bucket object storage, while Postgres holds lifecycle/receipt metadata
-and Redis coordinates queue leases, retries, and dead letters. See
-[`docs/architecture/managed-execution.md`](./docs/architecture/managed-execution.md)
-for the architecture and
-[`docs/operations/artifact-lifecycle.md`](./docs/operations/artifact-lifecycle.md)
-for the retention and agent-verification boundary.
+Their manifests are the source of truth: [`stars/`](./stars/). The live product also presents discovery and constellation surfaces at [`/gaze`](https://orrery.lol/gaze), [`/resolve`](https://orrery.lol/resolve), [`/stars`](https://orrery.lol/stars), and [`/constellations`](https://orrery.lol/constellations).
 
-### Source Watch star (`orrery/source-watch`)
+## The horizon
 
-Source Watch ([#51](https://github.com/lbliii/orrery/issues/51)) fetches an allowlisted official source at call time. Its `observe`, `diff`, and `source_watch_answer` tools produce an attributable canonical URL, content digests, bounded change summaries, or extractive evidence in the signed Envelope payload. V1 admits the Python release notes only; it intentionally rejects arbitrary URLs. (`answer` remains the existing world-time tool on the aggregated MCP host.)
+The public sky can grow with publishers owning their direct endpoints, while private namespaces organize tenant and capability surfaces. Constellations can compose stars into reusable policy graphs; managed execution and commerce can evolve around verified results. See the [vending-machine sky plan](./docs/plan/vending-machine-sky.md) and the [publisher direct-call ADR](./docs/adr/0004-publisher-direct-call.md).
 
-Use it for deployment checks that depend on current upstream guidance: resolve `orrery/source-watch`, call `observe(source="python-release-notes")`, then retain the digest and call `diff` before a later deployment. An offline clone cannot establish whether the official page changed after it was copied.
+## Direct stars and the aggregate host
 
-Remaining product work (live MCP wiring, provisioning, commerce) is tracked in **[Saga #1](https://github.com/lbliii/orrery/issues/1)**.
+Resolve records advertise direct, namespaced MCP paths such as:
 
-Strategy ADRs (control plane, prepaid wallet, Stripe top-up, discovery):
+```text
+https://orrery.lol/stars/world-time/mcp
+https://orrery.lol/stars/source-watch/mcp
+https://orrery.lol/constellations/ship-check/mcp
+```
 
-| ADR | Topic |
-| --- | --- |
-| [`docs/adr/0001-control-plane-wallet.md`](./docs/adr/0001-control-plane-wallet.md) | Control vs data plane, reactive stars, prepaid wallet, Not now |
-| [`docs/adr/0002-prepaid-wallet-ledger.md`](./docs/adr/0002-prepaid-wallet-ledger.md) | Ledger schema, hold/capture, insufficient-balance |
-| [`docs/adr/0003-stripe-topup.md`](./docs/adr/0003-stripe-topup.md) | Checkout + webhook credit (design only) |
-| [`docs/adr/0004-publisher-direct-call.md`](./docs/adr/0004-publisher-direct-call.md) | Agent → publisher MCP; Orrery is not a proxy |
-| [`docs/adr/0005-discovery-and-dual-trust.md`](./docs/adr/0005-discovery-and-dual-trust.md) | Agent-as-router, dual trust, thin harness; namespaces + facets |
+Direct endpoints preserve each star's natural tool names. The aggregate `/mcp` is a convenient discovery and compatibility surface; it has a flat namespace, so collisions may receive an aggregate alias. For example, direct Source Watch exposes `answer`, while the aggregate host exposes that conflicting tool as `source_watch_answer`. Resolve first when correctness of the endpoint and tool contract matters.
 
-Strategy plan (vending-machine sky, discovery at scale, dual trust, thin harnesses): [`docs/plan/vending-machine-sky.md`](./docs/plan/vending-machine-sky.md) · saga [#56](https://github.com/lbliii/orrery/issues/56).
+## Receipts and boundaries
 
-Star evaluation (L0–L5; corpus/oracle first): [`docs/plan/star-eval.md`](./docs/plan/star-eval.md) · checklist [`docs/design/star-eval.md`](./docs/design/star-eval.md) · epic [#114](https://github.com/lbliii/orrery/issues/114).
+Every Star declares an Ed25519 receipt algorithm and a freshness policy. A receipt can carry source URLs, digests, bounded evidence, and—for managed artifacts—the artifact checksum and lifecycle result. Verify the Envelope against Orrery's published public-key set before relying on it across a trust boundary.
 
-Specimen sky (pattern-coverage tranche): [`docs/plan/specimen-sky.md`](./docs/plan/specimen-sky.md) · saga [#76](https://github.com/lbliii/orrery/issues/76). Scouting litmus + shapes: [`docs/design/scouting.md`](./docs/design/scouting.md). Product atlases (Pidge-style soft recommend): [`docs/design/atlas.md`](./docs/design/atlas.md).
+This is not an open web proxy: networked stars use named allowlists, reject redirects, and enforce response bounds. Some stars are live at call time; others are explicitly pure, static-profile, or caller-provided operations. Read the resolved record and receipt rather than inferring freshness from a name.
 
-Design mocks (validated direction): [`design/`](./design/). Frozen favorite: [`design/v1-night-gold/`](./design/v1-night-gold/).
+Managed artifact bytes are held in private object storage; the API exposes the result and delivery path after the worker completes it. The architecture and retention boundary are documented in [`docs/architecture/managed-execution.md`](./docs/architecture/managed-execution.md) and [`docs/operations/artifact-lifecycle.md`](./docs/operations/artifact-lifecycle.md).
 
-Design language (identity + system inventory): [`docs/design/identity.md`](./docs/design/identity.md) · [`docs/design/system.md`](./docs/design/system.md).
+## Develop locally
 
-## Run locally
+Requires Python 3.14+ and `uv`.
 
 ```bash
 uv sync --group dev
 uv run python app.py
 ```
 
-Open `/` for the brand + live feed, browse `/gaze`, `/resolve`, `/stars`, `/constellations`, `/namespaces`, or point an MCP client at `/mcp`. Agent onboarding: `/connect`, `/llms.txt`, `/.well-known/mcp/server-card.json`. Host reliability ops: `/console` (footer **Ops · console**).
-
-```bash
-# Standard MCP 2025-06-18 Streamable HTTP: protocol header + JSON-RPC body.
-# Orrery does not require private routing headers or _meta fields.
-curl -s http://localhost:8000/mcp \
-  -H 'Content-Type: application/json' \
-  -H 'mcp-protocol-version: 2025-06-18' \
-  -d '{"jsonrpc":"2.0","method":"tools/list","id":1}'
-
-# Invoke gaze_match — watch `/` show the call
-curl -s http://localhost:8000/mcp \
-  -H 'Content-Type: application/json' \
-  -H 'mcp-protocol-version: 2025-06-18' \
-  -d '{"jsonrpc":"2.0","method":"tools/call","id":2,"params":{"name":"gaze_match","arguments":{"intent":"html pdf convert","node":"public"}}}'
-```
-
-Boot runs freeze + smoke against the dogfood corpus so `/console` shows reliability scores. Every public star package must ship a non-empty `corpus.py` (`CORPUS`) or it is not `oracle_ok` (L1). Set `ORRERY_SKIP_PUBLISH=1` to skip the publish gate during local iteration. Eval layers: [`docs/design/star-eval.md`](./docs/design/star-eval.md).
-
-Copy `.env.example` → `.env` if you want stable signing keys across restarts.
-
-## Test
+Open `http://localhost:8000`. The normal startup runs the publish gate; use `ORRERY_SKIP_PUBLISH=1` for faster local iteration. Copy `.env.example` to `.env` to retain signing keys between restarts.
 
 ```bash
 uv run pytest
 ```
 
-## Deploy (Railway)
+Deployment uses the root [`Dockerfile`](./Dockerfile) and [`railway.toml`](./railway.toml). The deployed system has a public API and a private worker backed by Postgres, Redis, and object storage. See the managed-execution architecture above for the service split.
 
-Live: [https://orrery.lol](https://orrery.lol)
+## Status and license
 
-Custom domain ``orrery.lol`` is the public HTTP host. Skill DNS resolve records use the same apex as ``mcp://orrery.lol/…`` (override with ``ORRERY_MCP_HOST``). Absolute discovery URLs use ``ORRERY_PUBLIC_ORIGIN`` (falls back to ``https://$RAILWAY_PUBLIC_DOMAIN``, then the request host).
+The public site and its registered Stars are live at [orrery.lol](https://orrery.lol). This repository is an active application project; its dependency on `chirp.skill` currently tracks Chirp `main` from GitHub.
 
-`Dockerfile` + `railway.toml` live at the repo root. The Railway project has a
-public API service, a private managed-worker service, Postgres, Redis, and a
-Railway Bucket. Merges to `main` rebuild and redeploy the API and worker from
-the same source; the worker receives `ORRERY_PROCESS_KIND=worker`. The image
-install layer re-fetches Chirp at `GIT_REF` because the Dockerfile cache-busts
-against GitHub's commits API.
-
-Manual / first deploy from this directory:
-
-```bash
-railway up --service orrery
-```
-
-| Variable | Value |
-| --- | --- |
-| `CHIRP_ENV` | `production` |
-| `CHIRP_DEBUG` | `0` |
-| `CHIRP_SECRET_KEY` | generated secret |
-| `CHIRP_LOG_FORMAT` | `json` |
-| `GIT_REF` | `main` (Chirp git ref for the skill stack) |
-| `ORRERY_PUBLIC_ORIGIN` | `https://orrery.lol` |
-
-The API additionally needs `DATABASE_URL`, `REDIS_URL`, and the non-secret
-artifact configuration (`ORRERY_ARTIFACT_BACKEND=s3`, bucket, endpoint). The
-worker needs those same private service references plus the bucket credentials;
-set them in Railway, never in the repository. See the managed-execution doc for
-the service responsibility split.
-
-`AppConfig.from_env()` binds `0.0.0.0:$PORT` on Railway. Healthcheck targets `/health`. Public domain target port must match `$PORT` (8080 on Railway).
-
-## Preview design mocks
-
-```bash
-cd design
-python -m http.server 8765
-# → http://localhost:8765
-```
-
-## Dependency note
-
-`chirp.skill` is installed from **Chirp `main` via git** (not PyPI yet). The Dockerfile pins the same via `GIT_REF`.
-
-## License
-
-TBD.
+License: **TBD**.
