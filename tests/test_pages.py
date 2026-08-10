@@ -60,7 +60,7 @@ class TestResolveSchema:
         gate = ResolveRecord(
             name="a/c", endpoint="mcp://x", content_digest="sha256:0", kind="constellation"
         )
-        assert star.href.startswith("/stars?name=")
+        assert star.href == "/star/a/b"
         assert gate.href.startswith("/constellations?name=")
 
     def test_public_zone_excludes_private_stars(self) -> None:
@@ -157,34 +157,48 @@ class TestResolveConsole:
 @pytest.mark.issue(26)
 @pytest.mark.issue(27)
 class TestStarDetail:
-    async def test_default_star_manifest_and_receipt(self, example_app) -> None:
+    async def test_catalog_is_a_browseable_public_sky(self, example_app) -> None:
         async with TestClient(example_app) as client:
             r = await client.get("/stars")
             assert r.status == 200
-            assert "orrery/html-to-pdf@1.2.0" in r.text
-            assert "mcp://orrery.lol/stars/html-to-pdf/mcp" in r.text
-            assert "Last Envelope" in r.text
-            assert "data-receipt" in r.text
-            assert 'data-copy-mcp' in r.text
-            assert 'data-mcp-url="mcp://orrery.lol/stars/html-to-pdf/mcp"' in r.text
-            assert "Verified · not forged" in r.text
-            assert "input_digest" in r.text
-            assert "signature" in r.text
-            assert "orrery-pdf-1" in r.text
-            assert "convert" in r.text
-            assert "/console/html-to-pdf" in r.text
-            assert "not a reverse proxy" in r.text
+            assert "Find something your agent can point at" in r.text
+            assert "data-star-search" in r.text
+            assert "orrery/html-to-pdf" in r.text
+            assert "Document processing" in r.text
+            assert 'href="/star/orrery/html-to-pdf"' in r.text
 
-    async def test_named_star_switches_record(self, example_app) -> None:
+    async def test_catalog_exposes_accessible_native_facet_controls(self, example_app) -> None:
         async with TestClient(example_app) as client:
-            r = await client.get("/stars?name=orrery/world-time")
+            r = await client.get("/stars")
+
             assert r.status == 200
-            assert "orrery/world-time" in r.text
-            assert "Free" in r.text
-            assert "unscored" in r.text
+            assert "<fieldset" in r.text
+            assert "<legend" in r.text
+            assert "data-star-facets" in r.text
+            assert 'type="checkbox"' in r.text
+            assert "data-star-facet" in r.text
+            assert "data-result-count" in r.text
 
-    async def test_unknown_star_name_is_404(self, example_app) -> None:
+    async def test_canonical_star_page_has_docs_relationships_and_actions(
+        self, example_app
+    ) -> None:
         async with TestClient(example_app) as client:
+            r = await client.get("/star/orrery/world-time")
+            assert r.status == 200
+            assert "<!DOCTYPE html>" in r.text
+            assert "/static/styles.css" in r.text
+            assert 'class="topbar"' in r.text
+            assert "orrery/world-time" in r.text
+            assert "How it works" in r.text
+            assert "In constellations" in r.text
+            assert "Copy MCP URL" in r.text
+            assert "Trust signal" in r.text
+
+    async def test_legacy_star_url_remains_usable_and_unknown_is_404(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            old = await client.get("/stars?name=orrery/world-time")
+            assert old.status == 200
+            assert "orrery/world-time" in old.text
             r = await client.get("/stars?name=does-not-exist")
             assert r.status == 404
 
@@ -193,20 +207,6 @@ class TestStarDetail:
             r = await client.get("/stars?name=acme/launch-gate")
             assert r.status == 404
 
-    async def test_world_time_star_shows_live_copy_and_receipt(self, example_app) -> None:
-        async with TestClient(example_app) as client:
-            r = await client.get("/stars?name=orrery/world-time")
-            assert r.status == 200
-            assert "orrery/world-time@0.1.0" in r.text
-            assert "Live at call time" in r.text
-            assert "Offline clones cannot mint" in r.text
-            assert "Free" in r.text
-            assert "/ verified call" in r.text
-            assert "fetch" in r.text
-            assert "Verified · not forged" in r.text
-            assert "orrery-world-time-1" in r.text
-            # Receipt panel omits payload (progressive disclosure on the page wire view).
-            assert '"payload"' not in r.text
 
 
 @pytest.mark.issue(37)
@@ -465,19 +465,15 @@ class TestCommerceStubs:
         assert "commerce.charge_stub" in caplog.text
         assert "commerce.refund_stub" in caplog.text
 
-    async def test_star_page_invokes_charge_stub(self, example_app, caplog) -> None:
+    async def test_star_catalog_is_read_only(self, example_app, caplog) -> None:
         import logging
 
         async with TestClient(example_app) as client:
             with caplog.at_level(logging.WARNING, logger="orrery.commerce"):
                 r = await client.get("/stars")
             assert r.status == 200
-            assert "payment_id" in r.text
-            assert "price_per_call" in r.text
-            assert "Free" in r.text
-            assert "/ verified call" in r.text
-            assert "$0.02" not in r.text
-            assert "commerce.charge_stub" in caplog.text
+            assert "Public sky" in r.text
+            assert "commerce.charge_stub" not in caplog.text
 
     async def test_resolve_and_gaze_include_price(self, example_app) -> None:
         async with TestClient(example_app) as client:

@@ -6,6 +6,7 @@ publisher = "orrery"
 publisher_key_id_env = "ORRERY_TABLE_DIFF_KEY_ID"
 direct_mcp_path = "/stars/table-diff/mcp"
 tools = ["diff"]
+capability_families = ["data"]
 [pricing]
 unit = "call"
 price_per_call = "0.00"

@@ -5,9 +5,20 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
-from typing import Any
+from typing import Any, Final
 
 from .execution import ManagedCPUExecutionPolicy, ManagedCPUExecutionPolicyError, ManagedCPUWorkload
+
+CAPABILITY_FAMILY_LABELS: Final[dict[str, str]] = {
+    "document_processing": "Document processing",
+    "source_monitoring": "Source monitoring",
+    "time_and_date": "Time & date",
+    "data": "Data",
+    "web_metadata": "Web metadata",
+    "media": "Media",
+    "security": "Security",
+}
+CAPABILITY_FAMILIES = frozenset(CAPABILITY_FAMILY_LABELS)
 
 
 class StarManifestError(ValueError):
@@ -38,6 +49,7 @@ class StarDefinition:
     managed_cpu_workload: ManagedCPUWorkload | None
     allowed_egress: tuple[str, ...]
     freshness: str
+    capability_families: tuple[str, ...]
     redirects: str
     max_response_bytes: int
     receipt_schema_version: str
@@ -83,6 +95,7 @@ class StarDefinition:
             managed_cpu_workload=_managed_cpu_workload(manifest, execution_mode, allowed_egress),
             allowed_egress=allowed_egress,
             freshness=_require_nonempty_string(policy, "policy", "freshness"),
+            capability_families=_require_string_list(star, "star", "capability_families"),
             redirects=_require_nonempty_string(policy, "policy", "redirects"),
             max_response_bytes=_require_positive_integer(policy, "max_response_bytes"),
             receipt_schema_version=_require_nonempty_string(receipt, "receipt", "schema_version"),
@@ -95,6 +108,7 @@ class StarDefinition:
             raise StarManifestError("star.kind must be star or constellation")
         _validate_unique(definition.allowed_egress, "policy.allowed_egress")
         _validate_unique(definition.tools, "star.tools")
+        _validate_capability_families(definition.capability_families)
         return definition
 
 
@@ -211,3 +225,11 @@ def _managed_cpu_workload(
 def _validate_unique(values: tuple[str, ...], field: str) -> None:
     if len(set(values)) != len(values):
         raise StarManifestError(f"{field} must not contain duplicates")
+
+
+def _validate_capability_families(values: tuple[str, ...]) -> None:
+    unknown = set(values) - CAPABILITY_FAMILIES
+    if unknown:
+        raise StarManifestError(
+            f"star.capability_families contains unknown families: {sorted(unknown)!r}"
+        )

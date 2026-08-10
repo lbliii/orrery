@@ -33,6 +33,7 @@ from chirp import (
     EventStream,
     Fragment,
     JSONResponse,
+    Page,
     Request,
     secure_stack,
 )
@@ -161,6 +162,14 @@ for _definition in star_registry:
 # ---------------------------------------------------------------------------
 
 app.mount_pages(str(PAGES_DIR))
+
+
+@app.route("/star/{namespace}/{star}")
+def canonical_star_page(request: Request, namespace: str, star: str) -> Page:
+    """Human Star pages use the singular, namespaced canonical route."""
+    from catalog.star_page import page_for_star
+
+    return page_for_star(f"{namespace}/{star}", request=request)
 
 
 # ---------------------------------------------------------------------------
