@@ -1,1 +1,15 @@
-{% extends "_layout.html" %}{% block content %}<section class="panel"><h1>Terms</h1><p>Use public endpoints within their declared bounded tool contracts. Do not treat any Orrery result as a deployment authorization.</p></section>{% end %}
+{% block content %}
+<section class="panel">
+  <p class="kicker">Trust center</p>
+  <h1>Public endpoint terms</h1>
+  <p class="lede">Use the public endpoints only through their declared, bounded tool contracts and applicable law. This page describes the current service boundary; it does not grant authority beyond a tool's stated result.</p>
+  <ul>
+    <li>Do not treat an Orrery result as authorization to deploy, publish, spend money, or make another irreversible decision.</li>
+    <li>Do not probe, scrape, or circumvent endpoint limits outside the documented interfaces.</li>
+    <li>Verify signed Envelopes with the published public key before relying on a result.</li>
+    <li>Protect artifact URLs as receipt-holder capabilities while they are live.</li>
+  </ul>
+  <p>Availability, source freshness, and scope are reflected in each capability's own receipt and policy. When an upstream source is unavailable, a correct result may be incomplete rather than affirmative.</p>
+  <ul class="meta-list">{% for fact in facts %}<li><span>•</span><span>{{ fact }}</span></li>{% end %}</ul>
+</section>
+{% end %}

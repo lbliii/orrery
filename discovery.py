@@ -138,6 +138,7 @@ DISCOVERY_CACHE_CONTROL = "public, max-age=3600"
 DISCOVERY_CORS = "*"
 GITHUB_REPO = "https://github.com/lbliii/orrery"
 SECURITY_CONTACT = f"{GITHUB_REPO}/security/advisories/new"
+SUPPORT_CONTACT = f"{GITHUB_REPO}/issues/new/choose"
 
 
 def configured_public_origin() -> str | None:
@@ -392,7 +393,7 @@ def security_txt(origin: str) -> str:
             f"Contact: {SECURITY_CONTACT}",
             f"Canonical: {origin}/.well-known/security.txt",
             "Preferred-Languages: en",
-            f"Policy: {GITHUB_REPO}/security",
+            f"Policy: {origin}/security",
             "Expires: 2027-01-01T00:00:00.000Z",
             "",
         ]

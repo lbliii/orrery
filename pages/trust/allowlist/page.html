@@ -1,1 +1,22 @@
-{% extends "_layout.html" %}{% block content %}<section class="panel"><h1>Trust allowlist</h1><p>Allowlist the public Orrery origin and verify direct-Star receipts against the published key set.</p><ul>{% for fact in facts %}<li>{{ fact }}</li>{% end %}</ul></section>{% end %}
+{% block content %}
+<section class="panel">
+  <p class="kicker">For network and security teams</p>
+  <h1>Orrery allowlisting packet</h1>
+  <p class="lede">Orrery is a public, hosted MCP catalog. Allowlist the named product origin over HTTPS; a wildcard exception is not required for a normal caller.</p>
+  <h2>Requested allowlist</h2>
+  <ul>
+    <li><span class="mono">{{ public_origin }}</span> — HTTPS/TCP 443</li>
+    <li>Public discovery, direct MCP, and artifact download routes remain under this origin.</li>
+  </ul>
+  <h2>Security boundary</h2>
+  <ul class="meta-list">{% for fact in facts %}<li><span>•</span><span>{{ fact }}</span></li>{% end %}</ul>
+  <h2>Independent checks</h2>
+  <ul>
+    <li><a href="/.well-known/orrery/keys.json">Published Ed25519 verification keys</a></li>
+    <li><a href="/.well-known/security.txt">Security disclosure policy</a></li>
+    <li><a href="/.well-known/mcp/server-card.json">MCP server card</a></li>
+    <li><a href="/security">Human-readable security model</a></li>
+  </ul>
+  <p>Suggested request: “Please categorize and allowlist Orrery as a hosted public MCP service at the named HTTPS origin. It provides bounded declared tools and signed outputs; it is not a remote shell, arbitrary-code, or filesystem service.”</p>
+</section>
+{% end %}

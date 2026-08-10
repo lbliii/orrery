@@ -1,6 +1,6 @@
 from chirp import Page
 
-from discovery import TRUST_FACTS
+from discovery import GITHUB_REPO, SECURITY_CONTACT, TRUST_FACTS
 
 
 def get() -> Page:
@@ -10,4 +10,6 @@ def get() -> Page:
         page_block_name="content",
         page_title="Security — Orrery",
         facts=TRUST_FACTS,
+        repository=GITHUB_REPO,
+        security_contact=SECURITY_CONTACT,
     )

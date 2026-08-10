@@ -184,6 +184,35 @@ async def test_robots_and_security_txt(discovery_app) -> None:
         assert security.status == 200
         assert "Contact:" in security.text
         assert "github.com/lbliii/orrery" in security.text
+        assert "Canonical: https://orrery.lol/.well-known/security.txt" in security.text
+        assert "Policy: https://orrery.lol/security" in security.text
+        assert "Expires:" in security.text
+        assert "Sitemap: https://orrery.lol/sitemap.xml" in robots.text
+
+
+@pytest.mark.asyncio
+async def test_public_trust_center_and_machine_metadata(discovery_app) -> None:
+    async with TestClient(discovery_app) as client:
+        for path, expected in (
+            ("/security", "arbitrary command"),
+            ("/privacy", "15 minutes"),
+            ("/terms", "deploy"),
+            ("/contact", "Security Advisories"),
+            ("/trust/allowlist", "HTTPS/TCP 443"),
+        ):
+            response = await client.get(path, headers=HOST)
+            assert response.status == 200
+            assert expected in response.text
+
+        trust = await client.get("/.well-known/orrery/trust.json", headers=HOST)
+        assert trust.status == 200
+        assert "signed Ed25519 Envelopes" in trust.text
+        assert "15 minutes" in trust.text
+
+        sitemap = await client.get("/sitemap.xml", headers=HOST)
+        assert sitemap.status == 200
+        assert "application/xml" in (sitemap.content_type or "")
+        assert "https://orrery.lol/security" in sitemap.text
 
 
 @pytest.mark.asyncio

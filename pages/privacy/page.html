@@ -1,1 +1,14 @@
-{% extends "_layout.html" %}{% block content %}<section class="panel"><h1>Privacy</h1><p>Orrery public tools return bounded, signed results. This page describes product behavior only; it makes no additional compliance or retention claim.</p></section>{% end %}
+{% block content %}
+<section class="panel">
+  <p class="kicker">Trust center</p>
+  <h1>Privacy and retention</h1>
+  <p class="lede">This is a factual description of the deployed product behavior, not a claim of a particular legal certification or a substitute for a customer agreement.</p>
+  <h2>Public calls</h2>
+  <p>Public Stars return bounded results inside signed Envelopes. Direct calls are not an arbitrary remote shell or filesystem service.</p>
+  <h2>Managed artifacts</h2>
+  <p>PDF, CSV, and image artifacts currently expire 15 minutes after publication. The opaque artifact URL acts as a practical receipt-holder capability during that window, so do not place it in logs or locations you do not intend to share. The worker deletes the exact stored object after expiry and retains a deletion tombstone for lifecycle safety.</p>
+  <h2>Verification boundary</h2>
+  <p>Orrery can attest to the signed receipt and delivered artifact bytes. It cannot attest that an agent saved, retained, displayed, or later used a local copy.</p>
+  <ul class="meta-list">{% for fact in facts %}<li><span>•</span><span>{{ fact }}</span></li>{% end %}</ul>
+</section>
+{% end %}
