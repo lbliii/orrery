@@ -197,7 +197,13 @@ def build_launch_gate_skill(*, private_key: Any | None = None) -> Skill:
 
     @skill.tool(
         "run",
-        description="Execute the constellation on a Doc Bundle (pages, links, examples)",
+        description=(
+            "Execute a constellation policy graph on a Doc Bundle input shape: "
+            "pages (string[]), links (string[]), examples (string[]). "
+            "Optional constellation name (default acme/launch-gate). "
+            "Returns a signed composite Envelope chain "
+            "(dispositions: ready | not-ready | stale | blocked)."
+        ),
     )
     def run(
         pages: list[str] | None = None,
@@ -228,7 +234,11 @@ def build_launch_gate_skill(*, private_key: Any | None = None) -> Skill:
 
     @skill.tool(
         "explain_policy",
-        description="Gates, repair loops, and fan-in in plain language",
+        description=(
+            "Explain a constellation: graph_summary, input schema, "
+            "disposition enum, run_contract, gates/loops/fan-in "
+            "(aligned with Agent Card fields; sealed Envelope)"
+        ),
     )
     def explain_policy_tool(name: str = "acme/launch-gate") -> dict[str, object]:
         return explain_policy(name)

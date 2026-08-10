@@ -15,6 +15,50 @@
   </div>
 </header>
 
+{% if pass_inputs or get_outputs %}
+<div class="detail-grid" style="margin-bottom: 1.25rem">
+  <div class="panel">
+    <p class="kicker">What to pass</p>
+    {% if graph_summary %}
+    <p class="muted" style="margin: 0.35rem 0 0.75rem">{{ graph_summary }}</p>
+    {% end %}
+    {% if pass_inputs %}
+    <ul class="meta-list" style="margin: 0">
+      {% for item in pass_inputs %}
+      <li>
+        <span class="mono">{{ item.name }}{% if item.required %}*{% end %}</span>
+        <span>{{ item.type }}{% if item.note %} · {{ item.note }}{% end %}</span>
+      </li>
+      {% end %}
+    </ul>
+    {% else %}
+    <p class="muted" style="margin: 0.4rem 0 0">No required inputs — call <span class="mono">run</span>.</p>
+    {% end %}
+  </div>
+  <div class="panel">
+    <p class="kicker">What you get</p>
+    {% if get_outputs %}
+    <ul class="meta-list" style="margin: 0">
+      {% for item in get_outputs %}
+      <li>
+        <span class="mono">{{ item.name }}</span>
+        <span>{{ item.type }}{% if item.note %} · {{ item.note }}{% end %}</span>
+      </li>
+      {% end %}
+    </ul>
+    {% else %}
+    <p class="muted" style="margin: 0.4rem 0 0">Signed composite Envelope chain.</p>
+    {% end %}
+    {% if dispositions %}
+    <p class="muted" style="margin: 0.75rem 0 0">
+      Dispositions:
+      <span class="mono">{{ ", ".join(dispositions) }}</span>
+    </p>
+    {% end %}
+  </div>
+</div>
+{% end %}
+
 <div class="legend">
   <span><i class="gate"></i> gate (must verify)</span>
   <span><i class="loop"></i> repair loop (bounded{% if policy.repair_loop_max %} · ≤ {{ policy.repair_loop_max }}{% end %})</span>

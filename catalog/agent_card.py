@@ -41,6 +41,10 @@ class AgentCardIO:
         return payload
 
 
+#: Sealed composite outcomes agents should expect from constellation runs.
+DEFAULT_DISPOSITIONS: tuple[str, ...] = ("ready", "not-ready", "stale", "blocked")
+
+
 @dataclass(frozen=True, slots=True)
 class AgentCard:
     """Versioned, policy-first metadata for one resolvable name."""
@@ -59,6 +63,8 @@ class AgentCard:
     agent_card_version: str = "1.0"
     run_contract: Mapping[str, object] | None = None
     graph_summary: str | None = None
+    dispositions: tuple[str, ...] | None = None
+    member_stars: tuple[Mapping[str, object], ...] | None = None
 
     def as_dict(self) -> dict[str, object]:
         """Full card for resolve / gaze_describe (no live tool payloads)."""
@@ -80,6 +86,10 @@ class AgentCard:
             payload["run_contract"] = dict(self.run_contract)
         if self.graph_summary is not None:
             payload["graph_summary"] = self.graph_summary
+        if self.dispositions is not None:
+            payload["dispositions"] = list(self.dispositions)
+        if self.member_stars is not None:
+            payload["member_stars"] = [dict(item) for item in self.member_stars]
         return payload
 
     def gaze_preview(self) -> dict[str, object]:
@@ -97,7 +107,17 @@ class AgentCard:
 
 
 def inputs_summary(card: AgentCard) -> str:
-    """Short human/agent-facing input blurb for gaze shortlists."""
+    """Short human/agent-facing input blurb for gaze shortlists.
+
+    Prefer ``run_contract.required_inputs`` / ``optional_inputs`` when present
+    so constellation hits advertise what ``run`` expects (#220).
+    """
+    if card.run_contract is not None:
+        required = [str(name) for name in (card.run_contract.get("required_inputs") or [])]
+        optional = [str(name) for name in (card.run_contract.get("optional_inputs") or [])]
+        bits = [f"{name}*" for name in required]
+        bits.extend(optional)
+        return ", ".join(bits) if bits else "no required inputs"
     if not card.inputs:
         return "no inputs"
     bits: list[str] = []
@@ -119,6 +139,27 @@ def _io(
     return AgentCardIO(name=name, type=type_, required=required, note=note)
 
 
+def member_stars_from_policy(name: str) -> tuple[dict[str, object], ...]:
+    """Derive member-star roles from the constellation policy graph."""
+    from .constellation import policy_for
+
+    graph = policy_for(name)
+    if graph is None:
+        return ()
+    members: list[dict[str, object]] = []
+    for node in graph.nodes:
+        if node.node_kind == "composite":
+            continue
+        members.append(
+            {
+                "name": node.star_ref or node.id,
+                "role": node.node_kind,
+                "label": node.label,
+            }
+        )
+    return tuple(members)
+
+
 def _card(
     *,
     summary: str,
@@ -134,6 +175,8 @@ def _card(
     approval: str = "not-required",
     run_contract: Mapping[str, object] | None = None,
     graph_summary: str | None = None,
+    dispositions: tuple[str, ...] | None = None,
+    member_stars: tuple[Mapping[str, object], ...] | None = None,
 ) -> AgentCard:
     return AgentCard(
         summary=summary,
@@ -149,6 +192,8 @@ def _card(
         coverage_href=f"/coverage/{coverage_slug}",
         run_contract=run_contract,
         graph_summary=graph_summary,
+        dispositions=dispositions,
+        member_stars=member_stars,
     )
 
 
@@ -270,9 +315,27 @@ def agent_card_json_schema() -> dict[str, Any]:
                         "items": {"type": "string"},
                     },
                     "composite_output": {"type": "string"},
+                    "input_bundle": {"type": "object"},
                 },
             },
             "graph_summary": {"type": "string"},
+            "dispositions": {
+                "type": "array",
+                "items": {"type": "string", "minLength": 1},
+            },
+            "member_stars": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "required": ["name", "role"],
+                    "additionalProperties": True,
+                    "properties": {
+                        "name": {"type": "string"},
+                        "role": {"type": "string"},
+                        "label": {"type": "string"},
+                    },
+                },
+            },
         },
     }
 
@@ -552,8 +615,17 @@ _STAR_CARDS: dict[str, AgentCard] = {
             "required_inputs": ["baseline"],
             "optional_inputs": [],
             "composite_output": "signed-envelope-chain",
+            "input_bundle": {
+                "baseline": {
+                    "type": "object",
+                    "required": True,
+                    "note": "caller-provided tabular baseline for table-diff",
+                }
+            },
         },
         graph_summary="csv-url sample → table-diff → fresh verdict",
+        dispositions=DEFAULT_DISPOSITIONS,
+        member_stars=member_stars_from_policy("orrery/table-fresh"),
     ),
     "orrery/pypi-release": _card(
         summary="Bounded current release metadata for named allowlisted PyPI packages.",
@@ -617,8 +689,14 @@ _STAR_CARDS: dict[str, AgentCard] = {
             "required_inputs": ["package"],
             "optional_inputs": ["source_digest"],
             "composite_output": "signed-envelope-chain",
+            "input_bundle": {
+                "package": {"type": "string", "required": True},
+                "source_digest": {"type": "string", "required": False},
+            },
         },
         graph_summary="release metadata → source-watch → world-time → reason",
+        dispositions=DEFAULT_DISPOSITIONS,
+        member_stars=member_stars_from_policy("orrery/ship-check"),
     ),
     "orrery/stale-proof": _card(
         summary="Fresh UTC plus official Python release-note digest evidence.",
@@ -637,8 +715,17 @@ _STAR_CARDS: dict[str, AgentCard] = {
             "required_inputs": [],
             "optional_inputs": ["source_digest"],
             "composite_output": "signed-envelope-chain",
+            "input_bundle": {
+                "source_digest": {
+                    "type": "string",
+                    "required": False,
+                    "note": "optional prior digest for source-watch diff",
+                }
+            },
         },
         graph_summary="world-time → source-watch → seal",
+        dispositions=DEFAULT_DISPOSITIONS,
+        member_stars=member_stars_from_policy("orrery/stale-proof"),
     ),
     "orrery/csv-report": _card(
         summary="Queue a durable CSV report on Orrery's managed CPU worker.",
@@ -696,8 +783,15 @@ _CONSTELLATION_CARDS: dict[str, AgentCard] = {
             "required_inputs": ["bundle"],
             "optional_inputs": ["targets"],
             "composite_output": "signed-envelope-chain",
+            "input_bundle": {
+                "pages": {"type": "array", "items": "string"},
+                "links": {"type": "array", "items": "string"},
+                "examples": {"type": "array", "items": "string"},
+            },
         },
         graph_summary="private release gates → status → explain_policy",
+        dispositions=DEFAULT_DISPOSITIONS,
+        member_stars=(),
         locality="namespace-private",
         approval="namespace-gated",
     ),
@@ -717,17 +811,24 @@ _CONSTELLATION_CARDS: dict[str, AgentCard] = {
         tools=("run", "status", "explain_policy"),
         coverage_slug="acme-launch-gate",
         inputs=(
-            _io("bundle", "object", required=True),
+            _io("bundle", "object", required=True, note="Doc Bundle: pages, links, examples"),
             _io("targets", "array"),
         ),
         outputs=(_io("chain", "signed-envelope-chain"),),
         run_contract={
             "entry_tool": "run",
             "required_inputs": ["bundle"],
-            "optional_inputs": ["targets"],
+            "optional_inputs": ["targets", "constellation"],
             "composite_output": "signed-envelope-chain",
+            "input_bundle": {
+                "pages": {"type": "array", "items": "string"},
+                "links": {"type": "array", "items": "string"},
+                "examples": {"type": "array", "items": "string"},
+            },
         },
         graph_summary="secret-scan → license → html-to-pdf → human-approve fan-in",
+        dispositions=DEFAULT_DISPOSITIONS,
+        member_stars=member_stars_from_policy("acme/launch-gate"),
         locality="namespace-private",
         approval="human-approve-witness",
     ),
