@@ -142,9 +142,10 @@ async def test_llms_full_indexes_public_catalog_from_agent_cards(discovery_app) 
         assert f"`{sku}`" in body
         assert sku in {str(item["name"]) for item in entries}
 
-    # content-readiness (#213) is a real public SKU; keep unshipped siblings out.
+    # content-readiness (#213) + authorized-content-patch (#215) are public SKUs;
+    # keep unshipped publish-gate (#216) out of llms-full.
     assert "`orrery/content-readiness`" in body
-    assert "authorized-content-patch" not in body
+    assert "`orrery/authorized-content-patch`" in body
     assert "orrery/publish-gate" not in body
 
 
