@@ -1,0 +1,26 @@
+[star]
+name = "orrery/manifest-bind"
+version = "0.1.0"
+description = "Bind caller file digests into a stable manifest_digest receipt"
+publisher = "orrery"
+publisher_key_id_env = "ORRERY_MANIFEST_BIND_KEY_ID"
+direct_mcp_path = "/stars/manifest-bind/mcp"
+tools = ["bind"]
+capability_families = ["security"]
+[pricing]
+unit = "call"
+price_per_call = "0.00"
+currency = "USD"
+[runtime]
+python_package = "stars.manifest_bind"
+skill_factory = "stars.manifest_bind.skill:build_skill"
+[policy]
+allowed_egress = []
+freshness = "caller_provided"
+redirects = "deny"
+max_response_bytes = 65536
+[receipt]
+schema_version = "1"
+algorithm = "Ed25519"
+[publish]
+corpus = "stars.manifest_bind.corpus:CORPUS"
