@@ -65,6 +65,7 @@ BOARD_MEMO_DISPOSITIONS: tuple[str, ...] = (
     "expired",
 )
 DOCS_MIGRATE_TO_MDX_DISPOSITIONS: tuple[str, ...] = BOARD_MEMO_DISPOSITIONS
+API_SPEC_UPGRADE_DISPOSITIONS: tuple[str, ...] = BOARD_MEMO_DISPOSITIONS
 
 #: ADR 0007 lease invariant — paused runs never hold a worker/MCP lease.
 LEASE_RULE = "waiting_never_holds_worker_lease"
@@ -1579,6 +1580,69 @@ _STAR_CARDS: dict[str, AgentCard] = {
         subtree_contract=subtree_contract_from_policy(
             "orrery/docs-migrate-to-mdx",
             dispositions=DOCS_MIGRATE_TO_MDX_DISPOSITIONS,
+            pause_allowed=True,
+            pause_modes=("awaiting_input",),
+            continuation_tools=("continue_run", "status", "cancel"),
+        ),
+    ),
+    "orrery/api-spec-upgrade": _card(
+        summary=(
+            "Frozen api-spec/upgrade constellation: inventory → profile pin → "
+            "safe upgrade → optional breaking-approval pause → validate-target → "
+            "compatibility-diff → composite migration receipt."
+        ),
+        use_when=(
+            "You need ADR 0007/0008 OpenAPI upgrade orchestration without reimplementing stars",
+            "Breaking/unknown constructs require typed approval before validate/seal",
+            "You want continue_run idempotency and distinct validate vs compatibility-diff digests",
+        ),
+        not_for=(
+            "Reimplementing inventory/upgrade/validate/compatibility-diff stars",
+            "Local Git/PR handoff (#180) or docs migrate graphs",
+            "Claiming runtime compatibility from structural equality",
+        ),
+        example_intents=(
+            "upgrade openapi 3.0 to 3.1 with breaking pause",
+            "api-spec upgrade constellation receipt",
+            "continue_run openapi migration checkpoint",
+        ),
+        tools=("run", "status", "continue_run", "cancel"),
+        coverage_slug="api-spec-upgrade",
+        inputs=(
+            _io("entries", "array", required=True, note="path/content OpenAPI tree"),
+            _io("profile", "object", required=True, note="pinned ADR 0008 MigrationProfile"),
+            _io("caller_id", "string", note="authenticated resume identity"),
+        ),
+        outputs=(
+            _io("disposition", "string"),
+            _io("outstanding_action_requests", "object"),
+            _io("migration_receipt", "object"),
+            _io("validation_digest", "string"),
+            _io("compatibility_diff_digest", "string"),
+            _io("artifact_digest", "string"),
+            *_ENVELOPE,
+        ),
+        run_contract={
+            "entry_tool": "run",
+            "required_inputs": ["entries", "profile"],
+            "optional_inputs": ["caller_id"],
+            "composite_output": "signed-envelope-chain",
+            "continuation_tools": ["continue_run"],
+            "input_bundle": {
+                "entries": {"type": "array", "required": True},
+                "profile": {"type": "object", "required": True},
+                "caller_id": {"type": "string", "required": False},
+            },
+        },
+        graph_summary=(
+            "inventory → choose-profile → safe-upgrade → breaking-approval → "
+            "validate-target → compatibility-diff → artifact-seal"
+        ),
+        dispositions=API_SPEC_UPGRADE_DISPOSITIONS,
+        member_stars=member_stars_from_policy("orrery/api-spec-upgrade"),
+        subtree_contract=subtree_contract_from_policy(
+            "orrery/api-spec-upgrade",
+            dispositions=API_SPEC_UPGRADE_DISPOSITIONS,
             pause_allowed=True,
             pause_modes=("awaiting_input",),
             continuation_tools=("continue_run", "status", "cancel"),

@@ -938,6 +938,147 @@ DOCS_MIGRATE_TO_MDX_POLICY = PolicyGraph(
     release_key_id="orrery-docs-migrate-to-mdx-1",
 )
 
+#: ADR 0007 / epic #164 — api-spec upgrade frozen graph (#179).
+API_SPEC_UPGRADE_POLICY = PolicyGraph(
+    nodes=(
+        PolicyNode(
+            "inventory",
+            "inventory",
+            "gate",
+            80,
+            180,
+            0,
+            "orrery/api-spec-openapi-inventory",
+            "inventory",
+        ),
+        PolicyNode(
+            "choose-profile",
+            "choose-profile",
+            "gate",
+            220,
+            180,
+            1,
+            status_label="profile",
+        ),
+        PolicyNode(
+            "safe-upgrade",
+            "safe-upgrade",
+            "gate",
+            360,
+            180,
+            2,
+            "orrery/api-spec-openapi-upgrade-safe",
+            "upgrade",
+        ),
+        PolicyNode(
+            "breaking-approval",
+            "breaking-approval",
+            "pause",
+            500,
+            180,
+            3,
+            status_label="pause",
+        ),
+        PolicyNode(
+            "validate-target",
+            "validate-target",
+            "gate",
+            640,
+            180,
+            4,
+            "orrery/api-spec-openapi-validate",
+            "validate",
+        ),
+        PolicyNode(
+            "compatibility-diff",
+            "compatibility-diff",
+            "gate",
+            780,
+            180,
+            5,
+            "orrery/api-spec-compatibility-diff",
+            "diff",
+        ),
+        PolicyNode(
+            "artifact-seal",
+            "artifact-seal",
+            "composite",
+            920,
+            320,
+            6,
+            status_label="seal",
+            r=18,
+        ),
+    ),
+    edges=(
+        PolicyEdge(
+            "au1",
+            "inventory",
+            "choose-profile",
+            "gate",
+            "M120 180 C170 180, 190 180, 200 180",
+            1,
+        ),
+        PolicyEdge(
+            "au2",
+            "choose-profile",
+            "safe-upgrade",
+            "gate",
+            "M260 180 C310 180, 330 180, 340 180",
+            2,
+        ),
+        PolicyEdge(
+            "au3",
+            "safe-upgrade",
+            "breaking-approval",
+            "gate",
+            "M400 180 C450 180, 470 180, 480 180",
+            3,
+        ),
+        PolicyEdge(
+            "au4",
+            "breaking-approval",
+            "validate-target",
+            "gate",
+            "M540 180 C590 180, 610 180, 620 180",
+            4,
+        ),
+        PolicyEdge(
+            "au5",
+            "validate-target",
+            "compatibility-diff",
+            "gate",
+            "M680 180 C730 180, 750 180, 760 180",
+            5,
+        ),
+        PolicyEdge(
+            "au6",
+            "compatibility-diff",
+            "artifact-seal",
+            "gate",
+            "M820 180 C870 220, 890 280, 900 300",
+            6,
+        ),
+    ),
+    repair_loop_max=None,
+    footnote=(
+        "Frozen OpenAPI upgrade · pause when breaking/unknown/decision-required · "
+        "continue_run resumes · validate ≠ compatibility-diff · "
+        "lease_rule waiting_never_holds_worker_lease."
+    ),
+    composite_chain=(
+        CompositeStep(1, "inventory", "Envelope ✓", "source inventory"),
+        CompositeStep(2, "choose-profile", "Envelope ✓", "profile pin"),
+        CompositeStep(3, "safe-upgrade", "Envelope ✓", "plan+apply"),
+        CompositeStep(4, "breaking-approval", "awaiting_input", "typed approval"),
+        CompositeStep(5, "validate-target", "Envelope ✓", "schema validate"),
+        CompositeStep(6, "compatibility-diff", "Envelope ✓", "policy diff"),
+        CompositeStep(7, "artifact-seal", "Envelope ✓", "migration receipt"),
+    ),
+    release_digest="sha256:api-spec-upgrade…",
+    release_key_id="orrery-api-spec-upgrade-1",
+)
+
 POLICIES: dict[str, PolicyGraph] = {
     "acme/launch-gate": LAUNCH_GATE_POLICY,
     "orrery/stale-proof": STALE_PROOF_POLICY,
@@ -948,6 +1089,7 @@ POLICIES: dict[str, PolicyGraph] = {
     "orrery/publish-gate": PUBLISH_GATE_POLICY,
     "orrery/board-memo": BOARD_MEMO_POLICY,
     "orrery/docs-migrate-to-mdx": DOCS_MIGRATE_TO_MDX_POLICY,
+    "orrery/api-spec-upgrade": API_SPEC_UPGRADE_POLICY,
 }
 
 

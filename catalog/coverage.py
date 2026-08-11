@@ -30,6 +30,7 @@ COVERAGE_GAPS: Final[tuple[str, ...]] = (
     "orrery/stale-proof",  # constellation over source-watch + world-time
     "orrery/board-memo",  # resumable pause → PDF seal dogfood (#154)
     "orrery/docs-migrate-to-mdx",  # frozen migration graph composer (#178)
+    "orrery/api-spec-upgrade",  # frozen OpenAPI upgrade graph composer (#179)
 )
 
 
