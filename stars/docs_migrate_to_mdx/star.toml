@@ -1,0 +1,27 @@
+[star]
+name = "orrery/docs-migrate-to-mdx"
+kind = "constellation"
+version = "0.1.0"
+description = "Frozen MyST→MDX migration graph with decision pause and composite receipt (#178)"
+publisher = "orrery"
+publisher_key_id_env = "ORRERY_DOCS_MIGRATE_TO_MDX_KEY_ID"
+direct_mcp_path = "/constellations/docs-migrate-to-mdx/mcp"
+tools = ["run", "status", "continue_run", "cancel"]
+capability_families = ["document_processing"]
+[pricing]
+unit = "call"
+price_per_call = "0.00"
+currency = "USD"
+[runtime]
+python_package = "stars.docs_migrate_to_mdx"
+skill_factory = "stars.docs_migrate_to_mdx.skill:build_skill"
+[policy]
+allowed_egress = []
+freshness = "at_call"
+redirects = "deny"
+max_response_bytes = 524288
+[receipt]
+schema_version = "1"
+algorithm = "Ed25519"
+[publish]
+corpus = "stars.docs_migrate_to_mdx.corpus:CORPUS"

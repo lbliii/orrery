@@ -29,6 +29,7 @@ COVERAGE_GAPS: Final[tuple[str, ...]] = (
     "orrery/table-fresh",  # constellation over csv-url + table-diff
     "orrery/stale-proof",  # constellation over source-watch + world-time
     "orrery/board-memo",  # resumable pause → PDF seal dogfood (#154)
+    "orrery/docs-migrate-to-mdx",  # frozen migration graph composer (#178)
 )
 
 
