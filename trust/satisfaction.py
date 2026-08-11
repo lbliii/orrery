@@ -9,13 +9,15 @@ from __future__ import annotations
 from collections import Counter
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any, Protocol
 
 from chirp.skill import Skill
 
 VERDICTS: frozenset[str] = frozenset({"useful", "stale", "broken", "wrong-price"})
 MAX_NOTE_LEN = 280
+DEFAULT_WINDOW = "7d"
+DEFAULT_WINDOW_DAYS = 7
 
 
 @dataclass(frozen=True, slots=True)
@@ -149,6 +151,92 @@ _default_store = InMemorySatisfactionStore()
 def get_satisfaction_store() -> InMemorySatisfactionStore:
     """Return the process-wide in-memory satisfaction store."""
     return _default_store
+
+
+@dataclass(frozen=True, slots=True)
+class SatisfactionPillView:
+    """Compact demand-side pill for gaze / resolve / star surfaces (#69)."""
+
+    total: int = 0
+    useful_pct: int | None = None
+    window: str | None = None
+    pill_text: str | None = None
+    pill_class: str = "pill-priv"
+
+    @property
+    def quiet(self) -> bool:
+        """True when there is no digest-matched aggregate to show."""
+        return self.total <= 0 or not self.pill_text
+
+    def as_dict(self) -> dict[str, object]:
+        if self.quiet:
+            return {"quiet": True}
+        return {
+            "quiet": False,
+            "pill_text": self.pill_text,
+            "pill_class": self.pill_class,
+            "useful_pct": self.useful_pct,
+            "total": self.total,
+            "window": self.window,
+        }
+
+
+def _since_for_window(window: str | None) -> datetime | None:
+    if window == DEFAULT_WINDOW:
+        return datetime.now(UTC) - timedelta(days=DEFAULT_WINDOW_DAYS)
+    return None
+
+
+def aggregate_for_live_digest(
+    *,
+    star_name: str,
+    content_digest: str,
+    store: SatisfactionStore | None = None,
+    window: str = DEFAULT_WINDOW,
+) -> SatisfactionAggregate:
+    """Aggregate ratings for the live resolve digest only (mismatch ⇒ empty)."""
+    target = store or get_satisfaction_store()
+    digest = _normalize_digest(content_digest)
+    agg = target.aggregate(
+        star_name=star_name.strip(),
+        content_digest=digest,
+        since=_since_for_window(window),
+    )
+    if agg.total <= 0:
+        return agg
+    return SatisfactionAggregate(
+        star_name=agg.star_name,
+        content_digest=agg.content_digest,
+        counts=agg.counts,
+        total=agg.total,
+        window=window,
+    )
+
+
+def satisfaction_pill_for(
+    *,
+    star_name: str,
+    content_digest: str,
+    store: SatisfactionStore | None = None,
+    window: str = DEFAULT_WINDOW,
+) -> SatisfactionPillView:
+    """Build a compact pill or a quiet empty view — never fake scores."""
+    agg = aggregate_for_live_digest(
+        star_name=star_name,
+        content_digest=content_digest,
+        store=store,
+        window=window,
+    )
+    if agg.total <= 0:
+        return SatisfactionPillView(total=0, window=window)
+    useful = agg.counts.get("useful", 0)
+    pct = round(useful * 100 / agg.total)
+    return SatisfactionPillView(
+        total=agg.total,
+        useful_pct=pct,
+        window=window,
+        pill_text=f"{pct}% useful · {agg.total}/{window}",
+    )
 
 
 def _normalize_digest(value: str) -> str:
