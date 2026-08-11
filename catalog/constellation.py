@@ -187,7 +187,10 @@ LAUNCH_GATE_POLICY = PolicyGraph(
         ),
     ),
     repair_loop_max=3,
-    footnote="* demo star in public namespace · loop retries secret-scan ≤ 3",
+    footnote=(
+        "* public star ref (orrery/html-to-pdf) from private acme/* graph — "
+        "ADR 0004 publisher-direct · loop retries secret-scan ≤ 3"
+    ),
     composite_chain=(
         CompositeStep(1, "secret-scan", "Envelope ✓", "pay_01"),
         CompositeStep(2, "license", "Envelope ✓", "(internal)"),

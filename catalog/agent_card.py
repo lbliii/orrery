@@ -1856,11 +1856,15 @@ _CONSTELLATION_CARDS: dict[str, AgentCard] = {
         approval="namespace-gated",
     ),
     "acme/launch-gate": _card(
-        summary="Ship policy graph — gates, repair loop, and fan-in disposition.",
+        summary=(
+            "Ship policy graph — gates, repair loop, and fan-in disposition "
+            "(private acme/* node; may reference public orrery/* stars)."
+        ),
         use_when=(
             "You need a composite launch-gate run over a policy graph",
             "You want explain_policy for gates, loops, and fan-in",
             "You are demoing constellation orchestration, not a single star",
+            "You need a private-namespace graph that cites public stars (ADR 0004)",
         ),
         not_for=(
             "Public-only agents without acme namespace access",
