@@ -20,11 +20,14 @@ structure findings. Pure transform: `allowed_egress = []`, no model inference.
 | `empty_file` | Empty content |
 | `orphan_file` | No inbound relative `.md` links (index/readme exempt) |
 
+Each finding also includes optional advisory `remediation` text (machine-oriented
+fix hint). Remediation does not change codes or pass/fail.
+
 ## Outputs
 
 | Field | Meaning |
 | --- | --- |
-| `findings[]` | Coded finding objects |
+| `findings[]` | Coded finding objects (`code`, `path`, `message`, `remediation`, …) |
 | `finding_codes` | Sorted unique codes |
 | `passed` | `true` when findings empty |
 

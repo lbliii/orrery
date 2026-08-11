@@ -86,6 +86,28 @@ def test_out_of_allowlist_status() -> None:
     assert result["passed"] is False
     assert result["links"][0]["status"] == "not_allowed"
     assert result["egress_count"] == 0
+    remediation = result["links"][0].get("remediation")
+    assert isinstance(remediation, str) and remediation.strip()
+
+
+@pytest.mark.issue(314)
+def test_failing_link_includes_remediation() -> None:
+    result = check(
+        [
+            {
+                "path": "docs/readme.md",
+                "content": "See [evil](https://evil.example/x).",
+            }
+        ],
+        max_link_count=5,
+        transport=_transport_ok,
+    )
+    assert result["passed"] is False
+    link = result["links"][0]
+    assert link["status"] == "not_allowed"
+    remediation = link.get("remediation")
+    assert isinstance(remediation, str) and remediation.strip()
+    assert "allowlisted" in remediation.lower()
 
 
 @pytest.mark.issue(223)

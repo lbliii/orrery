@@ -46,6 +46,33 @@ def test_heading_skip_and_missing_title() -> None:
     )
     assert result["passed"] is False
     assert set(result["finding_codes"]) >= {"heading_level_skip", "frontmatter_missing_title"}
+    for item in result["findings"]:
+        remediation = item.get("remediation")
+        assert isinstance(remediation, str) and remediation.strip()
+
+
+@pytest.mark.issue(314)
+def test_failing_findings_include_remediation() -> None:
+    result = audit(
+        [
+            {
+                "path": "docs/guide.md",
+                "content": "---\nstatus: draft\n---\n\n# Guide\n\n### Too deep\n",
+            }
+        ]
+    )
+    assert result["passed"] is False
+    assert result["findings"]
+    remediations = [
+        item["remediation"]
+        for item in result["findings"]
+        if isinstance(item.get("remediation"), str) and item["remediation"].strip()
+    ]
+    assert remediations
+    skip = next(
+        item for item in result["findings"] if item["code"] == "heading_level_skip"
+    )
+    assert "at most one" in str(skip["remediation"]).lower()
 
 
 @pytest.mark.issue(223)

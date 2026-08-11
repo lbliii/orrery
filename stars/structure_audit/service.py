@@ -12,6 +12,48 @@ _HEADING_RE = re.compile(r"^(#{1,6})\s+(\S.*)$", re.MULTILINE)
 _MD_LINK_RE = re.compile(r"\[[^\]]*\]\(([^)]+)\)")
 _FRONTMATTER_RE = re.compile(r"\A---\r?\n(.*?)\r?\n---\r?\n", re.DOTALL)
 
+# Advisory fix text for agents — does not change pass/fail or codes.
+_REMEDIATION: dict[str, str] = {
+    "empty_file": (
+        "Add non-empty markdown content to this file, or remove it from the bundle."
+    ),
+    "frontmatter_invalid": (
+        "Fix the YAML frontmatter fence: open with --- on its own line, "
+        "close with --- on its own line, then the document body."
+    ),
+    "frontmatter_missing_title": (
+        "Add a `title:` key to the YAML frontmatter block."
+    ),
+    "missing_h1": (
+        "Ensure the document body (after frontmatter) starts with a single "
+        "`#` H1 heading."
+    ),
+    "heading_level_skip": (
+        "Insert intermediate heading levels so heading depth increases by "
+        "at most one at a time (for example, add an h2 before an h3)."
+    ),
+    "orphan_file": (
+        "Add a relative markdown link to this file from another file in the "
+        "set, or rename it to index.md/readme.md if it is an entry point."
+    ),
+}
+
+
+def _finding(
+    code: str,
+    path: str,
+    message: str,
+    **extra: object,
+) -> dict[str, object]:
+    item: dict[str, object] = {
+        "code": code,
+        "path": path,
+        "message": message,
+        "remediation": _REMEDIATION[code],
+    }
+    item.update(extra)
+    return item
+
 
 def audit(files: object) -> dict[str, object]:
     """Emit coded findings for heading gaps, frontmatter errors, and orphans."""
@@ -29,11 +71,7 @@ def audit(files: object) -> dict[str, object]:
         content = entry["content"]
         if not content.strip():
             findings.append(
-                {
-                    "code": "empty_file",
-                    "path": path,
-                    "message": "file content is empty",
-                }
+                _finding("empty_file", path, "file content is empty")
             )
 
         findings.extend(_frontmatter_findings(path, content))
@@ -49,11 +87,11 @@ def audit(files: object) -> dict[str, object]:
         for path, count in sorted(inbound.items()):
             if count == 0 and not _is_index(path):
                 findings.append(
-                    {
-                        "code": "orphan_file",
-                        "path": path,
-                        "message": "no inbound relative markdown links",
-                    }
+                    _finding(
+                        "orphan_file",
+                        path,
+                        "no inbound relative markdown links",
+                    )
                 )
 
     findings.sort(key=lambda item: (str(item["code"]), str(item["path"])))
@@ -112,22 +150,22 @@ def _frontmatter_findings(path: str, content: str) -> list[dict[str, object]]:
     if match is None:
         if content.lstrip().startswith("---"):
             return [
-                {
-                    "code": "frontmatter_invalid",
-                    "path": path,
-                    "message": "frontmatter fence is malformed",
-                }
+                _finding(
+                    "frontmatter_invalid",
+                    path,
+                    "frontmatter fence is malformed",
+                )
             ]
         return []
 
     body = match.group(1)
     if "title:" not in body:
         return [
-            {
-                "code": "frontmatter_missing_title",
-                "path": path,
-                "message": "YAML frontmatter lacks title",
-            }
+            _finding(
+                "frontmatter_missing_title",
+                path,
+                "YAML frontmatter lacks title",
+            )
         ]
     return []
 
@@ -142,34 +180,30 @@ def _heading_findings(path: str, content: str) -> list[dict[str, object]]:
     findings: list[dict[str, object]] = []
     if not headings:
         findings.append(
-            {
-                "code": "missing_h1",
-                "path": path,
-                "message": "no markdown headings found",
-            }
+            _finding("missing_h1", path, "no markdown headings found")
         )
         return findings
 
     if headings[0][0] != 1:
         findings.append(
-            {
-                "code": "missing_h1",
-                "path": path,
-                "message": "document does not start with an H1",
-            }
+            _finding(
+                "missing_h1",
+                path,
+                "document does not start with an H1",
+            )
         )
 
     previous = headings[0][0]
     for level, _title in headings[1:]:
         if level > previous + 1:
             findings.append(
-                {
-                    "code": "heading_level_skip",
-                    "path": path,
-                    "message": f"heading jumps from h{previous} to h{level}",
-                    "from_level": previous,
-                    "to_level": level,
-                }
+                _finding(
+                    "heading_level_skip",
+                    path,
+                    f"heading jumps from h{previous} to h{level}",
+                    from_level=previous,
+                    to_level=level,
+                )
             )
         previous = level
     return findings
