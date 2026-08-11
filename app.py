@@ -427,8 +427,7 @@ def api_gaze_search(request: Request) -> JSONResponse:
     from catalog.gaze import clamp_gaze_limit
 
     query = (request.query.get("q") or request.query.get("query") or "").strip()
-    node_raw = (request.query.get("node") or "").strip()
-    node = node_raw or None
+    node = (request.query.get("node") or "public").strip() or "public"
     raw_limit = request.query.get("limit")
     if raw_limit is None or str(raw_limit).strip() == "":
         limit = None

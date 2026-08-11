@@ -103,12 +103,14 @@ def build_gaze_skill(*, private_key: Any | None = None) -> Skill:
     )
     def gaze_search(
         query: str,
-        node: str = "",
+        node: str = "public",
         limit: int = GAZE_DEFAULT_LIMIT,
     ) -> dict[str, object]:
-        hits = CATALOG.search(query, node=node or None, limit=limit)
+        scoped = node or "public"
+        hits = CATALOG.search(query, node=scoped, limit=limit)
         return {
             "query": query,
+            "node": scoped,
             "limit": len(hits),
             "hits": [h.as_dict() for h in hits],
             "status": "ok",
@@ -126,9 +128,11 @@ def build_gaze_skill(*, private_key: Any | None = None) -> Skill:
         "gaze_list_constellations",
         description="List constellation-kind records in the catalog",
     )
-    def gaze_list_constellations(node: str = "") -> dict[str, object]:
-        hits = CATALOG.list_constellations(node=node or None)
+    def gaze_list_constellations(node: str = "public") -> dict[str, object]:
+        scoped = node or "public"
+        hits = CATALOG.list_constellations(node=scoped)
         return {
+            "node": scoped,
             "hits": [h.as_dict() for h in hits],
             "status": "ok",
         }

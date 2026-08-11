@@ -8,7 +8,7 @@ import pytest
 from chirp.testing import TestClient
 
 from catalog import CATALOG
-from catalog.gaze import hit_from_record
+from catalog.gaze import hit_from_record, records_for_gaze_node
 from catalog.models import ResolveRecord
 from trust.satisfaction import InMemorySatisfactionStore, SatisfactionRecord, get_satisfaction_store
 
@@ -104,3 +104,49 @@ def test_constellation_tool_hit_has_quiet_satisfaction() -> None:
     )
     hit = hit_from_record(constellation)
     assert hit.as_dict()["trust"]["satisfaction"] == {"quiet": True}
+
+
+@pytest.mark.issue(70)
+def test_records_for_gaze_node_public_excludes_private(example_app) -> None:
+    pool = records_for_gaze_node(CATALOG.all(), "public")
+    assert pool
+    assert all(r.visibility == "public" for r in pool)
+    assert not any(r.name.startswith("acme/") for r in pool)
+
+
+@pytest.mark.issue(70)
+def test_public_gaze_match_excludes_private_namespace(example_app) -> None:
+    hits = CATALOG.match("ship gate release acme", node="public")
+    assert all(not h.name.startswith("acme/") for h in hits)
+
+
+@pytest.mark.issue(70)
+def test_public_gaze_search_excludes_private_namespace(example_app) -> None:
+    searched = CATALOG.search("acme", node="public")
+    assert all(not h.name.startswith("acme/") for h in searched)
+
+
+@pytest.mark.issue(70)
+def test_gaze_search_defaults_to_public_sky(example_app) -> None:
+    searched = CATALOG.search("acme")
+    assert all(not h.name.startswith("acme/") for h in searched)
+
+
+@pytest.mark.issue(70)
+def test_acme_node_scopes_match_and_search(example_app) -> None:
+    matched = CATALOG.match("ship gate", node="acme")
+    assert matched
+    assert all(h.name.startswith("acme/") for h in matched)
+    searched = CATALOG.search("release", node="acme")
+    assert searched
+    assert all(h.name.startswith("acme/") for h in searched)
+
+
+@pytest.mark.issue(70)
+async def test_api_gaze_search_public_node_excludes_acme(example_app) -> None:
+    async with TestClient(example_app) as client:
+        response = await client.get("/api/gaze/search?q=acme&node=public")
+        assert response.status == 200
+        body = json.loads(response.text)
+        assert body["node"] == "public"
+        assert all(not h["name"].startswith("acme/") for h in body["hits"])

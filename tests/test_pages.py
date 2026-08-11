@@ -600,12 +600,15 @@ class TestGazeCatalog:
         assert described["content_digest"].startswith("sha256:")
 
         consts = CATALOG.list_constellations()
-        assert {h.name for h in consts} >= {
+        assert {h.name for h in consts} >= {"orrery/stale-proof"}
+        assert all(not h.name.startswith("acme/") for h in consts)
+        assert all(h.kind == "constellation" for h in consts)
+
+        acme_consts = CATALOG.list_constellations(node="acme")
+        assert {h.name for h in acme_consts} >= {
             "acme/release-gate",
             "acme/launch-gate",
-            "orrery/stale-proof",
         }
-        assert all(h.kind == "constellation" for h in consts)
 
         launch = CATALOG.describe("acme/launch-gate")
         assert launch["kind"] == "constellation"
@@ -730,7 +733,33 @@ class TestGazeMcpTools:
                 },
             )
             text = json.loads(listed.text)["result"]["content"][0]["text"]
-            assert "acme/launch-gate" in text
+            assert "orrery/stale-proof" in text
+            assert "acme/launch-gate" not in text
+
+            acme_listed = await client.post(
+                "/mcp",
+                json={
+                    "jsonrpc": "2.0",
+                    "method": "tools/call",
+                    "id": 24,
+                    "params": {
+                        "_meta": {
+                            "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+                            "io.modelcontextprotocol/clientCapabilities": {},
+                        },
+                        "name": "gaze_list_constellations",
+                        "arguments": {"node": "acme"},
+                    },
+                },
+                headers={
+                    "content-type": "application/json",
+                    "mcp-protocol-version": "2026-07-28",
+                    "mcp-method": "tools/call",
+                    "mcp-name": "gaze_list_constellations",
+                },
+            )
+            acme_text = json.loads(acme_listed.text)["result"]["content"][0]["text"]
+            assert "acme/launch-gate" in acme_text
 
 
 @pytest.mark.issue(24)

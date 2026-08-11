@@ -19,6 +19,7 @@ from .gaze import (
     clamp_gaze_limit,
     hit_from_record,
     is_reactive_record,
+    records_for_gaze_node,
     score_record,
     tool_hit,
 )
@@ -82,13 +83,9 @@ class Catalog:
     # Gaze discovery (issues #22 / #23)
     # ------------------------------------------------------------------
 
-    def records_for_node(self, node: str) -> tuple[ResolveRecord, ...]:
+    def records_for_node(self, node: str | None = None) -> tuple[ResolveRecord, ...]:
         """Records visible under a gaze node id (``public`` / namespace / …)."""
-        key = (node or "public").strip().lower()
-        if key == "public":
-            return tuple(r for r in self._records if r.visibility == "public")
-        # Namespace node: match records whose namespace equals the node id.
-        return tuple(r for r in self._records if (r.namespace or "").lower() == key)
+        return records_for_gaze_node(self._records, node)
 
     def match(
         self,
@@ -118,7 +115,7 @@ class Catalog:
         """Substring search over name + description + agent card text."""
         cap = clamp_gaze_limit(limit)
         q = (query or "").strip().lower()
-        pool = self.records_for_node(node) if node else self._records
+        pool = self.records_for_node(node)
         if not q:
             return tuple(hit_from_record(r) for r in pool[:cap])
 
@@ -179,7 +176,7 @@ class Catalog:
 
     def list_constellations(self, *, node: str | None = None) -> tuple[GazeHit, ...]:
         """Constellation-kind records (optionally scoped to a gaze node)."""
-        pool = self.records_for_node(node) if node else self._records
+        pool = self.records_for_node(node)
         return tuple(hit_from_record(r) for r in pool if r.kind == "constellation")
 
     def gaze_nodes(self) -> tuple[GazeNode, ...]:
