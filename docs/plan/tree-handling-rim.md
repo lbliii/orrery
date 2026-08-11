@@ -8,7 +8,9 @@
   [specimen-sky.md](./specimen-sky.md)
 - **ADR:** [0006-decision-receipt.md](../adr/0006-decision-receipt.md) (DecisionReceipt);
   [0007-constellation-subtree-contract.md](../adr/0007-constellation-subtree-contract.md)
-  (`subtree_contract`: stages, pause_policy, composite_receipt_fields, lease_rule)
+  (`subtree_contract`: stages, pause_policy, composite_receipt_fields, lease_rule);
+  [0009-acceptance-receipt.md](../adr/0009-acceptance-receipt.md) (AcceptanceReceipt;
+  follow-on epic [#310](https://github.com/lbliii/orrery/issues/310))
 - **Evidence (primary):**
   [Cursor — Agent swarms and the new model economics](https://cursor.com/blog/agent-swarm-model-economics)
 - **Evidence (2026 harness corroboration):**
@@ -150,8 +152,9 @@ choosing the next skill.
 Not exit blockers for #237:
 
 1. **Populate** `tree_role` / `worker_cost` on shipped rim cards (schema only in
-   #246).
-2. **Remediation hints** on protocol finding objects (Fowler sensor polish).
-3. **Design freeze** for sealed acceptance / sprint contracts (Anthropic signal)
-   — distinct from DecisionReceipt; Orrery seals criteria + verify refs, harness
-   runs the evaluator.
+   #246) — done via [#312](https://github.com/lbliii/orrery/issues/312).
+2. **Remediation hints** on protocol finding objects (Fowler sensor polish) —
+   still open under epic [#310](https://github.com/lbliii/orrery/issues/310).
+3. **AcceptanceReceipt** sealed sprint / done contracts (Anthropic signal) —
+   design frozen in [ADR 0009](../adr/0009-acceptance-receipt.md) / [#311](https://github.com/lbliii/orrery/issues/311);
+   implement via `orrery/acceptance-bind` + `acceptance_cites` dogfood under #310.

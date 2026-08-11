@@ -101,15 +101,21 @@ disposition.
 | `disposition` | yes | Terminal sealed outcome; value from card `dispositions` |
 | `policy_digest` | yes | Digest of the frozen graph (stages + edges + release identity) |
 | `cites` | no | Array of lowercase hex `sha256` decision digests per [ADR 0006](./0006-decision-receipt.md) |
+| `acceptance_cites` | no | Array of lowercase hex `sha256` acceptance digests per [ADR 0009](./0009-acceptance-receipt.md) |
 | `release` | yes | Object `{ "digest": "<hex>", "key_id": "<id>" }` for composite signing |
 
 `cites` is optional per run but REQUIRED in this schema when a stage bound a
 DecisionReceipt freeze. Missing cite when policy required one is a
 constellation policy failure, not an Envelope verify failure (ADR 0006 §3).
 
+`acceptance_cites` is optional per run but REQUIRED when a stage bound an
+AcceptanceReceipt freeze (ADR 0009). Do not overload `cites` with acceptance
+digests. Missing `acceptance_cites` when policy required one is a constellation
+policy failure, not an AcceptanceReceipt verify failure.
+
 Composite receipts MAY also embed protocol-star digests from epic
 [#238](https://github.com/lbliii/orrery/issues/238) in the envelope chain;
-those digests live in `chain`, not in `cites`.
+those digests live in `chain`, not in `cites` or `acceptance_cites`.
 
 ### 5. `lease_rule`
 
