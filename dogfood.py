@@ -19,13 +19,22 @@ from __future__ import annotations
 import os
 from typing import Any
 
+from chirp.http.request import Request
+from chirp.http.response import Response
 from chirp.skill import Envelope, Skill, verify_envelope
+from chirp.skill.mount import use_skill
+from chirp.skill.registry import SkillRegistry
 from chirp.skill.smoke import CorpusPrompt
+from chirp.tools.handler import handle_mcp_request
+from chirp.tools.live_log import DEFAULT_INVOCATION_LOG_PATH, mount_invocation_log
+from chirp.tools.registry import ToolDef, ToolRegistry
+from chirp.tools.schema import function_to_schema
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from catalog import CATALOG, GAZE_DEFAULT_LIMIT, GAZE_MAX_LIMIT
 from catalog.constellation_run import explain_policy, run_constellation, status_for_run
 from catalog.coverage import check_coverage, describe_coverage
+from discovery import MCP_TOOLS_ALLOWLIST
 from public_keys import key_set_url
 from stars.decision_bind.service import bind as bind_decision
 from stars.html_to_pdf.skill import build_skill as build_html_to_pdf_star
@@ -36,6 +45,9 @@ from trust.satisfaction import build_satisfaction_skill
 
 #: How many dogfood skills this host mounts (Foundation epic #2 + Waves 1/2 + satisfaction).
 N_DOGFOOD_SKILLS = 7
+
+#: Labeled aggregate for teaching-trio / constellation **call** demos (not in /connect).
+DOGFOOD_MCP_PATH = "/mcp/dogfood"
 
 #: Smoke HTML used by the star detail receipt and corpus.
 SMOKE_HTML = "<!doctype html><html><body><h1>Orrery</h1></body></html>"
@@ -238,7 +250,11 @@ def build_source_watch_skill(*, private_key: Any | None = None) -> Skill:
     )
 
 
-def build_launch_gate_skill(*, private_key: Any | None = None) -> Skill:
+def build_launch_gate_skill(
+    *,
+    private_key: Any | None = None,
+    discovery_only: bool = False,
+) -> Skill:
     """launch-gate — constellation orchestration (run / status / explain_policy, #33)."""
     private = private_key or _load_or_generate_key("ORRERY_LAUNCH_GATE_PRIVATE_KEY")
     public = private.public_key().public_bytes_raw()
@@ -250,57 +266,59 @@ def build_launch_gate_skill(*, private_key: Any | None = None) -> Skill:
         public_key=public,
     )
 
-    @skill.tool(
-        "run",
-        description=(
-            "Execute a constellation policy graph on a Doc Bundle input shape: "
-            "pages (string[]), links (string[]), examples (string[]). "
-            "Optional constellation name (default acme/launch-gate). "
-            "Returns a signed composite Envelope chain "
-            "(dispositions: ready | not-ready | stale | blocked)."
-        ),
-    )
-    def run(
-        pages: list[str] | None = None,
-        links: list[str] | None = None,
-        examples: list[str] | None = None,
-        constellation: str = "acme/launch-gate",
-        decision_id: str = "",
-        decision_statement: str = "",
-    ) -> dict[str, object]:
-        bundle = {
-            "pages": list(pages or []),
-            "links": list(links or []),
-            "examples": list(examples or []),
-        }
-        cites: list[str] | None = None
-        if decision_id.strip() or decision_statement.strip():
-            if not decision_id.strip() or not decision_statement.strip():
-                return {
-                    "error": "decision_incomplete",
-                    "status": "invalid",
-                    "note": "Provide both decision_id and decision_statement to cite a freeze.",
-                }
-            bound = bind_decision(decision_id.strip(), decision_statement)
-            if "error" in bound:
-                return {"status": "invalid", **bound}
-            cites = [str(bound["decision_digest"])]
-        return run_constellation(
-            bundle,
-            constellation=constellation,
-            skill_name=skill.name,
-            skill_version=skill.version,
-            key_id=skill.key_id,
-            private_key=private,
-            cites=cites,
-        )
+    if not discovery_only:
 
-    @skill.tool(
-        "status",
-        description="Composite receipt / in-flight chain for a constellation run",
-    )
-    def status(run_id: str = "") -> dict[str, object]:
-        return status_for_run(run_id)
+        @skill.tool(
+            "run",
+            description=(
+                "Execute a constellation policy graph on a Doc Bundle input shape: "
+                "pages (string[]), links (string[]), examples (string[]). "
+                "Optional constellation name (default acme/launch-gate). "
+                "Returns a signed composite Envelope chain "
+                "(dispositions: ready | not-ready | stale | blocked)."
+            ),
+        )
+        def run(
+            pages: list[str] | None = None,
+            links: list[str] | None = None,
+            examples: list[str] | None = None,
+            constellation: str = "acme/launch-gate",
+            decision_id: str = "",
+            decision_statement: str = "",
+        ) -> dict[str, object]:
+            bundle = {
+                "pages": list(pages or []),
+                "links": list(links or []),
+                "examples": list(examples or []),
+            }
+            cites: list[str] | None = None
+            if decision_id.strip() or decision_statement.strip():
+                if not decision_id.strip() or not decision_statement.strip():
+                    return {
+                        "error": "decision_incomplete",
+                        "status": "invalid",
+                        "note": "Provide both decision_id and decision_statement to cite a freeze.",
+                    }
+                bound = bind_decision(decision_id.strip(), decision_statement)
+                if "error" in bound:
+                    return {"status": "invalid", **bound}
+                cites = [str(bound["decision_digest"])]
+            return run_constellation(
+                bundle,
+                constellation=constellation,
+                skill_name=skill.name,
+                skill_version=skill.version,
+                key_id=skill.key_id,
+                private_key=private,
+                cites=cites,
+            )
+
+        @skill.tool(
+            "status",
+            description="Composite receipt / in-flight chain for a constellation run",
+        )
+        def status(run_id: str = "") -> dict[str, object]:
+            return status_for_run(run_id)
 
     @skill.tool(
         "explain_policy",
@@ -449,8 +467,28 @@ def verify_receipt(
     return verify_envelope(env, sk.public_key)
 
 
+def build_discovery_skills() -> tuple[Skill, ...]:
+    """Slim default ``/mcp`` — gaze, resolve, and constellation explain only."""
+    return (
+        build_gaze_skill(),
+        build_resolve_skill(),
+        build_launch_gate_skill(discovery_only=True),
+    )
+
+
+def build_dogfood_call_skills() -> tuple[Skill, ...]:
+    """Teaching-trio / constellation call tools for ``/mcp/dogfood`` or direct mounts."""
+    return (
+        get_html_to_pdf_skill(),
+        get_world_time_skill(),
+        get_source_watch_skill(),
+        build_launch_gate_skill(),
+        build_satisfaction_skill(verify_receipt=verify_receipt),
+    )
+
+
 def build_dogfood_skills() -> tuple[Skill, ...]:
-    """Return the N dogfood skills in mount order."""
+    """Return the N dogfood skills in mount order (console + publish-oracle registry)."""
     skills = (
         build_gaze_skill(),
         build_resolve_skill(),
@@ -462,6 +500,145 @@ def build_dogfood_skills() -> tuple[Skill, ...]:
     )
     assert len(skills) == N_DOGFOOD_SKILLS
     return skills
+
+
+def _skills_tool_registry(app: Any, skills: tuple[Skill, ...]) -> ToolRegistry:
+    """Compile skill pending tools into one isolated MCP registry."""
+    seen: dict[str, str] = {}
+    tools: list[ToolDef] = []
+    for skill in skills:
+        for pending in skill._pending:
+            owner = seen.get(pending.name)
+            if owner is not None:
+                msg = (
+                    f"Duplicate tool name {pending.name!r} across skills "
+                    f"{owner!r} and {skill.name!r}; dogfood MCP requires unique names"
+                )
+                raise ValueError(msg)
+            seen[pending.name] = skill.name
+            tools.append(
+                ToolDef(
+                    name=pending.name,
+                    description=pending.description,
+                    handler=pending.handler,
+                    schema=function_to_schema(pending.handler),
+                    approval_required=pending.approval_required,
+                )
+            )
+    return ToolRegistry(tools, app.tool_events)
+
+
+def mount_dogfood_mcp(
+    app: Any,
+    skills: tuple[Skill, ...],
+    *,
+    path: str = DOGFOOD_MCP_PATH,
+) -> ToolRegistry:
+    """Mount call-tool aggregate at a labeled path (not advertised by ``/connect``)."""
+    registry = _skills_tool_registry(app, skills)
+
+    async def dogfood_mcp_handler(request: Request) -> Response:
+        return await handle_mcp_request(request, registry)
+
+    dogfood_mcp_handler.__name__ = "dogfood_mcp"
+    app.route(path, methods=["POST"], referenced=True)(dogfood_mcp_handler)
+    return registry
+
+
+def _register_skill_discovery(app: Any, registry: SkillRegistry, path: str) -> None:
+    @app.route(path, methods=["GET"], name="chirp_skill_discovery")
+    def skill_discovery() -> dict[str, object]:
+        return registry.discovery_document()
+
+
+def mount_orrery_skills(
+    app: Any,
+    *,
+    registry: SkillRegistry,
+    discovery_skills: tuple[Skill, ...],
+    call_skills: tuple[Skill, ...],
+    discovery_path: str = "/skills",
+    invocation_log_path: str | None = DEFAULT_INVOCATION_LOG_PATH,
+) -> ToolRegistry:
+    """Wire slim ``/mcp``, labeled ``/mcp/dogfood``, discovery, and live invocation log."""
+    for skill in discovery_skills:
+        use_skill(app, skill)
+    _register_skill_discovery(app, registry, discovery_path)
+    if invocation_log_path is not None:
+        mount_invocation_log(app, path=invocation_log_path)
+    return mount_dogfood_mcp(app, call_skills)
+
+
+def run_dogfood_publish_gate(
+    app: Any,
+    corpus: tuple[CorpusPrompt, ...],
+    *,
+    dogfood_registry: ToolRegistry,
+    answer_fn: Any | None = None,
+    warnings_as_errors: bool = False,
+) -> Any:
+    """Publish gate with call tools routed through ``/mcp/dogfood`` registry."""
+    from chirp.skill.publish import (
+        STAGE_SMOKE,
+        PublishReceipt,
+        StageResult,
+        _check_stage,
+        _freeze_stage,
+    )
+    from chirp.skill.smoke import run_smoke
+
+    check = _check_stage(app, warnings_as_errors=warnings_as_errors)
+    freeze, manifests = _freeze_stage(app)
+
+    async def _call_tool(tool: str, arguments: dict[str, object]) -> Any:
+        if tool in MCP_TOOLS_ALLOWLIST:
+            return await app.tools.call_tool(tool, arguments)
+        return await dogfood_registry.call_tool(tool, arguments)
+
+    try:
+        report = run_smoke(app, corpus, answer_fn=answer_fn, call_tool=_call_tool)
+    except Exception as exc:
+        smoke = StageResult(
+            name=STAGE_SMOKE,
+            passed=False,
+            summary=f"smoke raised {type(exc).__name__}: {exc}",
+            detail={"error": str(exc)},
+        )
+        return PublishReceipt(
+            passed=False,
+            stages=(check, freeze, smoke),
+            manifests=manifests,
+            smoke=None,
+        )
+
+    failures = report.failures
+    if report.passed:
+        summary = f"{len(report.results)} prompt(s) faithful"
+    else:
+        bits = [
+            (
+                f"{failure.prompt_id}/{failure.tool}:"
+                f"{failure.verdict.failure_class or failure.verdict.reason}"
+            )
+            for failure in failures
+        ]
+        summary = f"{len(failures)} failure(s) — " + "; ".join(bits)
+    smoke = StageResult(
+        name=STAGE_SMOKE,
+        passed=report.passed,
+        summary=summary,
+        detail={
+            "prompt_count": len(report.results),
+            "failure_count": len(failures),
+        },
+    )
+    stages = (check, freeze, smoke)
+    return PublishReceipt(
+        passed=all(stage.passed for stage in stages),
+        stages=stages,
+        manifests=manifests,
+        smoke=report,
+    )
 
 
 DOGFOOD_CORPUS: tuple[CorpusPrompt, ...] = (
