@@ -103,6 +103,15 @@ Saga: [#237](https://github.com/lbliii/orrery/issues/237).
    (`subtree_contract` per ADR 0007)—not only as a demo story.
 5. README / gaze copy never claims Orrery orchestrates swarms or merges code.
 
+## Agent card tree hints (#246)
+
+Optional **`tree_role`** (`worker` | `planner` | `review`) and **`worker_cost`**
+(`low` | `mid` | `high`) on agent cards are informational facets only — ADR 0005
+still applies: the agent ranks the shortlist; Orrery does not pick a skill.
+Both fields are absent-by-default; when set they appear on the full card and in
+``AgentCard.gaze_preview()`` (compact gaze shortlist projection). Gaze never
+returns live tool bodies.
+
 ## Success signal
 
 A planner agent can lock a decision digest and a worker can attach sealed

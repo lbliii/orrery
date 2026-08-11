@@ -10,6 +10,8 @@ from chirp.testing import TestClient
 from catalog import CATALOG
 from catalog.agent_card import (
     AGENT_CARDS,
+    TREE_ROLES,
+    WORKER_COSTS,
     AgentCard,
     AgentCardError,
     AgentCardIO,
@@ -276,3 +278,73 @@ async def test_api_resolve_exposes_agent_card(example_app) -> None:
 def test_all_registered_cards_validate() -> None:
     for name, card in AGENT_CARDS.items():
         validate_agent_card(card, name=name)
+
+
+@pytest.mark.issue(246)
+def test_tree_role_and_worker_cost_absent_by_default() -> None:
+    card = require_card("orrery/world-time")
+    assert card.tree_role is None
+    assert card.worker_cost is None
+    payload = card.as_dict()
+    assert "tree_role" not in payload
+    assert "worker_cost" not in payload
+    preview = card.gaze_preview()
+    assert "tree_role" not in preview
+    assert "worker_cost" not in preview
+    assert "payload" not in preview
+    validate_agent_card(card, name="orrery/world-time")
+
+
+@pytest.mark.issue(246)
+def test_tree_role_and_worker_cost_optional_on_card() -> None:
+    card = _minimal_card(tree_role="planner", worker_cost="low")
+    validate_agent_card(card)
+    payload = card.as_dict()
+    assert payload["tree_role"] == "planner"
+    assert payload["worker_cost"] == "low"
+    preview = card.gaze_preview()
+    assert preview["tree_role"] == "planner"
+    assert preview["worker_cost"] == "low"
+    assert "payload" not in preview
+
+
+@pytest.mark.issue(246)
+def test_tree_role_and_worker_cost_validation() -> None:
+    for role in sorted(TREE_ROLES):
+        validate_agent_card(_minimal_card(tree_role=role))
+    for cost in sorted(WORKER_COSTS):
+        validate_agent_card(_minimal_card(worker_cost=cost))
+
+    with pytest.raises(AgentCardError, match="tree_role"):
+        validate_agent_card(_minimal_card(tree_role="orchestrator"))
+    with pytest.raises(AgentCardError, match="worker_cost"):
+        validate_agent_card(_minimal_card(worker_cost="free"))
+
+
+@pytest.mark.issue(246)
+def test_json_schema_declares_tree_role_and_worker_cost() -> None:
+    schema = agent_card_json_schema()
+    props = schema["properties"]
+    assert props["tree_role"]["enum"] == ["worker", "planner", "review"]
+    assert props["worker_cost"]["enum"] == ["low", "mid", "high"]
+    assert "tree_role" not in schema["required"]
+    assert "worker_cost" not in schema["required"]
+
+
+@pytest.mark.issue(246)
+def test_gaze_match_still_omits_tool_bodies_with_hints_on_card() -> None:
+    card = _minimal_card(tree_role="worker", worker_cost="mid")
+    record = ResolveRecord(
+        name="orrery/test-hints",
+        endpoint="mcp://x",
+        content_digest="sha256:0",
+        description="test hints card",
+        agent_card=card,
+    )
+    preview = card.gaze_preview()
+    assert preview["tree_role"] == "worker"
+    assert preview["worker_cost"] == "mid"
+    assert "payload" not in preview
+    assert "tools" not in preview
+    assert record.agent_card is not None
+    assert record.agent_card.gaze_preview()["tree_role"] == "worker"
