@@ -1,0 +1,27 @@
+[star]
+name = "orrery/api-spec-upgrade"
+kind = "constellation"
+version = "0.1.0"
+description = "Frozen OpenAPI upgrade graph with breaking-approval pause and composite receipt (#179)"
+publisher = "orrery"
+publisher_key_id_env = "ORRERY_API_SPEC_UPGRADE_KEY_ID"
+direct_mcp_path = "/constellations/api-spec-upgrade/mcp"
+tools = ["run", "status", "continue_run", "cancel"]
+capability_families = ["document_processing"]
+[pricing]
+unit = "call"
+price_per_call = "0.00"
+currency = "USD"
+[runtime]
+python_package = "stars.api_spec_upgrade"
+skill_factory = "stars.api_spec_upgrade.skill:build_skill"
+[policy]
+allowed_egress = []
+freshness = "at_call"
+redirects = "deny"
+max_response_bytes = 524288
+[receipt]
+schema_version = "1"
+algorithm = "Ed25519"
+[publish]
+corpus = "stars.api_spec_upgrade.corpus:CORPUS"

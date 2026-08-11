@@ -393,6 +393,16 @@ def explain_policy(name: str = "acme/launch-gate") -> dict[str, Any]:
         narrative.append(
             "Consumes migration star sealed outputs; default receipts omit raw source."
         )
+    if name == "orrery/api-spec-upgrade":
+        narrative.append(
+            "Frozen OpenAPI upgrade: inventory → profile pin → safe upgrade → "
+            "optional breaking-approval pause → validate-target → "
+            "compatibility-diff → artifact-seal."
+        )
+        narrative.append(
+            "validate-target and compatibility-diff digests remain distinct; "
+            "approvals record policy exceptions without rewriting diff evidence."
+        )
     if graph.repair_loop_max and repair is not None:
         narrative.append(
             f"Repair loop: {repair.source} may retry {repair.target} "
