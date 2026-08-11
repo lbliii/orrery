@@ -1,0 +1,31 @@
+[star]
+name = "orrery/geocode"
+version = "0.1.0"
+description = "Resolve allowlisted place token to coordinates and display name"
+publisher = "orrery"
+publisher_key_id_env = "ORRERY_GEOCODE_KEY_ID"
+direct_mcp_path = "/stars/geocode/mcp"
+tools = ["geocode", "answer"]
+capability_families = ["time_and_date"]
+
+[pricing]
+unit = "call"
+price_per_call = "0.00"
+currency = "USD"
+
+[runtime]
+python_package = "stars.geocode"
+skill_factory = "stars.geocode.skill:build_skill"
+
+[policy]
+allowed_egress = []
+freshness = "at_call"
+redirects = "deny"
+max_response_bytes = 4096
+
+[receipt]
+schema_version = "1"
+algorithm = "Ed25519"
+
+[publish]
+corpus = "stars.geocode.corpus:CORPUS"

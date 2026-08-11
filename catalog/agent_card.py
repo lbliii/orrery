@@ -749,6 +749,32 @@ _STAR_CARDS: dict[str, AgentCard] = {
             *_ENVELOPE,
         ),
     ),
+    "orrery/geocode": _card(
+        summary="Offline coordinates and display name for allowlisted place tokens.",
+        use_when=(
+            "You need lat/lon for a named allowlisted place fixture",
+            "You are enriching secretary context without Maps egress",
+            "You want sealed geocode facts from a fixture provider",
+        ),
+        not_for=(
+            "Arbitrary address geocoding or Maps lookups",
+            "Trip planning or restaurant search",
+            "Live flight or venue hours evidence",
+        ),
+        example_intents=("coordinates for tokyo", "geocode new york", "place token lat lon"),
+        tools=("geocode", "answer"),
+        coverage_slug="geocode",
+        inputs=(
+            _io("place", "string", note="allowlisted named place token"),
+        ),
+        outputs=(
+            _io("display_name", "string", note="human-readable place label"),
+            _io("latitude", "number"),
+            _io("longitude", "number"),
+            _io("provider", "string", note="fixture attribution (orrery-fixtures)"),
+            *_ENVELOPE,
+        ),
+    ),
     "orrery/holidays": _card(
         summary="Pinned public holidays for allowlisted region code and year.",
         use_when=(
