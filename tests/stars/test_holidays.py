@@ -11,7 +11,8 @@ from stars.builtins import builtin_registry
 from stars.holidays.contract import tool_schemas
 from stars.holidays.corpus import CORPUS
 from stars.holidays.dataset import REGIONS
-from stars.holidays.fixtures import DEFAULT_HOLIDAY_COUNT, DEFAULT_REGION, DEFAULT_YEAR
+from stars.holidays.contract import DEFAULT_REGION, DEFAULT_YEAR
+from stars.holidays.fixtures import DEFAULT_HOLIDAY_COUNT
 from stars.holidays.service import answer, list_holidays
 from stars.holidays.skill import build_skill
 from tests.stars.helpers import (
