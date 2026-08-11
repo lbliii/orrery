@@ -103,11 +103,35 @@ _TOOL_BLURBS: dict[str, str] = {
 #: Stars whose value is live truth at call time (Wave 1 reactive spikes).
 _REACTIVE_SHORT_NAMES: frozenset[str] = frozenset({"world-time", "source-watch"})
 
+#: Default gaze node — public sky (``orrery/*`` visibility).
+PUBLIC_GAZE_NODE: str = "public"
+
 #: Default shortlist size for ``gaze_match`` / ``gaze_search`` (#64).
 GAZE_DEFAULT_LIMIT: int = 20
 
 #: Hard ceiling for an explicit ``limit`` argument (#64).
 GAZE_MAX_LIMIT: int = 100
+
+
+def normalize_gaze_node(node: str | None = None) -> str:
+    """Active gaze node id; unset → :data:`PUBLIC_GAZE_NODE`."""
+    key = (node or PUBLIC_GAZE_NODE).strip().lower()
+    return key or PUBLIC_GAZE_NODE
+
+
+def records_for_gaze_node(
+    records: tuple[ResolveRecord, ...],
+    node: str | None = None,
+) -> tuple[ResolveRecord, ...]:
+    """Filter catalog records to the active gaze node scope (#70).
+
+    - ``public``: only ``visibility == "public"`` records.
+    - namespace id (e.g. ``acme``): records whose ``namespace`` equals the id.
+    """
+    key = normalize_gaze_node(node)
+    if key == PUBLIC_GAZE_NODE:
+        return tuple(r for r in records if r.visibility == "public")
+    return tuple(r for r in records if (r.namespace or "").lower() == key)
 
 
 def clamp_gaze_limit(limit: int | None = None) -> int:
