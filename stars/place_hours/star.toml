@@ -1,0 +1,31 @@
+[star]
+name = "orrery/place-hours"
+version = "0.1.0"
+description = "Resolve allowlisted venue token to hours and open-now status"
+publisher = "orrery"
+publisher_key_id_env = "ORRERY_PLACE_HOURS_KEY_ID"
+direct_mcp_path = "/stars/place-hours/mcp"
+tools = ["place_hours", "answer"]
+capability_families = ["time_and_date"]
+
+[pricing]
+unit = "call"
+price_per_call = "0.00"
+currency = "USD"
+
+[runtime]
+python_package = "stars.place_hours"
+skill_factory = "stars.place_hours.skill:build_skill"
+
+[policy]
+allowed_egress = []
+freshness = "at_call"
+redirects = "deny"
+max_response_bytes = 8192
+
+[receipt]
+schema_version = "1"
+algorithm = "Ed25519"
+
+[publish]
+corpus = "stars.place_hours.corpus:CORPUS"

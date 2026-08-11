@@ -40,6 +40,7 @@ BUILTIN_STAR_PACKAGES = (
     "stars.tz_resolve",
     "stars.geocode",
     "stars.flight_status",
+    "stars.place_hours",
     "stars.holidays",
     "stars.decision_bind",
     "stars.manifest_bind",
