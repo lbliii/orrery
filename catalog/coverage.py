@@ -82,6 +82,7 @@ def _build_registry() -> dict[str, CoverageAllowlist]:
     from stars.ship_check.service import PYPI as SHIP_PYPI
     from stars.source_watch.service import SOURCES as SOURCE_WATCH_SOURCES
     from stars.spdx_license.contract import LICENSE_IDS
+    from stars.tz_resolve.lookup import PLACES as TZ_RESOLVE_PLACES
     from stars.well_known.contract import DOCUMENTS as WELL_KNOWN_DOCS
 
     specs: list[CoverageAllowlist] = [
@@ -136,6 +137,12 @@ def _build_registry() -> dict[str, CoverageAllowlist]:
             allowlist_kind="spdx_id",
             check_param="license_id",
             entries=_sorted_unique(LICENSE_IDS),
+        ),
+        CoverageAllowlist(
+            star="orrery/tz-resolve",
+            allowlist_kind="named_place",
+            check_param="place",
+            entries=_sorted_unique(TZ_RESOLVE_PLACES),
         ),
         CoverageAllowlist(
             star="orrery/csv-url",
