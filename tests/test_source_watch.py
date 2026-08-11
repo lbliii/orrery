@@ -92,7 +92,7 @@ class TestSourceWatch:
     async def test_mcp_tools_expose_source_watch_evidence(self, example_app) -> None:
         async with TestClient(example_app) as client:
             listed = await client.post(
-                "/mcp",
+                "/mcp/dogfood",
                 json={
                     "jsonrpc": "2.0",
                     "method": "tools/list",
@@ -105,7 +105,7 @@ class TestSourceWatch:
             assert {"observe", "diff", "source_watch_answer"} <= names
 
             observed = await client.post(
-                "/mcp",
+                "/mcp/dogfood",
                 json={
                     "jsonrpc": "2.0",
                     "method": "tools/call",
@@ -122,7 +122,7 @@ class TestSourceWatch:
             assert "live_at_call" in text
 
             answered = await client.post(
-                "/mcp",
+                "/mcp/dogfood",
                 json={
                     "jsonrpc": "2.0",
                     "method": "tools/call",

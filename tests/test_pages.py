@@ -273,7 +273,7 @@ class TestReactiveWorldTimeStar:
     async def test_mcp_answer_returns_signed_envelope(self, example_app) -> None:
         async with TestClient(example_app) as client:
             called = await client.post(
-                "/mcp",
+                "/mcp/dogfood",
                 json={
                     "jsonrpc": "2.0",
                     "method": "tools/call",
@@ -412,7 +412,7 @@ class TestEnvelopeVerifyAndPdfArtifact:
     async def test_mcp_convert_returns_signed_envelope(self, example_app) -> None:
         async with TestClient(example_app) as client:
             called = await client.post(
-                "/mcp",
+                "/mcp/dogfood",
                 json={
                     "jsonrpc": "2.0",
                     "method": "tools/call",
@@ -880,7 +880,7 @@ class TestConstellationRunContracts:
     async def test_run_tool_schema_mentions_doc_bundle(self, example_app) -> None:
         async with TestClient(example_app) as client:
             listed = await client.post(
-                "/mcp",
+                "/mcp/dogfood",
                 json={
                     "jsonrpc": "2.0",
                     "method": "tools/list",
@@ -930,7 +930,7 @@ class TestConstellationMCP:
     async def test_tools_list_exposes_constellation_tools(self, example_app) -> None:
         async with TestClient(example_app) as client:
             listed = await client.post(
-                "/mcp",
+                "/mcp/dogfood",
                 json={
                     "jsonrpc": "2.0",
                     "method": "tools/list",
@@ -945,7 +945,7 @@ class TestConstellationMCP:
     async def test_run_returns_chained_step_receipts(self, example_app) -> None:
         async with TestClient(example_app) as client:
             called = await client.post(
-                "/mcp",
+                "/mcp/dogfood",
                 json={
                     "jsonrpc": "2.0",
                     "method": "tools/call",
@@ -973,7 +973,7 @@ class TestConstellationMCP:
     async def test_status_returns_latest_chain(self, example_app) -> None:
         async with TestClient(example_app) as client:
             await client.post(
-                "/mcp",
+                "/mcp/dogfood",
                 json={
                     "jsonrpc": "2.0",
                     "method": "tools/call",
@@ -986,7 +986,7 @@ class TestConstellationMCP:
                 headers=_modern_mcp_headers("tools/call", "run"),
             )
             status = await client.post(
-                "/mcp",
+                "/mcp/dogfood",
                 json={
                     "jsonrpc": "2.0",
                     "method": "tools/call",
@@ -1022,7 +1022,7 @@ class TestConstellationMCP:
     async def test_stale_proof_run_and_explain(self, example_app) -> None:
         async with TestClient(example_app) as client:
             called = await client.post(
-                "/mcp",
+                "/mcp/dogfood",
                 json={
                     "jsonrpc": "2.0",
                     "method": "tools/call",
@@ -1046,7 +1046,7 @@ class TestConstellationMCP:
             assert "run_id" in body
 
             explained = await client.post(
-                "/mcp",
+                "/mcp/dogfood",
                 json={
                     "jsonrpc": "2.0",
                     "method": "tools/call",
