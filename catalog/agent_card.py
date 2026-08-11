@@ -1042,6 +1042,43 @@ _STAR_CARDS: dict[str, AgentCard] = {
             *_ENVELOPE,
         ),
     ),
+    "orrery/migration-git-handoff": _card(
+        summary=(
+            "Digest-only Git/PR handoff receipt for a sealed migration change bundle "
+            "in a caller-authorized checkout."
+        ),
+        use_when=(
+            "You applied a sealed migration bundle locally and need a reviewable receipt",
+            "You have pinned profile + validation digests and explicit checkout authority",
+            "You want fail-closed verification without Orrery holding repo tokens",
+        ),
+        not_for=(
+            "Production merges or Orrery-held GitHub credentials",
+            "Reimplementing docs/api-spec migration constellation graphs",
+            "Applying patches inside Orrery",
+        ),
+        example_intents=(
+            "migration git handoff receipt",
+            "authorized local git pr handoff",
+            "sealed bundle checkout handoff",
+        ),
+        tools=("handoff",),
+        coverage_slug="migration-git-handoff",
+        inputs=(
+            _io("profile", "object", required=True, note="pinned MigrationProfile v1"),
+            _io("change_bundle", "object", required=True, note="sealed apply artifact"),
+            _io("repo_identity_policy", "object", required=True, note="checkout root allowlist"),
+            _io("checkout_root", "string", required=True),
+            _io("authority", "object", required=True),
+            _io("local_validation", "object", required=True),
+            _io("branch_or_pr_ref", "object", required=True),
+        ),
+        outputs=(
+            _io("handoff_receipt", "object"),
+            _io("authorized", "boolean"),
+            *_ENVELOPE,
+        ),
+    ),
     "orrery/link-check-bounded": _card(
         summary="Bounded allowlisted HTTPS link reachability over markdown/html bundles.",
         use_when=(
