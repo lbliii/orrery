@@ -1,0 +1,16 @@
+{
+  "skill_name": "orrery-stale-proof-parable",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Detect whether my answer is stale — I need sealed live UTC and an official source digest.",
+      "expected_output": "Resolve orrery/stale-proof from gaze, call run, receive fresh_proof with utc and source_status.",
+      "expectations": [
+        "Gaze shortlist includes orrery/stale-proof",
+        "Resolved SKU is orrery/stale-proof",
+        "Tool run returns status fresh_proof",
+        "Payload includes utc and source_status"
+      ]
+    }
+  ]
+}

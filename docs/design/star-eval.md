@@ -7,8 +7,8 @@
 - **Related:** [scouting.md](./scouting.md) (litmus for *what* to ship), this page (how to *eval* it)
 
 Short instrument manual for every new **public** star. Copy the acceptance
-block onto the star issue. Layers L2–L5 are documented for horizon work; only
-**L0 + L1** gate publish / `oracle_ok` today.
+block onto the star issue. Only **L0 + L1** gate publish / `oracle_ok` today;
+L2–L5 are optional horizon layers (L3–L5 implemented; see ops docs).
 
 ## Layer table
 
@@ -18,8 +18,8 @@ block onto the star issue. Layers L2–L5 are documented for horizon work; only
 | **L1** | Non-empty `corpus.py` (`CORPUS`) + Chirp smoke | Boot publish / `oracle_ok` | Required |
 | **L2** | Live canary (scheduled) | Ops only | Not now (#118) |
 | **L3** | Envelope verify + satisfaction | Gaze/resolve pills | Implemented (#120) — [eval-health](../operations/eval-health.md) |
-| **L4** | Constellation composite smoke | Constellation publish | Not now (#119) |
-| **L5** | Optional agent-loop / `evals.json` | Demo / interop | Not now (#121) |
+| **L4** | Constellation composite smoke | Constellation publish | Implemented (#119) — stale-proof smoke below |
+| **L5** | Optional agent-loop / `evals.json` | Demo / interop — **≠ publish gate** | Implemented (#121) — [star-eval-l5](../operations/star-eval-l5.md) |
 
 **LLM rubric is Not now for the publish gate.** Prefer deterministic
 assertions on Envelope facts. Agent Skills `evals.json` is L5 interop only —
@@ -83,6 +83,13 @@ tests. Its direct `run` envelope contains the complete World Time and Source
 Watch evidence, and produces `fresh_proof` only when both are present;
 otherwise it is explicitly `incomplete`. This is a bounded composition smoke,
 not a claim that Orrery deployed anything or persisted an agent baseline.
+
+## L5 optional interop: stale-proof parable loop
+
+L5 exports a thin gaze→resolve→call eval for the cohort-A parable and an
+optional Agent Skills [`evals/evals.json`](../../evals/evals.json). **L5 is
+non-gating** for publish / `oracle_ok` — deterministic pytest only; no LLM
+judge. Ops: [star-eval-l5](../operations/star-eval-l5.md) (#121).
 
 ## Copy-paste acceptance (every new public star)
 
