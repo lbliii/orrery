@@ -124,7 +124,14 @@ Document layers in this plan + short `docs/design/star-eval.md`. Add “eval che
 ## Sprint 4 — L3 demand
 
 - Tie verify success/fail (+ optional rate) into eval dashboards / pills
-- Depends on #67–#69
+- Depends on #67–#69 (closed/merged: satisfaction schema, ``rate`` store, aggregate pills)
+
+**Shipped (#120):** Gaze ``trust.eval_health`` composes publish-oracle supply
+status with digest-matched satisfaction aggregates from
+[satisfaction schema](../design/satisfaction-schema.md) (#67) and
+[satisfaction pills](../operations/satisfaction-pills.md) (#69). Quiet when
+demand is empty or digest-mismatched — no fake scores. Oracle and satisfaction
+pills unchanged.
 
 **Acceptance:** Design links satisfaction aggregates to “eval health”; no fake scores.
 
@@ -157,7 +164,8 @@ Document layers in this plan + short `docs/design/star-eval.md`. Add “eval che
 
 - **#76** — Every specimen star task inherits L0+L1 acceptance.
 - **#9 / #34** — Oracle pills remain L1-backed.
-- **#59** — L3 demand-side.
+- **#59 / #67 / #69** — L3 demand-side: [satisfaction schema](../design/satisfaction-schema.md),
+  ``rate`` store, aggregate pills; L3 composite: [eval-health](../operations/eval-health.md) (#120)
 - **#56** — Dual trust / no ceremony tax: eval must stay hot-path cheap.
 - **Chirp smoke** — Do not fork; extend usage and docs.
 
