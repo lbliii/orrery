@@ -86,6 +86,7 @@ class TestOrreryHostFoundation:
                 "world-time",
                 "source-watch",
                 "launch-gate",
+                "satisfaction",
             }
 
             console = await client.get("/console")
@@ -130,6 +131,8 @@ class TestOrreryHostFoundation:
                 "run",
                 "status",
                 "explain_policy",
+                "rate",
+                "star_rate",
             }
 
             called = await client.post(
