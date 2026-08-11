@@ -19,6 +19,7 @@ from catalog import CATALOG
 from catalog.agent_card import AgentCard, AgentCardIO, card_for
 from catalog.console_links import PUBLISHER_DIRECT_NOTE, console_href_for
 from trust.oracle import oracle_for
+from trust.satisfaction import SatisfactionPillView, satisfaction_pill_for
 
 _INTRO = {
     "cert-expiry": (
@@ -85,6 +86,11 @@ class StarPageCard:
     agent_card_version: str
 
 
+def satisfaction_for_star(name: str, content_digest: str) -> SatisfactionPillView:
+    """Demand-side aggregate pill for a star page (quiet when empty/mismatch)."""
+    return satisfaction_pill_for(star_name=name, content_digest=content_digest)
+
+
 def page_for_star(name: str, *, request: Request | None = None) -> Page:
     rec = CATALOG.resolve(name)
     if rec is None:
@@ -113,6 +119,7 @@ def page_for_star(name: str, *, request: Request | None = None) -> Page:
         page_block_name="content",
         rec=rec,
         oracle=oracle_for(rec),
+        satisfaction=satisfaction_for_star(rec.name, rec.content_digest),
         console_href=console_href_for(rec),
         publisher_note=PUBLISHER_DIRECT_NOTE,
         intro=intro,

@@ -21,6 +21,7 @@ from .models import ResolveRecord
 
 if TYPE_CHECKING:
     from trust.oracle import OracleView
+    from trust.satisfaction import SatisfactionPillView
 
 
 def _inputs_summary_for(record: ResolveRecord) -> str | None:
@@ -97,6 +98,7 @@ class GazeHit:
     oracle_ok: bool = False
     console_href: str = "/console"
     oracle: OracleView | None = None
+    satisfaction: SatisfactionPillView | None = None
     summary: str | None = None
     use_when: tuple[str, ...] = ()
     inputs_summary: str | None = None
@@ -122,6 +124,10 @@ class GazeHit:
                 "skill_ok": None,
                 "reliability_label": "unscored",
             }
+        if self.satisfaction is not None:
+            trust_satisfaction = self.satisfaction.as_dict()
+        else:
+            trust_satisfaction = {"quiet": True}
         return {
             "name": self.name,
             "kind": self.kind,
@@ -135,7 +141,7 @@ class GazeHit:
             "reactive": self.reactive,
             "oracle_ok": self.oracle_ok,
             "console_href": self.console_href,
-            "trust": {"oracle": trust_oracle},
+            "trust": {"oracle": trust_oracle, "satisfaction": trust_satisfaction},
             "summary": self.summary,
             "use_when": list(self.use_when),
             "inputs_summary": self.inputs_summary,
@@ -174,11 +180,16 @@ GAZE_NODE_TOOLS: tuple[str, ...] = (
 def hit_from_record(record: ResolveRecord) -> GazeHit:
     """Build a gaze hit from a resolve record (descriptions + prices only)."""
     from trust.oracle import oracle_for
+    from trust.satisfaction import satisfaction_pill_for
 
     toll = record.pricing_label
     blurb_source = record.resolved_description() or ""
     blurb = f"{blurb_source} · {toll}" if blurb_source else toll
     view = oracle_for(record)
+    satisfaction = satisfaction_pill_for(
+        star_name=record.name,
+        content_digest=record.content_digest,
+    )
     card = record.agent_card
     return GazeHit(
         name=record.name,
@@ -193,6 +204,7 @@ def hit_from_record(record: ResolveRecord) -> GazeHit:
         oracle_ok=record.oracle_ok,
         console_href=console_href_for(record),
         oracle=view,
+        satisfaction=satisfaction,
         summary=None if card is None else card.summary,
         use_when=() if card is None else card.use_when[:3],
         inputs_summary=_inputs_summary_for(record),
@@ -202,8 +214,13 @@ def hit_from_record(record: ResolveRecord) -> GazeHit:
 def tool_hit(tool: str, *, constellation: ResolveRecord) -> GazeHit:
     """A constellation-node tool entry (kind ``tool``)."""
     from trust.oracle import oracle_for
+    from trust.satisfaction import satisfaction_pill_for
 
     view = oracle_for(constellation)
+    satisfaction = satisfaction_pill_for(
+        star_name=constellation.name,
+        content_digest=constellation.content_digest,
+    )
     return GazeHit(
         name=tool,
         kind="tool",
@@ -217,6 +234,7 @@ def tool_hit(tool: str, *, constellation: ResolveRecord) -> GazeHit:
         oracle_ok=constellation.oracle_ok,
         console_href=console_href_for(constellation),
         oracle=view,
+        satisfaction=satisfaction,
     )
 
 
