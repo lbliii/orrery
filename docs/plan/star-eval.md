@@ -140,6 +140,12 @@ pills unchanged.
 - Thin agent-loop eval for parable (gaze intent → resolve → call)
 - Optional `evals/evals.json` export for Agent Skills tooling
 
+**Shipped (#121):** Optional L5 agent-loop for the cohort-A parable
+(`orrery/stale-proof`): gaze intent → resolve → fixture-backed `run` call.
+Exports minimal Agent Skills [`evals/evals.json`](../../evals/evals.json).
+**Non-gating** for publish / `oracle_ok` — see
+[star-eval-l5](../operations/star-eval-l5.md).
+
 **Acceptance:** Documented as non-gating; deterministic checks preferred.
 
 ## Risk register
