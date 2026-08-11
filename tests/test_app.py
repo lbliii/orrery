@@ -18,7 +18,7 @@ from chirp.testing import TestClient
 from pages.page import public_capability_counts
 
 _META_PROTOCOL_VERSION = "io.modelcontextprotocol/protocolVersion"
-N_DOGFOOD_SKILLS = 6
+N_DOGFOOD_SKILLS = 7
 
 
 def _modern_mcp_params(**extra: Any) -> dict[str, Any]:
@@ -55,7 +55,7 @@ def _standard_mcp_headers() -> dict[str, str]:
 @pytest.mark.issue(11)
 class TestOrreryHostFoundation:
     async def test_host_mounts_n_skills_and_surfaces(self, example_app) -> None:
-        assert N_DOGFOOD_SKILLS == 6
+        assert N_DOGFOOD_SKILLS == 7
         async with TestClient(example_app) as client:
             home = await client.get("/")
             assert home.status == 200

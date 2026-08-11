@@ -32,9 +32,10 @@ from stars.html_to_pdf.skill import build_skill as build_html_to_pdf_star
 from stars.source_watch.skill import build_skill as build_source_watch_star
 from stars.world_time.service import fetch_live_utc as _fetch_live_utc
 from stars.world_time.skill import build_skill as build_world_time_star
+from trust.satisfaction import build_satisfaction_skill
 
-#: How many dogfood skills this host mounts (Foundation epic #2 + Waves 1/2).
-N_DOGFOOD_SKILLS = 6
+#: How many dogfood skills this host mounts (Foundation epic #2 + Waves 1/2 + satisfaction).
+N_DOGFOOD_SKILLS = 7
 
 #: Smoke HTML used by the star detail receipt and corpus.
 SMOKE_HTML = "<!doctype html><html><body><h1>Orrery</h1></body></html>"
@@ -453,6 +454,7 @@ def build_dogfood_skills() -> tuple[Skill, ...]:
         get_world_time_skill(),
         get_source_watch_skill(),
         build_launch_gate_skill(),
+        build_satisfaction_skill(verify_receipt=verify_receipt),
     )
     assert len(skills) == N_DOGFOOD_SKILLS
     return skills
