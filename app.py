@@ -42,10 +42,9 @@ from chirp.middleware.csrf import CSRFConfig
 from chirp.middleware.security_headers import SecurityHeadersConfig
 from chirp.skill import (
     ReliabilityStore,
+    SkillRegistry,
     mount_console,
-    mount_skills,
 )
-from chirp.skill.publish import run_publish_gate
 from chirp.skill.smoke import render_faithful_answer
 
 from artifacts import safe_attachment_filename
@@ -69,7 +68,16 @@ from discovery import (
 from discovery import (
     dumps as discovery_dumps,
 )
-from dogfood import DOGFOOD_CORPUS, build_dogfood_skills, verify_receipt
+from dogfood import (
+    DOGFOOD_CORPUS,
+    DOGFOOD_MCP_PATH,
+    build_discovery_skills,
+    build_dogfood_call_skills,
+    build_dogfood_skills,
+    mount_orrery_skills,
+    run_dogfood_publish_gate,
+    verify_receipt,
+)
 from public_keys import KEY_SET_CACHE_CONTROL, key_set_url, public_key_set
 from stars._core.corpus import corpus_ok_by_star, validate_public_star_corpora
 from stars._core.direct_mcp import mount_direct_mcp
@@ -129,7 +137,12 @@ for middleware in secure_stack(
     app.config,
     # MCP JSON-RPC clients have no browser CSRF cookie; exempt the machine face.
     csrf=CSRFConfig(
-        exempt_paths=frozenset({"/mcp", "/api/envelope/verify", *_DIRECT_STAR_MCP_PATHS})
+        exempt_paths=frozenset({
+            "/mcp",
+            DOGFOOD_MCP_PATH,
+            "/api/envelope/verify",
+            *_DIRECT_STAR_MCP_PATHS,
+        })
     ),
     headers=SecurityHeadersConfig(content_security_policy=_ORRERY_CSP),
 ):
@@ -137,11 +150,19 @@ for middleware in secure_stack(
 
 
 # ---------------------------------------------------------------------------
-# Dogfood skills → aggregated /mcp + discovery + console
+# Dogfood skills — slim /mcp + labeled /mcp/dogfood + discovery + console
 # ---------------------------------------------------------------------------
 
-_skills = build_dogfood_skills()
-registry = mount_skills(app, _skills)
+_skill_registry = SkillRegistry()
+for _skill in build_dogfood_skills():
+    _skill_registry.add(_skill)
+_dogfood_mcp = mount_orrery_skills(
+    app,
+    registry=_skill_registry,
+    discovery_skills=build_discovery_skills(),
+    call_skills=build_dogfood_call_skills(),
+)
+registry = _skill_registry
 scores = ReliabilityStore()
 mount_console(app, registry, scores=scores)
 
@@ -554,9 +575,10 @@ if os.environ.get("ORRERY_SKIP_PUBLISH", "").strip() not in ("1", "true", "True"
     except RuntimeError:
         # Public stars must exist before gaze/resolve smoke prompts run.
         refresh_catalog(star_registry, direct_star_skills, receipt=None)
-        _publish_receipt = run_publish_gate(
+        _publish_receipt = run_dogfood_publish_gate(
             app,
             DOGFOOD_CORPUS,
+            dogfood_registry=_dogfood_mcp,
             answer_fn=render_faithful_answer,
         )
         if _publish_receipt.smoke is not None:

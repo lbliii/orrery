@@ -12,9 +12,9 @@ import json
 from typing import Any
 
 import pytest
-from chirp.skill.publish import run_publish_gate
 from chirp.testing import TestClient
 
+from discovery import MCP_TOOLS_ALLOWLIST, MCP_TOOLS_DENYLIST
 from pages.page import public_capability_counts
 
 _META_PROTOCOL_VERSION = "io.modelcontextprotocol/protocolVersion"
@@ -97,7 +97,7 @@ class TestOrreryHostFoundation:
             assert detail.status == 200
             assert "gaze_match" in detail.text
 
-    async def test_aggregated_mcp_lists_and_invokes_dogfood_tools(self, example_app) -> None:
+    async def test_default_mcp_is_discovery_only(self, example_app) -> None:
         async with TestClient(example_app) as client:
             listed = await client.post(
                 "/mcp",
@@ -111,29 +111,8 @@ class TestOrreryHostFoundation:
             )
             assert listed.status == 200
             tool_names = {t["name"] for t in json.loads(listed.text)["result"]["tools"]}
-            assert tool_names == {
-                "gaze_match",
-                "gaze_search",
-                "gaze_describe",
-                "gaze_list_constellations",
-                "coverage_check",
-                "resolve_name",
-                "convert",
-                "submit",
-                "result",
-                "health",
-                "fetch",
-                "get",
-                "answer",
-                "observe",
-                "diff",
-                "source_watch_answer",
-                "run",
-                "status",
-                "explain_policy",
-                "rate",
-                "star_rate",
-            }
+            assert tool_names == MCP_TOOLS_ALLOWLIST
+            assert tool_names.isdisjoint(MCP_TOOLS_DENYLIST)
 
             called = await client.post(
                 "/mcp",
@@ -151,6 +130,55 @@ class TestOrreryHostFoundation:
             assert called.status == 200
             text = json.loads(called.text)["result"]["content"][0]["text"]
             assert "orrery/html-to-pdf" in text
+
+    async def test_dogfood_mcp_lists_and_invokes_call_tools(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            listed = await client.post(
+                "/mcp/dogfood",
+                json={
+                    "jsonrpc": "2.0",
+                    "method": "tools/list",
+                    "id": 1,
+                    "params": _modern_mcp_params(),
+                },
+                headers=_modern_mcp_headers("tools/list"),
+            )
+            assert listed.status == 200
+            tool_names = {t["name"] for t in json.loads(listed.text)["result"]["tools"]}
+            assert {
+                "convert",
+                "submit",
+                "result",
+                "health",
+                "fetch",
+                "get",
+                "answer",
+                "observe",
+                "diff",
+                "source_watch_answer",
+                "run",
+                "status",
+                "rate",
+                "star_rate",
+            } <= tool_names
+            assert tool_names.isdisjoint(MCP_TOOLS_ALLOWLIST - {"explain_policy"})
+
+            called = await client.post(
+                "/mcp/dogfood",
+                json={
+                    "jsonrpc": "2.0",
+                    "method": "tools/call",
+                    "id": 2,
+                    "params": _modern_mcp_params(
+                        name="convert",
+                        arguments={"html": "<p>dogfood</p>"},
+                    ),
+                },
+                headers=_modern_mcp_headers("tools/call", "convert"),
+            )
+            assert called.status == 200
+            text = json.loads(called.text)["result"]["content"][0]["text"]
+            assert "application/pdf" in text
 
     async def test_standard_2025_streamable_http_header_needs_no_body_meta_or_routing_headers(
         self, example_app
@@ -191,7 +219,9 @@ class TestOrreryHostFoundation:
             assert listed.status == 200
             body = json.loads(listed.text)
             assert body["id"] == 150
-            assert {tool["name"] for tool in body["result"]["tools"]} >= {"gaze_match", "convert"}
+            listed_names = {tool["name"] for tool in body["result"]["tools"]}
+            assert listed_names >= {"gaze_match", "resolve_name"}
+            assert "convert" not in listed_names
 
             called = await client.post(
                 "/mcp",
@@ -215,7 +245,7 @@ class TestOrreryHostFoundation:
             async def call_after_delay() -> None:
                 await asyncio.sleep(0.1)
                 await client.post(
-                    "/mcp",
+                    "/mcp/dogfood",
                     json={
                         "jsonrpc": "2.0",
                         "method": "tools/call",
@@ -249,7 +279,7 @@ class TestOrreryHostFoundation:
 
         import dogfood
         from catalog.sync import refresh_catalog
-        from dogfood import DOGFOOD_CORPUS
+        from dogfood import DOGFOOD_CORPUS, run_dogfood_publish_gate
         from trust.oracle import record_skill_scores_from_registry
 
         # Publish gate re-imports paths; keep world-time deterministic.
@@ -270,7 +300,11 @@ class TestOrreryHostFoundation:
         host = sys.modules["orrery_app_under_test"]
         # Mirror boot: catalog must exist before gaze/resolve smoke prompts.
         refresh_catalog(host.star_registry, host.direct_star_skills, receipt=None)
-        receipt = run_publish_gate(example_app, DOGFOOD_CORPUS)
+        receipt = run_dogfood_publish_gate(
+            example_app,
+            DOGFOOD_CORPUS,
+            dogfood_registry=host._dogfood_mcp,
+        )
         assert receipt.passed, receipt.to_dict()
         assert receipt.smoke is not None
         assert receipt.smoke.passed

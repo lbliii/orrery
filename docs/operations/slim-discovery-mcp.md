@@ -15,6 +15,11 @@ Star **call** tools (``convert``, ``fetch``, ``run``, ``answer``, …) are absen
 from the default install catalog. After ``resolve_name``, call the publisher MCP
 endpoint from the Skill DNS record (ADR 0004).
 
+For local teaching-trio / constellation demos on this host, call tools also
+live on a labeled aggregate at ``/mcp/dogfood`` (not referenced by ``/connect``
+or the server-card ``transport.endpoint``). Prefer direct star mounts such as
+``/stars/html-to-pdf/mcp`` when exercising publisher-direct call (ADR 0004).
+
 ## Copy contract
 
 Server card, ``/connect``, and ``llms.txt`` state:
@@ -27,6 +32,6 @@ Server card, ``/connect``, and ``llms.txt`` state:
 ## Verify
 
 ```bash
-uv run pytest tests/test_discovery.py -q
+uv run pytest tests/test_app.py tests/test_discovery.py -q
 uv run ruff check .
 ```
