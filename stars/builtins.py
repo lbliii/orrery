@@ -37,6 +37,7 @@ BUILTIN_STAR_PACKAGES = (
     "stars.docs_migrate_to_mdx",
     "stars.api_spec_upgrade",
     "stars.world_time",
+    "stars.tz_resolve",
     "stars.decision_bind",
     "stars.manifest_bind",
     "stars.manifest_preflight",

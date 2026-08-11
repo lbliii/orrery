@@ -722,6 +722,33 @@ _STAR_CARDS: dict[str, AgentCard] = {
             *_ENVELOPE,
         ),
     ),
+    "orrery/tz-resolve": _card(
+        summary="Offline IANA timezone from allowlisted place token or lat/lon.",
+        use_when=(
+            "You need an IANA timezone for a named allowlisted place",
+            "You have coordinates and want offline timezone resolution",
+            "You are enriching calendar context without geocoding APIs",
+        ),
+        not_for=(
+            "Arbitrary geocoding or Maps lookups",
+            "Trip planning or restaurant search",
+            "Live clock or UTC-now evidence",
+        ),
+        example_intents=("timezone for tokyo", "iana zone from lat lon", "place token timezone"),
+        tools=("resolve", "answer"),
+        coverage_slug="tz-resolve",
+        inputs=(
+            _io("place", "string", note="allowlisted named place token"),
+            _io("latitude", "number", note="decimal degrees; requires longitude"),
+            _io("longitude", "number", note="decimal degrees; requires latitude"),
+        ),
+        outputs=(
+            _io("timezone", "string", note="IANA timezone id"),
+            _io("latitude", "number"),
+            _io("longitude", "number"),
+            *_ENVELOPE,
+        ),
+    ),
     "orrery/source-watch": _card(
         summary="Live official-source evidence, digest comparison, and bounded answers.",
         use_when=(
