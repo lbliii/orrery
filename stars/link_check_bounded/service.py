@@ -27,6 +27,21 @@ _HTML_HREF_RE = re.compile(
 _PATH_RE = re.compile(r"^[A-Za-z0-9._/-]+$")
 ALLOWED_HOSTS = frozenset(urlsplit(origin).hostname for origin in ALLOWED_ORIGINS)
 
+# Advisory fix text for non-ok link rows — does not change status semantics.
+_STATUS_REMEDIATION: dict[str, str] = {
+    "not_allowed": (
+        "Replace the URL with an allowlisted HTTPS origin "
+        "(https://example.com or https://docs.python.org), or remove the link."
+    ),
+    "unreachable": (
+        "Fix or replace the URL so the allowlisted host responds successfully "
+        "to HEAD within the timeout."
+    ),
+    "redirect_not_allowed": (
+        "Ensure the URL does not redirect outside allowlisted HTTPS hosts."
+    ),
+}
+
 
 class Transport(Protocol):
     def __call__(self, url: str, *, timeout: float) -> tuple[str, int]: ...
@@ -87,19 +102,19 @@ def check(
         status = _status_for(url, transport=transport)
         if status.get("egress"):
             egress_count += 1
-        results.append(
-            {
-                "path": item["path"],
-                "url": url,
-                "status": status["status"],
-                **(
-                    {"http_status": status["http_status"]}
-                    if "http_status" in status
-                    else {}
-                ),
-                **({"detail": status["detail"]} if "detail" in status else {}),
-            }
-        )
+        row: dict[str, object] = {
+            "path": item["path"],
+            "url": url,
+            "status": status["status"],
+        }
+        if "http_status" in status:
+            row["http_status"] = status["http_status"]
+        if "detail" in status:
+            row["detail"] = status["detail"]
+        remediation = _STATUS_REMEDIATION.get(str(status["status"]))
+        if remediation is not None:
+            row["remediation"] = remediation
+        results.append(row)
 
     ok_count = sum(1 for row in results if row["status"] == "ok")
     return {

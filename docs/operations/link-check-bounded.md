@@ -23,6 +23,9 @@ requests only to allowlisted origins. Different SKU from `orrery/http-head`
 
 Statuses: `ok`, `not_allowed`, `unreachable`, `redirect_not_allowed`.
 
+Non-`ok` link rows include optional advisory `remediation` text (machine-oriented
+fix hint). Remediation does not change status semantics or pass/fail.
+
 ## Egress
 
 Allowlist (also in `star.toml`):
