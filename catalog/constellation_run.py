@@ -1,7 +1,7 @@
-"""Constellation orchestration — ``run`` / ``status`` / ``explain_policy`` (#33).
+"""Constellation orchestration — ``run`` / ``status`` / ``continue_run`` (#33).
 
-Steps are stubbed; each gate emits a real signed Envelope in the composite
-chain. Run state is in-memory for the process lifetime (Wave 4 demo).
+Checkpointed run state uses ``ConstellationRunStore`` (design #152 / ADR 0007).
+Sync demo paths still emit signed Envelope chains in the composite receipt.
 """
 
 from __future__ import annotations
@@ -9,20 +9,90 @@ from __future__ import annotations
 import hashlib
 import json
 import secrets
-from dataclasses import dataclass
+from collections.abc import Callable, Mapping
+from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta
 from typing import Any, Literal
 
 from chirp.skill import sign_envelope
 
 from catalog.constellation import PolicyGraph, policy_for
+from stars._core.migration_profile import canonical_json, sha256_hex
 from stars.stale_proof.composite_receipt import normalize_cites, with_cites
 
 RunStatus = Literal["in_flight", "completed"]
+RunDisposition = Literal[
+    "queued",
+    "running",
+    "awaiting_input",
+    "awaiting_witness",
+    "awaiting_external",
+    "completed",
+    "failed",
+    "cancelled",
+    "expired",
+]
+
+ReplayKey = tuple[str, str, str, str]
+
+
+class ConstellationRunError(ValueError):
+    """Checkpoint persistence, replay, or resume failed."""
+
+
+@dataclass(slots=True)
+class ActionRequest:
+    """Typed pause request (#153)."""
+
+    request_id: str
+    run_id: str
+    kind: str
+    schema: dict[str, Any]
+    audience: str
+    expires_at: str
+    title: str | None = None
+    prompt: str | None = None
+
+    def as_dict(self) -> dict[str, Any]:
+        payload: dict[str, Any] = {
+            "request_id": self.request_id,
+            "run_id": self.run_id,
+            "kind": self.kind,
+            "schema": self.schema,
+            "audience": self.audience,
+            "expires_at": self.expires_at,
+        }
+        if self.title is not None:
+            payload["title"] = self.title
+        if self.prompt is not None:
+            payload["prompt"] = self.prompt
+        return payload
+
+
+@dataclass(slots=True)
+class CheckpointRecord:
+    """Durable constellation run checkpoint (design #152)."""
+
+    run_id: str
+    caller_id: str
+    constellation: str
+    disposition: RunDisposition
+    policy_digest: str
+    release: dict[str, str]
+    graph_position: str
+    stage_receipt_digests: tuple[str, ...]
+    outstanding_action_requests: tuple[ActionRequest, ...] = ()
+    bundle: dict[str, Any] = field(default_factory=dict)
+    chain: tuple[dict[str, Any], ...] = ()
+    composite: dict[str, Any] | None = None
+    artifact_digest: str | None = None
+    lease_held: bool = False
+    cites: tuple[str, ...] = ()
 
 
 @dataclass(slots=True)
 class RunState:
-    """One constellation execution and its composite receipt chain."""
+    """Legacy sync constellation execution (completed runs only)."""
 
     run_id: str
     constellation: str
@@ -34,8 +104,84 @@ class RunState:
     cites: tuple[str, ...] = ()
 
 
-_RUNS: dict[str, RunState] = {}
-_latest_run_id: str | None = None
+class ConstellationRunStore:
+    """In-memory checkpoint store with idempotent ``continue_run`` replay."""
+
+    def __init__(self) -> None:
+        self._checkpoints: dict[str, CheckpointRecord] = {}
+        self._sync_runs: dict[str, RunState] = {}
+        self._replay: dict[ReplayKey, dict[str, Any]] = {}
+        self._latest_run_id: str | None = None
+
+    def put_checkpoint(self, record: CheckpointRecord) -> None:
+        self._checkpoints[record.run_id] = record
+        self._latest_run_id = record.run_id
+
+    def get_checkpoint(self, run_id: str) -> CheckpointRecord | None:
+        return self._checkpoints.get(run_id)
+
+    def put_sync(self, state: RunState) -> None:
+        self._sync_runs[state.run_id] = state
+        self._latest_run_id = state.run_id
+
+    def get_sync(self, run_id: str) -> RunState | None:
+        return self._sync_runs.get(run_id)
+
+    @property
+    def latest_run_id(self) -> str | None:
+        return self._latest_run_id
+
+    def seal_continuation(
+        self,
+        *,
+        caller_id: str,
+        run_id: str,
+        request_id: str,
+        payload: Mapping[str, Any],
+        producer: Callable[[], dict[str, Any]],
+    ) -> dict[str, Any]:
+        """Idempotent resume: same replay key returns the same terminal composite."""
+        payload_digest = payload_digest_for(payload)
+        key: ReplayKey = (caller_id, run_id, request_id, payload_digest)
+        existing = self._replay.get(key)
+        if existing is not None:
+            return {**existing, "replayed": True}
+
+        prefix = (caller_id, run_id, request_id)
+        for replay_key, _sealed in self._replay.items():
+            if replay_key[:3] == prefix and replay_key[3] != payload_digest:
+                raise ConstellationRunError("replay_incompatible")
+
+        result = dict(producer())
+        self._replay[key] = result
+        return result
+
+
+_STORE = ConstellationRunStore()
+
+
+def get_run_store() -> ConstellationRunStore:
+    """Return the process-wide constellation run store."""
+    return _STORE
+
+
+def reset_run_store() -> None:
+    """Clear all checkpoint and sync run state (tests only)."""
+    global _STORE
+    _STORE = ConstellationRunStore()
+
+
+def payload_digest_for(payload: Mapping[str, Any]) -> str:
+    """Replay digest for ``continue_run`` (#152)."""
+    return sha256_hex(canonical_json(dict(payload)))
+
+
+def stage_receipt_digest(stage: Mapping[str, Any]) -> str:
+    return sha256_hex(canonical_json(dict(stage)))
+
+
+def default_action_expires_at(*, hours: int = 24) -> str:
+    return (datetime.now(tz=UTC) + timedelta(hours=hours)).replace(microsecond=0).isoformat()
 
 
 def _input_digest(bundle: dict[str, Any]) -> str:
@@ -53,6 +199,28 @@ def _policy_digest(name: str, graph: PolicyGraph) -> str:
         sort_keys=True,
     )
     return "sha256:" + hashlib.sha256(blob.encode()).hexdigest()[:16] + "…"
+
+
+def policy_digest_full(name: str, graph: PolicyGraph) -> str:
+    """Full policy digest including release identity (ADR 0007)."""
+    blob = json.dumps(
+        {
+            "constellation": name,
+            "nodes": [node.id for node in graph.nodes],
+            "edges": [(edge.source, edge.target, edge.kind) for edge in graph.edges],
+            "release": {
+                "digest": graph.release_digest,
+                "key_id": graph.release_key_id,
+            },
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return "sha256:" + hashlib.sha256(blob.encode()).hexdigest()
+
+
+def release_identity(graph: PolicyGraph) -> dict[str, str]:
+    return {"digest": graph.release_digest, "key_id": graph.release_key_id}
 
 
 def _node_for_label(graph: PolicyGraph, label: str) -> Any:
@@ -99,6 +267,66 @@ def _sign_gate_envelope(
     return env.to_wire()
 
 
+def checkpoint_status_payload(record: CheckpointRecord) -> dict[str, Any]:
+    """Read-only ``status(run_id)`` wire for checkpointed runs (#153)."""
+    payload: dict[str, Any] = {
+        "run_id": record.run_id,
+        "constellation": record.constellation,
+        "disposition": record.disposition,
+        "policy_digest": record.policy_digest,
+        "release": dict(record.release),
+        "graph_position": record.graph_position,
+        "stage_receipt_digests": list(record.stage_receipt_digests),
+        "outstanding_action_requests": [
+            request.as_dict() for request in record.outstanding_action_requests
+        ],
+        "lease_held": record.lease_held,
+        "lease_rule": "waiting_never_holds_worker_lease",
+    }
+    if record.composite is not None:
+        payload["composite"] = dict(record.composite)
+    if record.artifact_digest is not None:
+        payload["artifact_digest"] = record.artifact_digest
+    if record.chain:
+        payload["chain"] = list(record.chain)
+    if record.cites:
+        payload["cites"] = list(record.cites)
+    return payload
+
+
+def cancel_checkpoint(
+    run_id: str,
+    *,
+    caller_id: str = "anonymous",
+) -> dict[str, Any]:
+    """Terminal cancel for a checkpointed run (#153)."""
+    store = get_run_store()
+    record = store.get_checkpoint(run_id)
+    if record is None:
+        return {"error": "not_found", "run_id": run_id, "status": "not_found"}
+    if record.caller_id != caller_id:
+        return {"error": "forbidden", "run_id": run_id, "status": "forbidden"}
+    if record.disposition in {"completed", "cancelled", "expired", "failed"}:
+        return checkpoint_status_payload(record)
+    cancelled = CheckpointRecord(
+        run_id=record.run_id,
+        caller_id=record.caller_id,
+        constellation=record.constellation,
+        disposition="cancelled",
+        policy_digest=record.policy_digest,
+        release=dict(record.release),
+        graph_position=record.graph_position,
+        stage_receipt_digests=record.stage_receipt_digests,
+        outstanding_action_requests=(),
+        bundle=dict(record.bundle),
+        chain=record.chain,
+        lease_held=False,
+        cites=record.cites,
+    )
+    store.put_checkpoint(cancelled)
+    return checkpoint_status_payload(cancelled)
+
+
 def explain_policy(name: str = "acme/launch-gate") -> dict[str, Any]:
     """Plain-language gates, repair loops, and fan-in for a constellation.
 
@@ -120,7 +348,7 @@ def explain_policy(name: str = "acme/launch-gate") -> dict[str, Any]:
 
     card = card_for(name)
     gate_nodes = sorted(
-        (n for n in graph.nodes if n.node_kind in ("gate", "witness")),
+        (n for n in graph.nodes if n.node_kind in ("gate", "witness", "pause")),
         key=lambda n: n.step,
     )
     repair = next((e for e in graph.edges if e.kind == "repair_loop"), None)
@@ -152,6 +380,11 @@ def explain_policy(name: str = "acme/launch-gate") -> dict[str, Any]:
             "(+ optional PDF receipt); do not install or clone for live truth."
         )
         narrative.append("Step budget: ≤ 3 gates.")
+    if name == "orrery/board-memo":
+        narrative.append(
+            "Resumable demo: memo-bind → audience-choice pause → pdf-seal composite."
+        )
+        narrative.append("Waiting never holds a worker lease (ADR 0007).")
     if graph.repair_loop_max and repair is not None:
         narrative.append(
             f"Repair loop: {repair.source} may retry {repair.target} "
@@ -234,8 +467,6 @@ def run_constellation(
     cites: list[str] | tuple[str, ...] | None = None,
 ) -> dict[str, Any]:
     """Execute a constellation on a Doc Bundle and return the composite chain."""
-    global _latest_run_id
-
     graph = policy_for(constellation)
     if graph is None:
         return {
@@ -290,8 +521,7 @@ def run_constellation(
         },
         cites=cite_tuple,
     )
-    _RUNS[run_id] = state
-    _latest_run_id = run_id
+    get_run_store().put_sync(state)
 
     return _composite_receipt_payload(state, chain=list(chain))
 
@@ -316,12 +546,17 @@ def _composite_receipt_payload(
 
 
 def status_for_run(run_id: str = "") -> dict[str, Any]:
-    """Return in-flight or completed composite receipt for a run."""
-    resolved = run_id.strip() or (_latest_run_id or "")
+    """Return checkpoint, in-flight, or completed composite receipt for a run."""
+    store = get_run_store()
+    resolved = run_id.strip() or (store.latest_run_id or "")
     if not resolved:
         return {"error": "not_found", "run_id": run_id, "status": "not_found"}
 
-    state = _RUNS.get(resolved)
+    checkpoint = store.get_checkpoint(resolved)
+    if checkpoint is not None:
+        return checkpoint_status_payload(checkpoint)
+
+    state = store.get_sync(resolved)
     if state is None:
         return {"error": "not_found", "run_id": resolved, "status": "not_found"}
 

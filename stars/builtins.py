@@ -33,6 +33,7 @@ BUILTIN_STAR_PACKAGES = (
     "stars.content_readiness",
     "stars.authorized_content_patch",
     "stars.publish_gate",
+    "stars.board_memo",
     "stars.world_time",
     "stars.decision_bind",
     "stars.manifest_bind",

@@ -56,6 +56,14 @@ PUBLISH_GATE_DISPOSITIONS: tuple[str, ...] = (
     "awaiting_witness",
     "inconclusive",
 )
+BOARD_MEMO_DISPOSITIONS: tuple[str, ...] = (
+    "completed",
+    "awaiting_input",
+    "inconclusive",
+    "failed",
+    "cancelled",
+    "expired",
+)
 
 #: ADR 0007 lease invariant — paused runs never hold a worker/MCP lease.
 LEASE_RULE = "waiting_never_holds_worker_lease"
@@ -1453,6 +1461,64 @@ _STAR_CARDS: dict[str, AgentCard] = {
             dispositions=PUBLISH_GATE_DISPOSITIONS,
             pause_allowed=True,
             pause_modes=("awaiting_witness",),
+            continuation_tools=("continue_run",),
+        ),
+    ),
+    "orrery/board-memo": _card(
+        summary=(
+            "Resumable board-memo dogfood: memo-bind → audience-choice pause → "
+            "pdf-seal composite with verifiable managed PDF artifact."
+        ),
+        use_when=(
+            "You need ADR 0007 Example 2 pause/resume with one typed choice",
+            "You want a checkpointed constellation run ending in html-to-pdf",
+            "You need continue_run idempotency without holding a worker lease",
+        ),
+        not_for=(
+            "General workflow authoring or arbitrary graph editing",
+            "Holding MCP/HTTP open while awaiting human input",
+            "Raw sensitive payloads in default receipts",
+        ),
+        example_intents=(
+            "board memo audience recommendation",
+            "resumable constellation pdf seal",
+            "awaiting_input board memo demo",
+        ),
+        tools=("run", "status", "continue_run", "cancel"),
+        coverage_slug="board-memo",
+        inputs=(
+            _io("title", "string", required=True, note="memo title"),
+            _io("summary", "string", required=True, note="memo body text"),
+            _io("author", "string", note="optional author label"),
+            _io("caller_id", "string", note="authenticated resume identity"),
+        ),
+        outputs=(
+            _io("disposition", "string"),
+            _io("outstanding_action_requests", "object"),
+            _io("artifact_digest", "string"),
+            *_ENVELOPE,
+        ),
+        run_contract={
+            "entry_tool": "run",
+            "required_inputs": ["title", "summary"],
+            "optional_inputs": ["author", "caller_id"],
+            "composite_output": "signed-envelope-chain",
+            "continuation_tools": ["continue_run"],
+            "input_bundle": {
+                "title": {"type": "string", "required": True},
+                "summary": {"type": "string", "required": True},
+                "author": {"type": "string", "required": False},
+                "caller_id": {"type": "string", "required": False},
+            },
+        },
+        graph_summary="memo-bind → audience-choice → pdf-seal",
+        dispositions=BOARD_MEMO_DISPOSITIONS,
+        member_stars=member_stars_from_policy("orrery/board-memo"),
+        subtree_contract=subtree_contract_from_policy(
+            "orrery/board-memo",
+            dispositions=BOARD_MEMO_DISPOSITIONS,
+            pause_allowed=True,
+            pause_modes=("awaiting_input",),
             continuation_tools=("continue_run",),
         ),
     ),
