@@ -1066,6 +1066,7 @@ _STAR_CARDS: dict[str, AgentCard] = {
             _io("statement", "string"),
             *_ENVELOPE,
         ),
+        tree_role="planner",
     ),
     "orrery/manifest-bind": _card(
         summary="Bind caller-supplied file digests into a stable manifest_digest receipt.",
@@ -1088,6 +1089,8 @@ _STAR_CARDS: dict[str, AgentCard] = {
             _io("excluded_count", "integer"),
             *_ENVELOPE,
         ),
+        tree_role="worker",
+        worker_cost="low",
     ),
     "orrery/manifest-preflight": _card(
         summary="Preflight a caller file manifest against a named versioned policy.",
@@ -1122,6 +1125,8 @@ _STAR_CARDS: dict[str, AgentCard] = {
             _io("violation_codes", "array"),
             *_ENVELOPE,
         ),
+        tree_role="review",
+        worker_cost="low",
     ),
     "orrery/patch-capture": _card(
         summary="Capture a sealed patch digest from before/after caller file snapshots.",
@@ -1151,6 +1156,8 @@ _STAR_CARDS: dict[str, AgentCard] = {
             _io("line_stats", "object"),
             *_ENVELOPE,
         ),
+        tree_role="worker",
+        worker_cost="low",
     ),
     "orrery/write-authority-check": _card(
         summary="Verify an explicit write grant covers the intended path set.",
@@ -1185,6 +1192,8 @@ _STAR_CARDS: dict[str, AgentCard] = {
             _io("grant_digest", "string"),
             *_ENVELOPE,
         ),
+        tree_role="review",
+        worker_cost="low",
     ),
     "orrery/migration-git-handoff": _card(
         summary=(
@@ -1254,6 +1263,8 @@ _STAR_CARDS: dict[str, AgentCard] = {
             _io("passed", "boolean"),
             *_ENVELOPE,
         ),
+        tree_role="review",
+        worker_cost="low",
     ),
     "orrery/structure-audit": _card(
         summary="Pure markdown structure audit with coded findings.",
@@ -1282,6 +1293,8 @@ _STAR_CARDS: dict[str, AgentCard] = {
             _io("passed", "boolean"),
             *_ENVELOPE,
         ),
+        tree_role="review",
+        worker_cost="low",
     ),
     "orrery/row-validate": _card(
         summary="Pure validation of one row against a named static source-aligned profile.",
@@ -1450,6 +1463,8 @@ _STAR_CARDS: dict[str, AgentCard] = {
             dispositions=CONTENT_READINESS_DISPOSITIONS,
             pause_allowed=False,
         ),
+        tree_role="review",
+        worker_cost="mid",
     ),
     "orrery/authorized-content-patch": _card(
         summary=(
@@ -1551,6 +1566,8 @@ _STAR_CARDS: dict[str, AgentCard] = {
             dispositions=AUTHORIZED_CONTENT_PATCH_DISPOSITIONS,
             pause_allowed=False,
         ),
+        tree_role="worker",
+        worker_cost="mid",
     ),
     "orrery/publish-gate": _card(
         summary=(
@@ -1646,6 +1663,8 @@ _STAR_CARDS: dict[str, AgentCard] = {
             pause_modes=("awaiting_witness",),
             continuation_tools=("continue_run",),
         ),
+        tree_role="review",
+        worker_cost="mid",
     ),
     "orrery/board-memo": _card(
         summary=(
@@ -1984,6 +2003,8 @@ _STAR_CARDS: dict[str, AgentCard] = {
                 },
             ),
         ),
+        tree_role="review",
+        worker_cost="mid",
     ),
     "orrery/stale-proof": _card(
         summary="Fresh UTC plus official Python release-note digest evidence.",
@@ -2018,6 +2039,8 @@ _STAR_CARDS: dict[str, AgentCard] = {
         dispositions=DEFAULT_DISPOSITIONS,
         member_stars=member_stars_from_policy("orrery/stale-proof"),
         subtree_contract=subtree_contract_from_policy("orrery/stale-proof"),
+        tree_role="review",
+        worker_cost="mid",
     ),
     "orrery/csv-report": _card(
         summary="Queue a durable CSV report on Orrery's managed CPU worker.",
