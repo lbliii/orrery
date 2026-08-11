@@ -103,7 +103,10 @@ No workshop ceremony on the hot path.
   for discovery/trust disputes; saga #1 north-star language should name the
   vending-machine + thin-harness loop (#63).
 - Gaze work (caps, facets, oracle pills) stays index-shaped; satisfaction
-  schema and `rate` land under epic #9 without inventing a review product.
+  schema and `rate` land under epic [#59](https://github.com/lbliii/orrery/issues/59)
+  / design [#67](https://github.com/lbliii/orrery/issues/67) without inventing a
+  review product — store shape frozen in
+  [satisfaction-schema.md](../design/satisfaction-schema.md).
 - Optional scoped RAG stays feature-flagged and candidate-only (#61 / #72).
 - Product resolve records continue to advertise publisher-shaped endpoints
   (`mcp://orrery.lol/s/…`); dogfood `/mcp` on this host remains demo-only.

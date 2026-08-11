@@ -168,7 +168,10 @@ Constellation cards and `explain_policy` responses MUST include:
   [#154](https://github.com/lbliii/orrery/issues/154), [#245](https://github.com/lbliii/orrery/issues/245))
   publish `subtree_contract` on their agent cards.
 - Resumable epic [#157](https://github.com/lbliii/orrery/issues/157) aligns
-  pause/continuation MCP to `pause_policy` and `lease_rule`.
+  pause/continuation MCP to `pause_policy` and `lease_rule`. Durable
+  checkpoint store, TTL, and `continue_run` idempotency are frozen in
+  design [#152](https://github.com/lbliii/orrery/issues/152) /
+  [constellation-run-checkpoint.md](../design/constellation-run-checkpoint.md).
 - Migration [#164](https://github.com/lbliii/orrery/issues/164) is a vertical
   instance; shared names live here, not in migration-only prose.
 - A follow-on leaf wires `subtree_contract` into existing cards and
