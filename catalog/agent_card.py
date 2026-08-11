@@ -63,6 +63,10 @@ LEASE_RULE = "waiting_never_holds_worker_lease"
 #: ADR 0007 stage roles (planner freeze vocabulary).
 _STAGE_ROLES = frozenset({"gate", "witness", "fan_in", "composite", "pause"})
 
+#: Optional planner-shelf hints (#246) — informational only; agent ranks.
+TREE_ROLES = frozenset({"worker", "planner", "review"})
+WORKER_COSTS = frozenset({"low", "mid", "high"})
+
 
 @dataclass(frozen=True, slots=True)
 class AgentCard:
@@ -85,6 +89,8 @@ class AgentCard:
     dispositions: tuple[str, ...] | None = None
     member_stars: tuple[Mapping[str, object], ...] | None = None
     subtree_contract: Mapping[str, object] | None = None
+    tree_role: str | None = None
+    worker_cost: str | None = None
 
     def as_dict(self) -> dict[str, object]:
         """Full card for resolve / gaze_describe (no live tool payloads)."""
@@ -112,15 +118,24 @@ class AgentCard:
             payload["member_stars"] = [dict(item) for item in self.member_stars]
         if self.subtree_contract is not None:
             payload["subtree_contract"] = _copy_subtree_contract(self.subtree_contract)
+        if self.tree_role is not None:
+            payload["tree_role"] = self.tree_role
+        if self.worker_cost is not None:
+            payload["worker_cost"] = self.worker_cost
         return payload
 
     def gaze_preview(self) -> dict[str, object]:
         """Compact progressive-disclosure fields for gaze_match hits."""
-        return {
+        preview: dict[str, object] = {
             "summary": self.summary,
             "use_when": list(self.use_when[:3]),
             "inputs_summary": inputs_summary(self),
         }
+        if self.tree_role is not None:
+            preview["tree_role"] = self.tree_role
+        if self.worker_cost is not None:
+            preview["worker_cost"] = self.worker_cost
+        return preview
 
     def searchable_text(self) -> str:
         """Concatenated text indexed by gaze match/search."""
@@ -315,6 +330,8 @@ def _card(
     dispositions: tuple[str, ...] | None = None,
     member_stars: tuple[Mapping[str, object], ...] | None = None,
     subtree_contract: Mapping[str, object] | None = None,
+    tree_role: str | None = None,
+    worker_cost: str | None = None,
 ) -> AgentCard:
     return AgentCard(
         summary=summary,
@@ -333,6 +350,8 @@ def _card(
         dispositions=dispositions,
         member_stars=member_stars,
         subtree_contract=subtree_contract,
+        tree_role=tree_role,
+        worker_cost=worker_cost,
     )
 
 
@@ -371,6 +390,14 @@ def validate_agent_card(card: AgentCard, *, name: str | None = None) -> None:
             raise AgentCardError(f"inputs/outputs need name and type{where}")
     if card.run_contract is not None:
         _validate_subtree_contract(card.subtree_contract, where=where)
+    if card.tree_role is not None and card.tree_role not in TREE_ROLES:
+        raise AgentCardError(
+            f"tree_role must be one of {sorted(TREE_ROLES)}{where}"
+        )
+    if card.worker_cost is not None and card.worker_cost not in WORKER_COSTS:
+        raise AgentCardError(
+            f"worker_cost must be one of {sorted(WORKER_COSTS)}{where}"
+        )
 
 
 def _validate_subtree_contract(
@@ -533,6 +560,14 @@ def agent_card_json_schema() -> dict[str, Any]:
                         "label": {"type": "string"},
                     },
                 },
+            },
+            "tree_role": {
+                "type": "string",
+                "enum": ["worker", "planner", "review"],
+            },
+            "worker_cost": {
+                "type": "string",
+                "enum": ["low", "mid", "high"],
             },
             "subtree_contract": {
                 "type": "object",
