@@ -1,0 +1,31 @@
+[star]
+name = "orrery/flight-status"
+version = "0.1.0"
+description = "Resolve allowlisted flight id and date to schedule/status fields"
+publisher = "orrery"
+publisher_key_id_env = "ORRERY_FLIGHT_STATUS_KEY_ID"
+direct_mcp_path = "/stars/flight-status/mcp"
+tools = ["status", "answer"]
+capability_families = ["time_and_date"]
+
+[pricing]
+unit = "call"
+price_per_call = "0.00"
+currency = "USD"
+
+[runtime]
+python_package = "stars.flight_status"
+skill_factory = "stars.flight_status.skill:build_skill"
+
+[policy]
+allowed_egress = []
+freshness = "at_call"
+redirects = "deny"
+max_response_bytes = 4096
+
+[receipt]
+schema_version = "1"
+algorithm = "Ed25519"
+
+[publish]
+corpus = "stars.flight_status.corpus:CORPUS"
