@@ -775,6 +775,37 @@ _STAR_CARDS: dict[str, AgentCard] = {
             *_ENVELOPE,
         ),
     ),
+    "orrery/flight-status": _card(
+        summary="Offline schedule/status for allowlisted flight id and pinned date.",
+        use_when=(
+            "You need flight status for a named allowlisted flight fixture",
+            "You are enriching secretary context without airline egress",
+            "You want sealed flight status facts from a fixture provider",
+        ),
+        not_for=(
+            "Live airline tracking or arbitrary flight lookup",
+            "Trip planning or open-ended itinerary design",
+            "Venue hours or geocoding evidence",
+        ),
+        example_intents=(
+            "flight AA100 status",
+            "is UA456 delayed today",
+            "allowlisted flight schedule offline",
+        ),
+        tools=("status", "answer"),
+        coverage_slug="flight-status",
+        inputs=(
+            _io("flight", "string", note="allowlisted flight id fixture"),
+            _io("date", "string", note="ISO date from pinned fixture schedule"),
+        ),
+        outputs=(
+            _io("status", "string", note="on_time, delayed, cancelled, landed, scheduled"),
+            _io("departure_airport", "string", note="IATA departure code"),
+            _io("arrival_airport", "string", note="IATA arrival code"),
+            _io("provider", "string", note="fixture attribution (orrery-fixtures)"),
+            *_ENVELOPE,
+        ),
+    ),
     "orrery/holidays": _card(
         summary="Pinned public holidays for allowlisted region code and year.",
         use_when=(
