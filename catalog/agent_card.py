@@ -749,6 +749,35 @@ _STAR_CARDS: dict[str, AgentCard] = {
             *_ENVELOPE,
         ),
     ),
+    "orrery/holidays": _card(
+        summary="Pinned public holidays for allowlisted region code and year.",
+        use_when=(
+            "You need a bounded holiday list for calendar enrichment",
+            "You want offline holiday facts without a live provider",
+            "You are composing secretary enrich context with tz-resolve",
+        ),
+        not_for=(
+            "Trip planning or itinerary design",
+            "Arbitrary country crawl or open-web holiday lookup",
+            "Sub-national or city-only holiday calendars",
+        ),
+        example_intents=(
+            "us public holidays 2026",
+            "uk bank holidays",
+            "holiday list for japan",
+        ),
+        tools=("list", "answer"),
+        coverage_slug="holidays",
+        inputs=(
+            _io("region", "string", note="allowlisted ISO 3166-1 alpha-2 code"),
+            _io("year", "integer", note="pinned calendar year"),
+        ),
+        outputs=(
+            _io("holidays", "array", note="date + name records from pinned dataset"),
+            _io("count", "integer"),
+            *_ENVELOPE,
+        ),
+    ),
     "orrery/source-watch": _card(
         summary="Live official-source evidence, digest comparison, and bounded answers.",
         use_when=(
