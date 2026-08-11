@@ -24,6 +24,59 @@ if TYPE_CHECKING:
     from trust.satisfaction import SatisfactionPillView
 
 
+@dataclass(frozen=True, slots=True)
+class EvalHealthView:
+    """L3 composite narrative: supply-side oracle + demand-side satisfaction (#120)."""
+
+    supply_ok: bool | None = None
+    narrative: str | None = None
+    demand_quiet: bool = True
+
+    @property
+    def quiet(self) -> bool:
+        return not self.narrative
+
+    def as_dict(self) -> dict[str, object]:
+        if self.quiet:
+            return {"quiet": True}
+        out: dict[str, object] = {"quiet": False, "narrative": self.narrative}
+        if self.supply_ok is not None:
+            out["supply_ok"] = self.supply_ok
+        if not self.demand_quiet:
+            out["demand"] = True
+        return out
+
+
+def eval_health_for(
+    *,
+    oracle: OracleView,
+    satisfaction: SatisfactionPillView,
+) -> EvalHealthView:
+    """Compose optional ``trust.eval_health`` — quiet when demand empty and supply unscored."""
+    supply_scored = bool(oracle.stages)
+    demand_active = not satisfaction.quiet
+
+    if not supply_scored and not demand_active:
+        return EvalHealthView(demand_quiet=True)
+
+    parts: list[str] = []
+    supply_ok: bool | None = None
+    if supply_scored:
+        supply_ok = oracle.ok
+        parts.append("supply verified" if oracle.ok else "supply fail")
+    if demand_active and satisfaction.pill_text:
+        parts.append(satisfaction.pill_text)
+
+    if not parts:
+        return EvalHealthView(demand_quiet=True)
+
+    return EvalHealthView(
+        supply_ok=supply_ok,
+        narrative=" · ".join(parts),
+        demand_quiet=not demand_active,
+    )
+
+
 def _inputs_summary_for(record: ResolveRecord) -> str | None:
     from .agent_card import inputs_summary
 
@@ -99,6 +152,7 @@ class GazeHit:
     console_href: str = "/console"
     oracle: OracleView | None = None
     satisfaction: SatisfactionPillView | None = None
+    eval_health: EvalHealthView | None = None
     summary: str | None = None
     use_when: tuple[str, ...] = ()
     inputs_summary: str | None = None
@@ -128,6 +182,15 @@ class GazeHit:
             trust_satisfaction = self.satisfaction.as_dict()
         else:
             trust_satisfaction = {"quiet": True}
+        if self.eval_health is not None:
+            trust_eval_health = self.eval_health.as_dict()
+        elif self.oracle is not None and self.satisfaction is not None:
+            trust_eval_health = eval_health_for(
+                oracle=self.oracle,
+                satisfaction=self.satisfaction,
+            ).as_dict()
+        else:
+            trust_eval_health = {"quiet": True}
         return {
             "name": self.name,
             "kind": self.kind,
@@ -141,7 +204,11 @@ class GazeHit:
             "reactive": self.reactive,
             "oracle_ok": self.oracle_ok,
             "console_href": self.console_href,
-            "trust": {"oracle": trust_oracle, "satisfaction": trust_satisfaction},
+            "trust": {
+                "oracle": trust_oracle,
+                "satisfaction": trust_satisfaction,
+                "eval_health": trust_eval_health,
+            },
             "summary": self.summary,
             "use_when": list(self.use_when),
             "inputs_summary": self.inputs_summary,
@@ -190,6 +257,7 @@ def hit_from_record(record: ResolveRecord) -> GazeHit:
         star_name=record.name,
         content_digest=record.content_digest,
     )
+    health = eval_health_for(oracle=view, satisfaction=satisfaction)
     card = record.agent_card
     return GazeHit(
         name=record.name,
@@ -205,6 +273,7 @@ def hit_from_record(record: ResolveRecord) -> GazeHit:
         console_href=console_href_for(record),
         oracle=view,
         satisfaction=satisfaction,
+        eval_health=health,
         summary=None if card is None else card.summary,
         use_when=() if card is None else card.use_when[:3],
         inputs_summary=_inputs_summary_for(record),
@@ -221,6 +290,7 @@ def tool_hit(tool: str, *, constellation: ResolveRecord) -> GazeHit:
         star_name=constellation.name,
         content_digest=constellation.content_digest,
     )
+    health = eval_health_for(oracle=view, satisfaction=satisfaction)
     return GazeHit(
         name=tool,
         kind="tool",
@@ -235,6 +305,7 @@ def tool_hit(tool: str, *, constellation: ResolveRecord) -> GazeHit:
         console_href=console_href_for(constellation),
         oracle=view,
         satisfaction=satisfaction,
+        eval_health=health,
     )
 
 

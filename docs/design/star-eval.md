@@ -17,7 +17,7 @@ block onto the star issue. Layers L2–L5 are documented for horizon work; only
 | **L0** | Contract + allowlist-negative tests | CI (`pytest`) | Required |
 | **L1** | Non-empty `corpus.py` (`CORPUS`) + Chirp smoke | Boot publish / `oracle_ok` | Required |
 | **L2** | Live canary (scheduled) | Ops only | Not now (#118) |
-| **L3** | Envelope verify + satisfaction | Gaze/resolve pills | Not now (#120) |
+| **L3** | Envelope verify + satisfaction | Gaze/resolve pills | Implemented (#120) — [eval-health](../operations/eval-health.md) |
 | **L4** | Constellation composite smoke | Constellation publish | Not now (#119) |
 | **L5** | Optional agent-loop / `evals.json` | Demo / interop | Not now (#121) |
 
@@ -101,4 +101,6 @@ not a claim that Orrery deployed anything or persisted an agent baseline.
 - **Plan** — full L0–L5 roadmap: [star-eval.md](../plan/star-eval.md)
 - **#76** — specimen stars inherit this checklist
 - **#9 / #34** — oracle pills stay L1-backed
+- **#59 / #67 / #69** — L3 demand-side: [satisfaction schema](../design/satisfaction-schema.md),
+  ``rate`` store, aggregate pills; L3 composite: [eval-health](../operations/eval-health.md) (#120)
 - **Scouting** — whether a SKU belongs in the sky: [scouting.md](./scouting.md)
