@@ -35,6 +35,7 @@ BUILTIN_STAR_PACKAGES = (
     "stars.publish_gate",
     "stars.board_memo",
     "stars.docs_migrate_to_mdx",
+    "stars.api_spec_upgrade",
     "stars.world_time",
     "stars.decision_bind",
     "stars.manifest_bind",
