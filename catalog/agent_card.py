@@ -806,6 +806,37 @@ _STAR_CARDS: dict[str, AgentCard] = {
             *_ENVELOPE,
         ),
     ),
+    "orrery/place-hours": _card(
+        summary="Offline weekly hours and open-now for allowlisted venue tokens.",
+        use_when=(
+            "You need venue hours for a named allowlisted fixture",
+            "You are enriching secretary context without Places egress",
+            "You want sealed open-now facts from a fixture provider",
+        ),
+        not_for=(
+            "Arbitrary restaurant or venue search",
+            "Trip planning or live Places lookups",
+            "Geocoding or flight status evidence",
+        ),
+        example_intents=(
+            "is central park cafe open",
+            "hours for british museum cafe",
+            "venue token open now",
+        ),
+        tools=("place_hours", "answer"),
+        coverage_slug="place-hours",
+        inputs=(
+            _io("venue", "string", note="allowlisted named venue token"),
+            _io("as_of", "string", note="optional ISO-8601 instant for open-now"),
+        ),
+        outputs=(
+            _io("display_name", "string", note="human-readable venue label"),
+            _io("hours", "object", note="weekly hours schedule"),
+            _io("open_now", "boolean"),
+            _io("provider", "string", note="fixture attribution (orrery-fixtures)"),
+            *_ENVELOPE,
+        ),
+    ),
     "orrery/holidays": _card(
         summary="Pinned public holidays for allowlisted region code and year.",
         use_when=(
