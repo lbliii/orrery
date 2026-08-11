@@ -6,6 +6,7 @@ from chirp import Page, Request
 
 from discovery import (
     MCP_TOOLS,
+    SLIM_MCP_COPY,
     TEACHING_TRIO,
     configured_public_origin,
     mcp_endpoint,
@@ -24,6 +25,7 @@ def get(request: Request) -> Page:
         footer_meta="point → call → seal",
         origin=origin,
         mcp_url=mcp_endpoint(origin),
+        slim_mcp_copy=SLIM_MCP_COPY,
         teaching_trio=list(TEACHING_TRIO),
         tools=[{"name": t["name"], "description": t["description"]} for t in MCP_TOOLS],
     )

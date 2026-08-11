@@ -1,8 +1,9 @@
 """Public discovery documents for agents probing Orrery.
 
 Discovery is intentional and open: llms.txt, MCP well-knowns, and /connect
-point at the aggregated dogfood host. No bearer mint — CSRF-exempt /mcp is
-the machine face. Skill DNS (mcp://) stays on ORRERY_MCP_HOST.
+advertise a slim gaze/resolve MCP at /mcp. No bearer mint — CSRF-exempt /mcp
+is the machine face. Call the resolved publisher endpoint for execution (ADR
+0004). Skill DNS (mcp://) stays on ORRERY_MCP_HOST.
 """
 
 from __future__ import annotations
@@ -21,6 +22,47 @@ TRUST_FACTS = (
     "Durable artifact downloads are authorized by stored metadata and expire after 15 minutes.",
     "Public Stars expose bounded declared tools; Orrery does not provide arbitrary shell or "
     "filesystem execution.",
+)
+
+#: One-line contract for server card, /connect, and llms.txt (slim discovery MCP).
+SLIM_MCP_COPY = (
+    "This MCP is gaze/resolve (shelf + Skill DNS). "
+    "Call the resolved publisher endpoint for execution."
+)
+
+#: Default advertised install — discovery-only (design: slim-discovery-mcp.md).
+MCP_TOOLS_ALLOWLIST: frozenset[str] = frozenset(
+    {
+        "gaze_match",
+        "gaze_search",
+        "gaze_describe",
+        "gaze_list_constellations",
+        "resolve_name",
+        "coverage_check",
+        "explain_policy",
+    }
+)
+
+#: Star **call** tools not on the default advertised install (denylist guard).
+MCP_TOOLS_DENYLIST: frozenset[str] = frozenset(
+    {
+        "convert",
+        "health",
+        "submit",
+        "result",
+        "fetch",
+        "get",
+        "answer",
+        "observe",
+        "diff",
+        "source_watch_answer",
+        "run",
+        "status",
+        "continue_run",
+        "cancel",
+        "rate",
+        "star_rate",
+    }
 )
 
 # Static catalog for pre-connection probes (must stay in sync with aggregate /mcp).
@@ -48,6 +90,10 @@ MCP_TOOLS: tuple[dict[str, str], ...] = (
         "description": "List drawn policy graphs (constellations).",
     },
     {
+        "name": "resolve_name",
+        "description": "Resolve a Skill DNS name to endpoint, digest, key, price.",
+    },
+    {
         "name": "coverage_check",
         "description": (
             "Preflight allowlist membership for a public star "
@@ -55,54 +101,13 @@ MCP_TOOLS: tuple[dict[str, str], ...] = (
         ),
     },
     {
-        "name": "resolve_name",
-        "description": "Resolve a Skill DNS name to endpoint, digest, key, price.",
-    },
-    {
-        "name": "convert",
-        "description": "Convert HTML to PDF (html-to-pdf star; aggregate alias).",
-    },
-    {
-        "name": "health",
-        "description": "Health check for the html-to-pdf star.",
-    },
-    {
-        "name": "fetch",
-        "description": "Fetch a live UTC reading (world-time star).",
-    },
-    {
-        "name": "get",
-        "description": "Get the last sealed world-time reading.",
-    },
-    {
-        "name": "answer",
-        "description": "Answer with a sealed live UTC reading (world-time).",
-    },
-    {
-        "name": "observe",
-        "description": "Observe an allowlisted official source (source-watch).",
-    },
-    {
-        "name": "diff",
-        "description": "Diff a prior source-watch observation against live content.",
-    },
-    {
-        "name": "source_watch_answer",
-        "description": "Extractive answer from source-watch (aggregate name).",
-    },
-    {
-        "name": "run",
-        "description": "Run a constellation policy graph.",
-    },
-    {
-        "name": "status",
-        "description": "Status for a constellation run.",
-    },
-    {
         "name": "explain_policy",
         "description": "Explain a constellation policy for an agent.",
     },
 )
+
+assert frozenset(t["name"] for t in MCP_TOOLS) == MCP_TOOLS_ALLOWLIST
+assert MCP_TOOLS_ALLOWLIST.isdisjoint(MCP_TOOLS_DENYLIST)
 
 DIRECT_STAR_ENDPOINTS: tuple[dict[str, str], ...] = (
     {
@@ -230,10 +235,9 @@ def server_card(origin: str) -> dict[str, Any]:
             "version": SERVER_VERSION,
         },
         "description": (
-            "Skills you point at, not install. Gaze to discover, resolve to lock "
-            "endpoint/digest/key/price, call publisher MCP, seal with a Chirp "
-            "Envelope. Aggregated dogfood host at /mcp; direct stars at "
-            "/stars/*/mcp. Authentication not required on the public host."
+            "Skills you point at, not install. "
+            f"{SLIM_MCP_COPY} Direct star MCP at /stars/*/mcp. "
+            "Authentication not required on the public host."
         ),
         "homepage": f"{origin}/connect",
         "documentation": f"{origin}/llms.txt",
@@ -253,8 +257,8 @@ def server_card(origin: str) -> dict[str, Any]:
             "schemes": [],
             "instructions": (
                 "Point a streamable-HTTP MCP client at /mcp with no auth headers. "
-                "Prefer resolve_name then call the publisher direct endpoint from "
-                "the Skill DNS record when locking a star."
+                f"{SLIM_MCP_COPY} Use resolve_name, then call the publisher "
+                "endpoint from the Skill DNS record."
             ),
         },
         "tools": [{"name": t["name"], "description": t["description"]} for t in MCP_TOOLS],
@@ -303,7 +307,8 @@ def llms_txt(origin: str) -> str:
         "",
         "> Skills you point at, not install.",
         "> Gaze to discover, resolve to lock the record, call for a verified result.",
-        "> Public discovery and aggregated MCP — no bearer mint on the dogfood host.",
+        f"> {SLIM_MCP_COPY}",
+        "> Public discovery MCP at /mcp — no bearer mint on the public host.",
         "> Do not install or clone for live truth — point at the teaching trio below.",
         "",
         "## Connect",
@@ -462,7 +467,9 @@ def llms_full_txt(origin: str) -> str:
         "",
         recipes_section().rstrip(),
         "",
-        "## MCP tools (aggregate /mcp)",
+        "## MCP tools (default /mcp — discovery only)",
+        "",
+        SLIM_MCP_COPY,
         "",
         *tool_lines,
         "",

@@ -11,6 +11,9 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from discovery import (
     MCP_TOOLS,
+    MCP_TOOLS_ALLOWLIST,
+    MCP_TOOLS_DENYLIST,
+    SLIM_MCP_COPY,
     TEACHING_TRIO,
     configured_public_origin,
     mcp_endpoint,
@@ -62,6 +65,32 @@ def discovery_app(example_app, monkeypatch: pytest.MonkeyPatch):
     return example_app
 
 
+@pytest.mark.issue(302)
+def test_mcp_tools_allowlist_matches_frozen_set() -> None:
+    names = {t["name"] for t in MCP_TOOLS}
+    assert names == MCP_TOOLS_ALLOWLIST
+    assert names.isdisjoint(MCP_TOOLS_DENYLIST)
+    for denied in ("convert", "fetch", "run", "answer"):
+        assert denied in MCP_TOOLS_DENYLIST
+        assert denied not in names
+
+
+@pytest.mark.issue(302)
+@pytest.mark.asyncio
+async def test_discovery_copy_mentions_resolve_then_call(discovery_app) -> None:
+    async with TestClient(discovery_app) as client:
+        llms = await client.get("/llms.txt", headers=HOST)
+        card = await client.get("/.well-known/mcp/server-card.json", headers=HOST)
+        connect = await client.get("/connect", headers=HOST)
+        assert llms.status == card.status == connect.status == 200
+        for body in (llms.text, card.text, connect.text):
+            assert "gaze/resolve" in body.lower() or "Gaze" in body
+            assert "publisher" in body.lower() or "call" in body.lower()
+        assert SLIM_MCP_COPY in llms.text
+        assert SLIM_MCP_COPY in json.loads(card.text)["description"]
+        assert SLIM_MCP_COPY in connect.text
+
+
 @pytest.mark.asyncio
 async def test_llms_txt_is_public(discovery_app) -> None:
     async with TestClient(discovery_app) as client:
@@ -77,6 +106,7 @@ async def test_llms_txt_is_public(discovery_app) -> None:
             job_prefix = star["job"].split("—")[0].strip()
             assert job_prefix in response.text or star["job"] in response.text
         assert "Do not install or clone for live truth" in response.text
+        assert SLIM_MCP_COPY in response.text
         assert "orrery/stale-proof" in response.text
 
 
@@ -87,6 +117,7 @@ async def test_llms_full_lists_tools(discovery_app) -> None:
         assert response.status == 200
         for tool in MCP_TOOLS:
             assert tool["name"] in response.text
+        assert "- `convert`:" not in response.text
         assert "tools/list" in response.text
         assert "/stars/html-to-pdf/mcp" in response.text
         assert "gaze_match" in response.text
@@ -303,6 +334,7 @@ async def test_connect_page_is_public(discovery_app) -> None:
         assert 'href="/skills"' in page.text
         assert "Teaching trio" in page.text
         assert "Do not install or clone for live truth" in page.text
+        assert SLIM_MCP_COPY in page.text
         for star in TEACHING_TRIO:
             assert star["star"] in page.text
             assert star["href"] in page.text
