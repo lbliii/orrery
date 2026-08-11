@@ -1,0 +1,27 @@
+[star]
+name = "orrery/board-memo"
+kind = "constellation"
+version = "0.1.0"
+description = "Resumable board-memo demo: memo-bind → audience-choice pause → pdf-seal composite (ADR 0007 Example 2)"
+publisher = "orrery"
+publisher_key_id_env = "ORRERY_BOARD_MEMO_KEY_ID"
+direct_mcp_path = "/constellations/board-memo/mcp"
+tools = ["run", "status", "continue_run", "cancel"]
+capability_families = ["document_processing"]
+[pricing]
+unit = "call"
+price_per_call = "0.00"
+currency = "USD"
+[runtime]
+python_package = "stars.board_memo"
+skill_factory = "stars.board_memo.skill:build_skill"
+[policy]
+allowed_egress = []
+freshness = "at_call"
+redirects = "deny"
+max_response_bytes = 524288
+[receipt]
+schema_version = "1"
+algorithm = "Ed25519"
+[publish]
+corpus = "stars.board_memo.corpus:CORPUS"

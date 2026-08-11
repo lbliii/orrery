@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from typing import Literal
 
 EdgeKind = Literal["gate", "repair_loop", "fan_in"]
-NodeKind = Literal["gate", "witness", "composite", "internal"]
+NodeKind = Literal["gate", "witness", "composite", "internal", "pause"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -747,6 +747,72 @@ PUBLISH_GATE_POLICY = PolicyGraph(
     release_key_id="orrery-publish-gate-1",
 )
 
+#: ADR 0007 Example 2 — board-memo (#154); pause for audience/recommendation → PDF seal.
+BOARD_MEMO_POLICY = PolicyGraph(
+    nodes=(
+        PolicyNode(
+            "memo-bind",
+            "memo-bind",
+            "gate",
+            160,
+            180,
+            0,
+            status_label="bound",
+        ),
+        PolicyNode(
+            "audience-choice",
+            "audience-choice",
+            "pause",
+            400,
+            180,
+            1,
+            status_label="pause",
+        ),
+        PolicyNode(
+            "pdf-seal",
+            "pdf-seal",
+            "composite",
+            680,
+            320,
+            2,
+            "orrery/html-to-pdf",
+            "seal",
+            r=18,
+        ),
+    ),
+    edges=(
+        PolicyEdge(
+            "bm1",
+            "memo-bind",
+            "audience-choice",
+            "gate",
+            "M240 180 C300 180, 340 180, 360 180",
+            1,
+        ),
+        PolicyEdge(
+            "bm2",
+            "audience-choice",
+            "pdf-seal",
+            "gate",
+            "M480 180 C540 220, 600 280, 660 300",
+            2,
+        ),
+    ),
+    repair_loop_max=None,
+    footnote=(
+        "Resumable board memo · pause_policy.allowed=true (awaiting_input) · "
+        "continue_run resumes · PDF via html-to-pdf · "
+        "lease_rule waiting_never_holds_worker_lease."
+    ),
+    composite_chain=(
+        CompositeStep(1, "memo-bind", "Envelope ✓", "title+summary bound"),
+        CompositeStep(2, "audience-choice", "awaiting_input", "typed choice"),
+        CompositeStep(3, "pdf-seal", "Envelope ✓", "managed PDF artifact"),
+    ),
+    release_digest="sha256:board-memo…",
+    release_key_id="orrery-board-memo-1",
+)
+
 POLICIES: dict[str, PolicyGraph] = {
     "acme/launch-gate": LAUNCH_GATE_POLICY,
     "orrery/stale-proof": STALE_PROOF_POLICY,
@@ -755,6 +821,7 @@ POLICIES: dict[str, PolicyGraph] = {
     "orrery/content-readiness": CONTENT_READINESS_POLICY,
     "orrery/authorized-content-patch": AUTHORIZED_CONTENT_PATCH_POLICY,
     "orrery/publish-gate": PUBLISH_GATE_POLICY,
+    "orrery/board-memo": BOARD_MEMO_POLICY,
 }
 
 
