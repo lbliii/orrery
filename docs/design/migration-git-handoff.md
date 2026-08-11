@@ -63,3 +63,4 @@ retention_redaction).
   docs or api-spec constellation graphs
 - Carve-outs for card/skill registration only if exposed as an MCP star;
   prefer a callable star with explicit non-goals in the card blurb
+- Ops: [`docs/operations/migration-git-handoff.md`](../operations/migration-git-handoff.md)

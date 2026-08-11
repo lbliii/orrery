@@ -42,6 +42,7 @@ BUILTIN_STAR_PACKAGES = (
     "stars.manifest_preflight",
     "stars.patch_capture",
     "stars.write_authority_check",
+    "stars.migration_git_handoff",
     "stars.link_check_bounded",
     "stars.structure_audit",
 )
