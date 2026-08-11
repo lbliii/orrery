@@ -813,6 +813,128 @@ BOARD_MEMO_POLICY = PolicyGraph(
     release_key_id="orrery-board-memo-1",
 )
 
+#: ADR 0007 / epic #164 — docs migrate-to-MDX frozen graph (#178).
+DOCS_MIGRATE_TO_MDX_POLICY = PolicyGraph(
+    nodes=(
+        PolicyNode(
+            "inventory",
+            "inventory",
+            "gate",
+            80,
+            180,
+            0,
+            "orrery/docs-myst-inventory",
+            "inventory",
+        ),
+        PolicyNode(
+            "choose-profile",
+            "choose-profile",
+            "gate",
+            220,
+            180,
+            1,
+            status_label="profile",
+        ),
+        PolicyNode(
+            "safe-convert",
+            "safe-convert",
+            "gate",
+            360,
+            180,
+            2,
+            "orrery/docs-myst-to-mdx-safe",
+            "convert",
+        ),
+        PolicyNode(
+            "unsupported-decision",
+            "unsupported-decision",
+            "pause",
+            500,
+            180,
+            3,
+            status_label="pause",
+        ),
+        PolicyNode(
+            "validate-diff",
+            "validate-diff",
+            "gate",
+            640,
+            180,
+            4,
+            "orrery/docs-mdx-validate-and-migration-diff",
+            "validate",
+        ),
+        PolicyNode(
+            "artifact-seal",
+            "artifact-seal",
+            "composite",
+            780,
+            320,
+            5,
+            status_label="seal",
+            r=18,
+        ),
+    ),
+    edges=(
+        PolicyEdge(
+            "dm1",
+            "inventory",
+            "choose-profile",
+            "gate",
+            "M120 180 C170 180, 190 180, 200 180",
+            1,
+        ),
+        PolicyEdge(
+            "dm2",
+            "choose-profile",
+            "safe-convert",
+            "gate",
+            "M260 180 C310 180, 330 180, 340 180",
+            2,
+        ),
+        PolicyEdge(
+            "dm3",
+            "safe-convert",
+            "unsupported-decision",
+            "gate",
+            "M400 180 C450 180, 470 180, 480 180",
+            3,
+        ),
+        PolicyEdge(
+            "dm4",
+            "unsupported-decision",
+            "validate-diff",
+            "gate",
+            "M540 180 C590 180, 610 180, 620 180",
+            4,
+        ),
+        PolicyEdge(
+            "dm5",
+            "validate-diff",
+            "artifact-seal",
+            "gate",
+            "M680 180 C730 220, 750 280, 760 300",
+            5,
+        ),
+    ),
+    repair_loop_max=None,
+    footnote=(
+        "Frozen MyST→MDX migration · pause when decision_required · "
+        "continue_run resumes · composite migration receipt · "
+        "lease_rule waiting_never_holds_worker_lease."
+    ),
+    composite_chain=(
+        CompositeStep(1, "inventory", "Envelope ✓", "source inventory"),
+        CompositeStep(2, "choose-profile", "Envelope ✓", "profile pin"),
+        CompositeStep(3, "safe-convert", "Envelope ✓", "plan+apply"),
+        CompositeStep(4, "unsupported-decision", "awaiting_input", "typed decision"),
+        CompositeStep(5, "validate-diff", "Envelope ✓", "validate+diff"),
+        CompositeStep(6, "artifact-seal", "Envelope ✓", "migration receipt"),
+    ),
+    release_digest="sha256:docs-migrate-to-mdx…",
+    release_key_id="orrery-docs-migrate-to-mdx-1",
+)
+
 POLICIES: dict[str, PolicyGraph] = {
     "acme/launch-gate": LAUNCH_GATE_POLICY,
     "orrery/stale-proof": STALE_PROOF_POLICY,
@@ -822,6 +944,7 @@ POLICIES: dict[str, PolicyGraph] = {
     "orrery/authorized-content-patch": AUTHORIZED_CONTENT_PATCH_POLICY,
     "orrery/publish-gate": PUBLISH_GATE_POLICY,
     "orrery/board-memo": BOARD_MEMO_POLICY,
+    "orrery/docs-migrate-to-mdx": DOCS_MIGRATE_TO_MDX_POLICY,
 }
 
 

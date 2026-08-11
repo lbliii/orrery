@@ -385,6 +385,14 @@ def explain_policy(name: str = "acme/launch-gate") -> dict[str, Any]:
             "Resumable demo: memo-bind → audience-choice pause → pdf-seal composite."
         )
         narrative.append("Waiting never holds a worker lease (ADR 0007).")
+    if name == "orrery/docs-migrate-to-mdx":
+        narrative.append(
+            "Frozen migration: inventory → profile pin → safe convert → "
+            "optional unsupported-decision pause → validate-diff → artifact-seal."
+        )
+        narrative.append(
+            "Consumes migration star sealed outputs; default receipts omit raw source."
+        )
     if graph.repair_loop_max and repair is not None:
         narrative.append(
             f"Repair loop: {repair.source} may retry {repair.target} "

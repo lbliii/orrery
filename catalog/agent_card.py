@@ -64,6 +64,7 @@ BOARD_MEMO_DISPOSITIONS: tuple[str, ...] = (
     "cancelled",
     "expired",
 )
+DOCS_MIGRATE_TO_MDX_DISPOSITIONS: tuple[str, ...] = BOARD_MEMO_DISPOSITIONS
 
 #: ADR 0007 lease invariant — paused runs never hold a worker/MCP lease.
 LEASE_RULE = "waiting_never_holds_worker_lease"
@@ -1520,6 +1521,67 @@ _STAR_CARDS: dict[str, AgentCard] = {
             pause_allowed=True,
             pause_modes=("awaiting_input",),
             continuation_tools=("continue_run",),
+        ),
+    ),
+    "orrery/docs-migrate-to-mdx": _card(
+        summary=(
+            "Frozen docs/migrate-to-mdx constellation: inventory → profile pin → "
+            "safe convert → optional unsupported-decision pause → validate-diff → "
+            "composite migration receipt."
+        ),
+        use_when=(
+            "You need ADR 0007/0008 migration orchestration without reimplementing stars",
+            "Unsupported MyST semantics require a typed decision before validate/seal",
+            "You want continue_run idempotency and digest-bound receipts without raw source",
+        ),
+        not_for=(
+            "Reimplementing inventory/convert/validate stars",
+            "Local Git/PR handoff or API-spec upgrade graphs",
+            "Holding MCP/HTTP open while awaiting human input",
+        ),
+        example_intents=(
+            "migrate myst docs to mdx with decision pause",
+            "docs migrate-to-mdx constellation receipt",
+            "continue_run migration checkpoint",
+        ),
+        tools=("run", "status", "continue_run", "cancel"),
+        coverage_slug="docs-migrate-to-mdx",
+        inputs=(
+            _io("entries", "array", required=True, note="path/content MyST tree"),
+            _io("profile", "object", required=True, note="pinned ADR 0008 MigrationProfile"),
+            _io("caller_id", "string", note="authenticated resume identity"),
+        ),
+        outputs=(
+            _io("disposition", "string"),
+            _io("outstanding_action_requests", "object"),
+            _io("migration_receipt", "object"),
+            _io("artifact_digest", "string"),
+            *_ENVELOPE,
+        ),
+        run_contract={
+            "entry_tool": "run",
+            "required_inputs": ["entries", "profile"],
+            "optional_inputs": ["caller_id"],
+            "composite_output": "signed-envelope-chain",
+            "continuation_tools": ["continue_run"],
+            "input_bundle": {
+                "entries": {"type": "array", "required": True},
+                "profile": {"type": "object", "required": True},
+                "caller_id": {"type": "string", "required": False},
+            },
+        },
+        graph_summary=(
+            "inventory → choose-profile → safe-convert → unsupported-decision → "
+            "validate-diff → artifact-seal"
+        ),
+        dispositions=DOCS_MIGRATE_TO_MDX_DISPOSITIONS,
+        member_stars=member_stars_from_policy("orrery/docs-migrate-to-mdx"),
+        subtree_contract=subtree_contract_from_policy(
+            "orrery/docs-migrate-to-mdx",
+            dispositions=DOCS_MIGRATE_TO_MDX_DISPOSITIONS,
+            pause_allowed=True,
+            pause_modes=("awaiting_input",),
+            continuation_tools=("continue_run", "status", "cancel"),
         ),
     ),
     "orrery/ship-check": _card(
