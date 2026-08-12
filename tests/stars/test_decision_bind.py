@@ -12,6 +12,7 @@ import pytest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from dogfood import verify_receipt as verify_envelope_wire
+from stars._core.attribution import PAYLOAD_VIA
 from stars.builtins import builtin_registry
 from stars.decision_bind.contract import MAX_STATEMENT_BYTES, tool_schemas
 from stars.decision_bind.service import bind, decision_digest, verify_receipt
@@ -111,7 +112,11 @@ def test_envelope_signs_and_verifies_via_dogfood_helper(
     assert verify_envelope_wire(wire, skill=skill) is True
 
     payload = wire["payload"]
-    assert_payload_keys(payload, ("decision_id", "statement", "decision_digest", "decided_at"))
+    assert_payload_keys(
+        payload,
+        ("decision_id", "statement", "decision_digest", "decided_at", "via"),
+    )
+    assert payload["via"] == PAYLOAD_VIA
     assert verify_receipt(payload) == {"verified": True}
 
     fields = {
@@ -134,6 +139,25 @@ def test_envelope_signs_and_verifies_via_dogfood_helper(
     Ed25519PublicKey.from_public_bytes(raw).verify(
         base64.b64decode(str(wire["signature"])), message
     )
+
+
+@pytest.mark.issue(318)
+def test_envelope_via_does_not_change_decision_digest() -> None:
+    receipt = bind("id", GOLDEN_STATEMENT, clock=lambda: FIXED_TIME)
+    assert receipt["decision_digest"] == GOLDEN_DIGEST
+    assert "via" not in receipt
+
+
+@pytest.mark.issue(318)
+def test_envelope_error_payload_omits_via() -> None:
+    skill = build_skill()
+    envelope = next(item for item in skill._pending if item.name == "bind").handler(
+        decision_id="",
+        statement=GOLDEN_STATEMENT,
+    )
+    payload = envelope.to_wire()["payload"]
+    assert payload["error"] == "decision_id_invalid"
+    assert "via" not in payload
 
 
 @pytest.mark.issue(244)

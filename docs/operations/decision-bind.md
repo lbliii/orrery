@@ -23,7 +23,8 @@ normalization only.
 3. Reject empty or oversized statements.
 
 Constellation composite receipts cite `decision_digest` values in a `cites`
-array; fetching statement text from Orrery is not supported in v1.
+array; fetching statement text from Orrery is not supported in v1. Host-sealed
+success envelopes include a signed `payload.via` attribution object (design #317).
 
 ## Direct MCP
 

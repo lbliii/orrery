@@ -17,6 +17,7 @@ from typing import Any, Literal
 from chirp.skill import sign_envelope
 
 from catalog.constellation import PolicyGraph, policy_for
+from stars._core.attribution import with_via
 from stars._core.migration_profile import canonical_json, sha256_hex
 from stars.stale_proof.composite_receipt import (
     normalize_acceptance_cites,
@@ -790,7 +791,7 @@ def _composite_receipt_payload(
         result = with_cites(result, state.cites)
     if state.acceptance_cites:
         result = with_acceptance_cites(result, state.acceptance_cites)
-    return result
+    return with_via(result)
 
 
 def status_for_run(run_id: str = "") -> dict[str, Any]:
