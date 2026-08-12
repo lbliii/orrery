@@ -40,10 +40,37 @@ def _catalog_has_namespace(catalog: Catalog, namespace_id: str) -> bool:
     return any((record.namespace or "").lower() == namespace_id for record in catalog.all())
 
 
+def _normalize_caller_allowlist(raw: object) -> tuple[str, ...]:
+    if raw is None:
+        return ()
+    if not isinstance(raw, list):
+        raise ProvisionError("invalid_caller_allowlist")
+    entries: list[str] = []
+    for item in raw:
+        if not isinstance(item, str) or not item.strip():
+            raise ProvisionError("invalid_caller_allowlist")
+        entries.append(item.strip())
+    return tuple(entries)
+
+
+def _normalize_retention_days(raw: object) -> int:
+    from .models import DEFAULT_RETENTION_DAYS
+
+    if raw is None:
+        return DEFAULT_RETENTION_DAYS
+    if not isinstance(raw, int) or isinstance(raw, bool):
+        raise ProvisionError("invalid_retention_days")
+    if raw < 1 or raw > 3650:
+        raise ProvisionError("invalid_retention_days")
+    return raw
+
+
 def provision_namespace(
     raw_id: str,
     *,
     catalog: Catalog,
+    retention_days: object = None,
+    caller_allowlist: object = None,
 ) -> dict[str, Any]:
     """Create a namespace id and register it for private gaze/resolve scoping."""
     slug = normalize_slug(raw_id)
@@ -54,7 +81,12 @@ def provision_namespace(
     if get_namespace(slug) is not None:
         raise ProvisionError("duplicate_namespace")
 
-    record = register_namespace(slug)
+    try:
+        days = _normalize_retention_days(retention_days)
+        allowlist = _normalize_caller_allowlist(caller_allowlist)
+    except ProvisionError:
+        raise
+    record = register_namespace(slug, retention_days=days, caller_allowlist=allowlist)
     if not _catalog_has_namespace(catalog, slug):
         catalog.reload((*catalog.all(), _demo_record(slug)))
     return record.as_dict()

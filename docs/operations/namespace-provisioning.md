@@ -14,13 +14,29 @@ Content-Type: application/json
 {"id": "acme"}
 ```
 
+Optional policy fields on create:
+
+```json
+{
+  "id": "acme",
+  "retention_days": 30,
+  "caller_allowlist": ["agent:deploy", "agent:ci"]
+}
+```
+
+- `retention_days` — integer 1–3650 (default `90`); local hook for Envelope
+  retention (audit export stubbed).
+- `caller_allowlist` — machine caller ids allowed on private namespace paths.
+  **Deny-by-default** when non-empty; empty list keeps open access.
+
 Machine clients are CSRF-exempt (same pattern as wallet holds).
 
 | Status | Meaning |
 | --- | --- |
-| `201` | Namespace created — body includes `id`, `created_at`, `retention_days` |
+| `201` | Namespace created — body includes `id`, `created_at`, `retention_days`, `caller_allowlist` |
 | `400` | `invalid_slug`, `reserved_slug`, or `duplicate_namespace` |
 | `400` | `invalid_json`, `expected_object`, or `id_required` |
+| `400` | `invalid_retention_days` or `invalid_caller_allowlist` |
 
 ### Slug rules
 
@@ -43,6 +59,17 @@ Creating `acme`:
 Persistence matches the wallet ledger MVP bar — in-process only; durable Postgres
 is Not now.
 
+## Caller allowlist + retention (#30)
+
+Private namespace machine paths (`GET /api/resolve?name={ns}/…`, gaze with
+`node={ns}`) check the `X-Orrery-Caller` header when the provisioned namespace
+has a **non-empty** `caller_allowlist`. Unauthorized callers receive `403`
+`caller_not_allowed`. Public sky (`node=public`, public resolve names) is
+unchanged.
+
+Retention is read from the namespace store via `retention_days_for(namespace_id)`
+for downstream Envelope hooks; no audit export pipeline in this leaf.
+
 ## Module
 
 ```python
@@ -56,7 +83,7 @@ result = provision_namespace("acme", catalog=CATALOG)
 ## Verify
 
 ```bash
-uv run pytest tests/test_namespace_provision.py -q
+uv run pytest tests/test_namespace_provision.py tests/test_namespace_allowlist.py -q
 uv run ruff check .
 ```
 
