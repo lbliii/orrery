@@ -88,6 +88,7 @@ from dogfood import (
     run_dogfood_publish_gate,
     verify_receipt,
 )
+from namespaces import ProvisionError, provision_namespace
 from public_keys import KEY_SET_CACHE_CONTROL, key_set_url, public_key_set
 from stars._core.corpus import corpus_ok_by_star, validate_public_star_corpora
 from stars._core.direct_mcp import mount_direct_mcp
@@ -155,6 +156,7 @@ for middleware in secure_stack(
             "/api/wallet/hold",
             "/api/wallet/stripe/checkout",
             "/api/wallet/stripe/webhook",
+            "/api/namespaces",
             *_DIRECT_STAR_MCP_PATHS,
         })
     ),
@@ -695,6 +697,25 @@ async def api_wallet_stripe_webhook(request: Request) -> JSONResponse:
     signature = request.headers.get("stripe-signature", "")
     status, body = handle_stripe_webhook(payload, signature_header=signature)
     return JSONResponse.from_value(body, status=status)
+
+
+@app.route("/api/namespaces", methods=["POST"], referenced=True)
+async def api_create_namespace(request: Request) -> JSONResponse:
+    """Provision a private namespace id for gaze/resolve scoping (#29 / #382)."""
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse.from_value({"error": "invalid_json"}, status=400)
+    if not isinstance(body, dict):
+        return JSONResponse.from_value({"error": "expected_object"}, status=400)
+    raw_id = body.get("id")
+    if not isinstance(raw_id, str):
+        return JSONResponse.from_value({"error": "id_required"}, status=400)
+    try:
+        result = provision_namespace(raw_id, catalog=CATALOG)
+    except ProvisionError as exc:
+        return JSONResponse.from_value({"error": exc.code}, status=400)
+    return JSONResponse.from_value(result, status=201)
 
 
 # Publish-oracle dogfood: seed Skill DNS, then check → freeze → smoke with
