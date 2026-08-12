@@ -26,7 +26,7 @@ check files before run without Orrery hosting the caller's tree.
 | `passed` | True when `violations` is empty |
 | `policy` | Echo of the named policy |
 | `manifest_digest` | Digest of the admitted list |
-| `violations` / `violation_codes` | Structured + code list |
+| `violations` / `violation_codes` | Structured + code list (each violation may include advisory `remediation`) |
 
 ## Direct MCP
 

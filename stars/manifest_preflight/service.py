@@ -18,6 +18,27 @@ from .contract import (
 _DOCS_PREFIXES = ("docs/",)
 _DOCS_SUFFIXES = (".md", ".rst", ".txt", ".toml", ".yaml", ".yml", ".json")
 
+# Advisory fix text for agents — does not change pass/fail or codes.
+_REMEDIATION: dict[str, str] = {
+    "too_many_files": (
+        "Reduce the admitted file count to at most 100, or choose a policy "
+        "that allows more files."
+    ),
+    "path_not_docs": (
+        "Move the file under docs/ with a docs-like suffix (.md, .rst, .txt, "
+        ".toml, .yaml, .yml, .json), or remove it from the manifest."
+    ),
+    "policy_unknown": (
+        "Use a known versioned policy name from the tool schema enum."
+    ),
+}
+
+
+def _violation(code: str, **extra: object) -> dict[str, object]:
+    item: dict[str, object] = {"code": code, "remediation": _REMEDIATION[code]}
+    item.update(extra)
+    return item
+
 
 def check(
     files: object,
@@ -72,11 +93,11 @@ def _violations(policy: str, admitted: list[Any]) -> list[dict[str, object]]:
     if policy == POLICY_MAX_100:
         if len(admitted) > 100:
             return [
-                {
-                    "code": "too_many_files",
-                    "file_count": len(admitted),
-                    "max_files": 100,
-                }
+                _violation(
+                    "too_many_files",
+                    file_count=len(admitted),
+                    max_files=100,
+                )
             ]
         return []
 
@@ -86,10 +107,10 @@ def _violations(policy: str, admitted: list[Any]) -> list[dict[str, object]]:
             assert isinstance(entry, Mapping)
             path = str(entry["path"])
             if not _is_docs_path(path):
-                violations.append({"code": "path_not_docs", "path": path})
+                violations.append(_violation("path_not_docs", path=path))
         return violations
 
-    return [{"code": "policy_unknown", "policy": policy}]
+    return [_violation("policy_unknown", policy=policy)]
 
 
 def _is_docs_path(path: str) -> bool:

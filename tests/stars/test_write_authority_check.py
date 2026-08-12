@@ -49,6 +49,24 @@ def test_grant_digest_mismatch_denies() -> None:
     result = check(MANIFEST, _authority(grant_digest="b" * 64))
     assert result["authorized"] is False
     assert "grant_digest_mismatch" in result["codes"]
+    findings = result.get("findings")
+    assert isinstance(findings, list) and findings
+    remediation = findings[0].get("remediation")
+    assert isinstance(remediation, str) and remediation.strip()
+    assert "grant_digest" in remediation.lower()
+
+
+@pytest.mark.issue(322)
+def test_denial_findings_include_remediation() -> None:
+    result = check(MANIFEST, _authority(grant_digest="b" * 64))
+    assert result["authorized"] is False
+    remediations = [
+        item["remediation"]
+        for item in result.get("findings", [])
+        if isinstance(item.get("remediation"), str) and item["remediation"].strip()
+    ]
+    assert remediations
+    assert "grant_digest_mismatch" in result["codes"]
 
 
 @pytest.mark.issue(223)
@@ -111,7 +129,10 @@ class TestL0WriteAuthorityCheck:
         assert CORPUS
 
     def test_invalid_manifest_fails_loud(self) -> None:
-        assert check("not-hex", _authority())["error"] == "manifest_digest_invalid"
+        result = check("not-hex", _authority())
+        assert result["error"] == "manifest_digest_invalid"
+        remediation = result.get("remediation")
+        assert isinstance(remediation, str) and remediation.strip()
 
 
 @pytest.mark.issue(223)

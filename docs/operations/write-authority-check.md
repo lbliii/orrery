@@ -44,6 +44,7 @@ Verification rules:
 | --- | --- |
 | `authorized` | `true` when no denial codes |
 | `codes` | Denial / mismatch codes (empty when authorized) |
+| `findings` | When denied, coded finding objects with advisory `remediation` |
 | `grant_digest` | Recomputed digest |
 | `witness_verified` | `true` only when a witness was supplied and fully verified |
 
