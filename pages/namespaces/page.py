@@ -1,6 +1,6 @@
 """Namespaces — the private "company Skill DNS" pitch (SaaS wedge).
 
-Static marketing surface from ``design/namespace.html``. Backs GitHub epic #6
+Create flow posts to ``POST /api/namespaces`` (#383). Backs GitHub epic #6
 (Namespaces).
 """
 
@@ -17,4 +17,5 @@ def get() -> Page:
         page_title="Private namespaces — Orrery",
         footer_note="Private namespaces",
         footer_meta="public free · namespace paid",
+        create_api="/api/namespaces",
     )
