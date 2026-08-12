@@ -13,11 +13,16 @@ from discovery import (
     MCP_TOOLS,
     MCP_TOOLS_ALLOWLIST,
     MCP_TOOLS_DENYLIST,
+    PUBLIC_MARKETING_ROUTES,
+    SITEMAP_PATHS,
     SLIM_MCP_COPY,
     TEACHING_TRIO,
     configured_public_origin,
+    llms_txt,
     mcp_endpoint,
     resolve_public_origin,
+    robots_txt,
+    sitemap_xml,
 )
 from public_keys import public_key_set
 
@@ -296,6 +301,29 @@ async def test_robots_and_security_txt(discovery_app) -> None:
         assert "Policy: https://orrery.lol/security" in security.text
         assert "Expires:" in security.text
         assert "Sitemap: https://orrery.lol/sitemap.xml" in robots.text
+
+
+@pytest.mark.issue(331)
+def test_discovery_lists_public_marketing_routes() -> None:
+    """robots, sitemap URL set, and llms Product section (#328 inventory)."""
+    origin = "https://orrery.lol"
+    robots = robots_txt(origin)
+    llms = llms_txt(origin)
+    sitemap = sitemap_xml(origin)
+    for path in PUBLIC_MARKETING_ROUTES:
+        assert f"Allow: {path}" in robots
+        assert f"{origin}{path}" in llms
+        assert f"<loc>{origin}{path}</loc>" in sitemap
+    assert "/product" in SITEMAP_PATHS
+    assert "/receipts" in SITEMAP_PATHS
+    assert "/how-it-works" in SITEMAP_PATHS
+    assert "/for-harnesses" in SITEMAP_PATHS
+    assert "/pricing" in SITEMAP_PATHS
+    assert "[Overview]" in llms
+    assert "[Receipts]" in llms
+    assert "[How it works]" in llms
+    assert "[For harnesses]" in llms
+    assert "[Pricing]" in llms
 
 
 @pytest.mark.asyncio
