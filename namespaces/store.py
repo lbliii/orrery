@@ -26,6 +26,7 @@ def register_namespace(
     namespace_id: str,
     *,
     retention_days: int = DEFAULT_RETENTION_DAYS,
+    caller_allowlist: tuple[str, ...] = (),
     created_at: datetime | None = None,
 ) -> Namespace:
     """Insert a namespace record; caller must validate slug and uniqueness."""
@@ -34,6 +35,7 @@ def register_namespace(
         id=key,
         created_at=created_at or datetime.now(tz=UTC),
         retention_days=retention_days,
+        caller_allowlist=caller_allowlist,
     )
     with _lock:
         _store[key] = record

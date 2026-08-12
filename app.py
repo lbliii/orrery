@@ -88,7 +88,15 @@ from dogfood import (
     run_dogfood_publish_gate,
     verify_receipt,
 )
-from namespaces import ProvisionError, provision_namespace
+from namespaces import (
+    CALLER_HEADER,
+    ProvisionError,
+    authorize_private_namespace,
+    authorize_private_record,
+    caller_from_header,
+    is_private_namespace_node,
+    provision_namespace,
+)
 from public_keys import KEY_SET_CACHE_CONTROL, key_set_url, public_key_set
 from stars._core.corpus import corpus_ok_by_star, validate_public_star_corpora
 from stars._core.direct_mcp import mount_direct_mcp
@@ -369,6 +377,12 @@ def api_resolve(request: Request) -> JSONResponse:
     record = CATALOG.resolve(name) if name else None
     if record is None:
         return JSONResponse.from_value({"error": "not_found", "name": name}, status=404)
+    denied = authorize_private_record(
+        record,
+        caller_from_header(request.headers.get(CALLER_HEADER)),
+    )
+    if denied is not None:
+        return JSONResponse.from_value(denied, status=403)
     payload = record.as_dict()
     payload["public_key_url"] = key_set_url(_orrery_origin(request))
     return JSONResponse.from_value(payload)
@@ -428,6 +442,13 @@ def api_gaze_match(request: Request) -> JSONResponse:
 
     intent = (request.query.get("intent") or request.query.get("q") or "").strip()
     node = (request.query.get("node") or "public").strip() or "public"
+    if is_private_namespace_node(node):
+        denied = authorize_private_namespace(
+            node,
+            caller_from_header(request.headers.get(CALLER_HEADER)),
+        )
+        if denied is not None:
+            return JSONResponse.from_value(denied, status=403)
     raw_limit = request.query.get("limit")
     limit: int | None
     if raw_limit is None or str(raw_limit).strip() == "":
@@ -465,6 +486,13 @@ def api_gaze_search(request: Request) -> JSONResponse:
 
     query = (request.query.get("q") or request.query.get("query") or "").strip()
     node = (request.query.get("node") or "public").strip() or "public"
+    if is_private_namespace_node(node):
+        denied = authorize_private_namespace(
+            node,
+            caller_from_header(request.headers.get(CALLER_HEADER)),
+        )
+        if denied is not None:
+            return JSONResponse.from_value(denied, status=403)
     raw_limit = request.query.get("limit")
     if raw_limit is None or str(raw_limit).strip() == "":
         limit = None
@@ -712,7 +740,12 @@ async def api_create_namespace(request: Request) -> JSONResponse:
     if not isinstance(raw_id, str):
         return JSONResponse.from_value({"error": "id_required"}, status=400)
     try:
-        result = provision_namespace(raw_id, catalog=CATALOG)
+        result = provision_namespace(
+            raw_id,
+            catalog=CATALOG,
+            retention_days=body.get("retention_days"),
+            caller_allowlist=body.get("caller_allowlist"),
+        )
     except ProvisionError as exc:
         return JSONResponse.from_value({"error": exc.code}, status=400)
     return JSONResponse.from_value(result, status=201)
