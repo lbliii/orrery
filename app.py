@@ -553,14 +553,22 @@ async def api_envelope_verify(request: Request) -> JSONResponse:
             skill=skill,
             nonce=nonce,
         )
-    return JSONResponse.from_value(
-        {
-            "verified": ok,
-            "payment_id": payment_id,
-            "price_per_call": price_per_call,
-            "commerce": commerce,
-        }
-    )
+    response: dict[str, object] = {
+        "verified": ok,
+        "payment_id": payment_id,
+        "price_per_call": price_per_call,
+        "commerce": commerce,
+    }
+    if ok:
+        signed_payload = payload.get("payload")
+        if isinstance(signed_payload, dict):
+            via = signed_payload.get("via")
+            if isinstance(via, dict):
+                line = via.get("line")
+                sky = via.get("sky")
+                if isinstance(line, str) and isinstance(sky, str):
+                    response["via"] = {"line": line, "sky": sky}
+    return JSONResponse.from_value(response)
 
 
 # Publish-oracle dogfood: seed Skill DNS, then check → freeze → smoke with

@@ -36,7 +36,18 @@ For machine-readable entry points, see [`/connect`](https://orrery.lol/connect),
 1. **Gaze** narrows an intent to a bounded shortlist. It returns names, facets, blurbs, and trust labels—not the valuable tool result. Use `gaze_match`, `gaze_search`, `gaze_describe`, or the [Gaze console](https://orrery.lol/gaze).
 2. **Resolve** locks an exact name to its endpoint, manifest digest, publisher key, price label, and policy metadata. Use `resolve_name` or [`/api/resolve?name=orrery/world-time`](https://orrery.lol/api/resolve?name=orrery/world-time).
 3. **Call** the resolved star's MCP endpoint directly with its canonical tool name.
-4. **Seal** the returned Chirp Envelope with the result and its evidence. Public keys are available at [`/.well-known/orrery/keys.json`](https://orrery.lol/.well-known/orrery/keys.json); verification is exposed at `/api/envelope/verify`.
+4. **Seal** the returned Chirp Envelope with the result and its evidence. Public keys are available at [`/.well-known/orrery/keys.json`](https://orrery.lol/.well-known/orrery/keys.json); verification is exposed at `/api/envelope/verify`. Success seals from protocol stars include host attribution inside the signed payload:
+
+```json
+"payload": {
+  "passed": true,
+  "via": {
+    "product": "Orrery",
+    "sky": "https://orrery.lol",
+    "line": "Sealed via Orrery MCP"
+  }
+}
+```
 
 Gaze is a shelf, not a router: the agent can re-rank the shortlist. Resolve is exact, so a chosen name has one locked record.
 
