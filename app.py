@@ -507,11 +507,14 @@ def artifact_download(artifact_id: str) -> Response:
     )
 
 
-def _commerce_fields(body: dict) -> tuple[str | None, str | None]:
-    """Pull payment + price from a receipt body (catalog fallback for price)."""
+def _commerce_fields(body: dict) -> tuple[str | None, str | None, str | None]:
+    """Pull payment, price, and owner from a receipt body (catalog fallback for price)."""
     payment_id = body.get("payment_id")
     if payment_id is not None:
         payment_id = str(payment_id)
+    owner_id = body.get("owner_id")
+    if owner_id is not None:
+        owner_id = str(owner_id)
     price = body.get("price_per_call")
     if price is None and isinstance(body.get("skill"), str):
         skill_name = body["skill"]
@@ -520,14 +523,14 @@ def _commerce_fields(body: dict) -> tuple[str | None, str | None]:
             price = record.price_per_call
     if price is not None:
         price = str(price)
-    return payment_id, price
+    return payment_id, price, owner_id
 
 
 @app.route("/api/envelope/verify", methods=["POST"], referenced=True)
 async def api_envelope_verify(request: Request) -> JSONResponse:
     """Verify a Chirp Envelope / star receipt dict (fails closed on tamper).
 
-    Success → loud ``commerce.charge_stub``; failure → loud ``commerce.refund_stub``.
+    Success → ledger capture (or loud stub when wallet disabled); failure → release.
     """
     try:
         body = await request.json()
@@ -535,9 +538,13 @@ async def api_envelope_verify(request: Request) -> JSONResponse:
         return JSONResponse.from_value({"verified": False, "error": "invalid_json"}, status=400)
     if not isinstance(body, dict):
         return JSONResponse.from_value({"verified": False, "error": "expected_object"}, status=400)
-    payment_id, price_per_call = _commerce_fields(body)
-    # payment_id / price_per_call are commerce metadata, not Envelope wire fields.
-    payload = {k: v for k, v in body.items() if k not in ("payment_id", "price_per_call")}
+    payment_id, price_per_call, owner_id = _commerce_fields(body)
+    # Commerce metadata is not part of the Envelope wire signature.
+    payload = {
+        k: v
+        for k, v in body.items()
+        if k not in ("payment_id", "price_per_call", "owner_id")
+    }
     ok = verify_receipt(payload)
     skill = str(body["skill"]) if isinstance(body.get("skill"), str) else None
     nonce = str(body["nonce"]) if isinstance(body.get("nonce"), str) else None
@@ -547,6 +554,7 @@ async def api_envelope_verify(request: Request) -> JSONResponse:
             price_per_call=price_per_call,
             skill=skill,
             nonce=nonce,
+            owner_id=owner_id,
         )
     else:
         commerce = refund_on_forge(
@@ -554,6 +562,7 @@ async def api_envelope_verify(request: Request) -> JSONResponse:
             price_per_call=price_per_call,
             skill=skill,
             nonce=nonce,
+            owner_id=owner_id,
         )
     response: dict[str, object] = {
         "verified": ok,
