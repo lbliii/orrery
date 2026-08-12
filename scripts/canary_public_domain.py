@@ -9,9 +9,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import subprocess
 import sys
 import urllib.request
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
 
@@ -119,11 +122,25 @@ def run(
     require_server_card(fetch(base + "/.well-known/mcp/server-card.json", opener=opener), base)
 
 
+def maybe_run_catalog_probe(origin: str) -> None:
+    """Run the full public catalog MCP probe when ``ORRERY_CANARY_PROBE=1``."""
+    if os.environ.get("ORRERY_CANARY_PROBE") != "1":
+        return
+    repo_root = Path(__file__).resolve().parents[1]
+    subprocess.run(
+        ["uv", "run", "python", "scripts/probe_all_mcp.py", "--origin", origin],
+        cwd=repo_root,
+        check=True,
+    )
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--origin", default="https://orrery.lol")
+    args = parser.parse_args()
     try:
-        run(parser.parse_args().origin)
+        run(args.origin)
+        maybe_run_catalog_probe(args.origin)
     except Exception as error:
         print(f"public-domain canary failed: {error}", file=sys.stderr)
         raise
