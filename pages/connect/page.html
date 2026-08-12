@@ -13,6 +13,29 @@
   teaching trio.
 </p>
 
+<section class="panel" style="margin-bottom: 1.5rem" id="starter-paths">
+  <p class="kicker" style="margin-bottom: 0.5rem">Onboarding tour · three calls</p>
+  <p class="lede" style="margin: 0 0 0.75rem; font-size: 0.95rem">
+    After <code class="mono">gaze_match</code> and
+    <code class="mono">resolve_name</code>, call
+    <code class="mono">run</code> on the publisher MCP (not aggregate
+    <code class="mono">/mcp</code>). Agent ranks; Orrery documents frozen paths
+    only (ADR 0005). In-MCP execution via
+    <code class="mono">call_skill</code> waits for
+    <a href="https://github.com/lbliii/orrery/issues/390">#390</a>.
+  </p>
+  <ol class="meta-list">
+    {% for p in starter_paths %}
+    <li>
+      <span class="mono">{{ p.name }}</span>
+      <span>{{ p.title }} — {{ p.intent }} →
+        <code class="mono">{{ p.expected_disposition }}</code></span>
+    </li>
+    {% end %}
+  </ol>
+  <pre class="mono" style="margin: 0.75rem 0 0; white-space: pre-wrap">{{ starter_paths_json }}</pre>
+</section>
+
 <section class="panel" style="margin-bottom: 1.5rem">
   <p class="kicker" style="margin-bottom: 0.75rem">Teaching trio · cohort A</p>
   <p class="lede" style="margin: 0 0 0.75rem; font-size: 0.95rem">

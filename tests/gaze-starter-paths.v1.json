@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "contract": "Three-call tour after gaze → resolve → call → seal. Agent ranks intents; Orrery documents frozen paths only (ADR 0005).",
+  "paths": [
+    {
+      "id": "live-truth",
+      "title": "Live truth",
+      "intent": "seal live UTC and source digest evidence",
+      "name": "orrery/stale-proof",
+      "tool": "run",
+      "arguments": {},
+      "expected_disposition": "fresh_proof"
+    },
+    {
+      "id": "ship-gate",
+      "title": "Ship gate",
+      "intent": "ship-check release evidence before reasoning",
+      "name": "orrery/ship-check",
+      "tool": "run",
+      "arguments": {
+        "package": "httpx"
+      },
+      "expected_disposition": "ready",
+      "coverage_check": {
+        "star": "orrery/ship-check",
+        "package": "httpx"
+      }
+    },
+    {
+      "id": "content-gate",
+      "title": "Content gate",
+      "intent": "audit docs bundle readiness",
+      "name": "orrery/content-readiness",
+      "tool": "run",
+      "arguments": {
+        "files": [
+          {
+            "path": "docs/guide.md",
+            "content": "---\nstatus: draft\n---\n\n# Guide\n\n### Too deep\n"
+          }
+        ]
+      },
+      "expected_disposition": "needs-work"
+    }
+  ]
+}

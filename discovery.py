@@ -195,6 +195,47 @@ CAPABILITY_FAMILY_DESCRIPTIONS: dict[str, str] = {
     "media": ("Bounded image transforms on Orrery's managed CPU worker."),
 }
 
+#: Frozen three-call onboarding tour (#393). ADR 0005: document paths; agent ranks.
+STARTER_PATHS: tuple[dict[str, Any], ...] = (
+    {
+        "id": "live-truth",
+        "title": "Live truth",
+        "intent": "seal live UTC and source digest evidence",
+        "name": "orrery/stale-proof",
+        "tool": "run",
+        "arguments": {},
+        "expected_disposition": "fresh_proof",
+    },
+    {
+        "id": "ship-gate",
+        "title": "Ship gate",
+        "intent": "ship-check release evidence before reasoning",
+        "name": "orrery/ship-check",
+        "tool": "run",
+        "arguments": {"package": "httpx"},
+        "expected_disposition": "ready",
+        "coverage_check": {"star": "orrery/ship-check", "package": "httpx"},
+    },
+    {
+        "id": "content-gate",
+        "title": "Content gate",
+        "intent": "audit docs bundle readiness",
+        "name": "orrery/content-readiness",
+        "tool": "run",
+        "arguments": {
+            "files": [
+                {
+                    "path": "docs/guide.md",
+                    "content": (
+                        "---\nstatus: draft\n---\n\n# Guide\n\n### Too deep\n"
+                    ),
+                }
+            ]
+        },
+        "expected_disposition": "needs-work",
+    },
+)
+
 #: Common intents → recommended public SKUs only (no invented catalog names).
 PUBLIC_CATALOG_RECIPES: tuple[tuple[str, str], ...] = (
     ("fresh timestamp for citation", "orrery/world-time"),
@@ -360,6 +401,8 @@ def llms_txt(origin: str) -> str:
         f"- [`orrery/stale-proof`]({origin}/constellations?name=orrery/stale-proof): "
         "composite that seals now + observe/diff (+ optional PDF receipt)",
         "",
+        starter_paths_section(origin).rstrip(),
+        "",
         "## Discovery",
         "",
         f"- [llms.txt]({origin}/llms.txt): this file",
@@ -474,6 +517,42 @@ def public_catalog_section(origin: str) -> str:
     return "\n".join(lines).rstrip() + "\n"
 
 
+def starter_paths_payload() -> dict[str, Any]:
+    """Machine-readable starter tour for agents (static doc; not an MCP tool)."""
+    return {
+        "version": 1,
+        "contract": (
+            "Three-call tour after gaze → resolve → call → seal. "
+            "Agent ranks intents; Orrery documents frozen paths only (ADR 0005)."
+        ),
+        "paths": [dict(path) for path in STARTER_PATHS],
+    }
+
+
+def starter_paths_section(origin: str) -> str:
+    """Markdown section for llms.txt / llms-full — onboarding starter paths."""
+    doc_href = f"{GITHUB_REPO}/blob/main/docs/operations/discovery-onboarding.md"
+    lines = [
+        "## Onboarding starter paths",
+        "",
+        "Three frozen constellation calls for a first session — after "
+        "`gaze_match` / `resolve_name`, call `run` on the publisher MCP "
+        "(not aggregate `/mcp`). Agent ranks; Orrery documents only (ADR 0005).",
+        "",
+        f"Full walkthrough: [discovery-onboarding]({doc_href})",
+        "",
+        "| Step | Intent | Name | Tool | Expected |",
+        "|------|--------|------|------|----------|",
+    ]
+    for index, path in enumerate(STARTER_PATHS, start=1):
+        lines.append(
+            f"| {index} | {path['intent']} | `{path['name']}` | "
+            f"`{path['tool']}` | `{path['expected_disposition']}` |"
+        )
+    lines.extend(["", "```json", json.dumps(starter_paths_payload(), indent=2), "```", ""])
+    return "\n".join(lines)
+
+
 def recipes_section() -> str:
     """Markdown recipes table — common intents to existing public SKUs."""
     public_names = {str(item["name"]) for item in public_star_catalog()}
@@ -502,6 +581,8 @@ def llms_full_txt(origin: str) -> str:
     ]
     body = [
         llms_txt(origin).rstrip(),
+        "",
+        starter_paths_section(origin).rstrip(),
         "",
         public_catalog_section(origin).rstrip(),
         "",
