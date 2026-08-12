@@ -1209,6 +1209,10 @@ a:hover {
   max-width: 28rem;
 }
 
+.hero-lede {
+  max-width: 34rem;
+}
+
 .hero-actions {
   display: flex;
   flex-wrap: wrap;
