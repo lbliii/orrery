@@ -91,7 +91,10 @@
   <p class="kicker" style="margin-bottom: 0.5rem">1. MCP endpoint</p>
   <pre class="mono" style="margin: 0; white-space: pre-wrap">{{ mcp_url }}</pre>
   <p class="lede" style="margin: 0.75rem 0 0; font-size: 0.95rem">
-    Streamable HTTP. No Authorization header on the public host.
+    Streamable HTTP on MCP protocol <code class="mono">2025-06-18</code> (matches
+    the server card). Cursor and other clients negotiate that version on connect;
+    you do not need to speak Chirp's internal <code class="mono">2026-07-28</code>
+    dialect. No Authorization header on the public host.
   </p>
 </section>
 

@@ -55,6 +55,7 @@ from commerce import charge_on_verify, refund_on_forge
 from discovery import (
     DISCOVERY_CACHE_CONTROL,
     DISCOVERY_CORS,
+    MCP_PROTOCOL_VERSION,
     TRUST_FACTS,
     configured_public_origin,
     llms_full_txt,
@@ -120,6 +121,7 @@ config = AppConfig.from_env(
     template_dir=PAGES_DIR,
     static_dir=STATIC_DIR,
     worker_mode="async",
+    mcp_connect_default=MCP_PROTOCOL_VERSION,
 )
 app = App(config=config)
 star_registry = builtin_registry()
