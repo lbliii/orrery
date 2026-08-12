@@ -1,6 +1,6 @@
 # ADR 0003: Stripe $5 top-up (Checkout + webhook credit)
 
-- **Status:** Design accepted (implementation gated)
+- **Status:** Implemented (#371 — Checkout + webhook credit)
 - **Date:** 2026-08-08
 - **Issue:** [#39](https://github.com/lbliii/orrery/issues/39)
 - **Parent epic:** [#9](https://github.com/lbliii/orrery/issues/9) Trust & Commerce
