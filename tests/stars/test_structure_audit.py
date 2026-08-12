@@ -6,6 +6,7 @@ import pytest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from dogfood import verify_receipt as verify_envelope_wire
+from stars._core.attribution import PAYLOAD_VIA
 from stars.builtins import builtin_registry
 from stars.structure_audit.contract import tool_schemas
 from stars.structure_audit.corpus import CORPUS
@@ -128,6 +129,26 @@ def test_envelope_signs_and_verifies(monkeypatch: pytest.MonkeyPatch) -> None:
     )
     assert verify_envelope_wire(envelope.to_wire(), skill=skill) is True
     assert envelope.payload["passed"] is True
+    assert envelope.payload["via"] == PAYLOAD_VIA
+
+
+@pytest.mark.issue(319)
+def test_success_seal_includes_payload_via(monkeypatch: pytest.MonkeyPatch) -> None:
+    private = Ed25519PrivateKey.generate()
+    monkeypatch.setenv("ORRERY_STAR_PRIVATE_KEY", private.private_bytes_raw().hex())
+    monkeypatch.setenv("ORRERY_STAR_KEY_ID", "stars-2026-08")
+    skill = build_skill()
+    envelope = next(item for item in skill._pending if item.name == "audit").handler(
+        files=[
+            {
+                "path": "docs/readme.md",
+                "content": "---\ntitle: Readme\n---\n\n# Readme\n\nHello.\n",
+            }
+        ]
+    )
+    payload = envelope.to_wire()["payload"]
+    assert payload["via"]["line"] == PAYLOAD_VIA["line"]
+    assert payload["via"]["sky"] == PAYLOAD_VIA["sky"]
 
 
 @pytest.mark.issue(223)

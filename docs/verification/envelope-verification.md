@@ -41,3 +41,23 @@ Artifact verification is separate: after Envelope verification, download the
 artifact, calculate SHA-256 over the exact bytes, and compare it with the
 receipt payload's `sha256` value. A valid signature does not replace the
 digest check.
+
+## Host attribution (`payload.via`)
+
+Orrery success seals may include a frozen attribution object on the signed
+**payload**, not as a top-level Envelope wire field:
+
+```json
+"payload": {
+  "passed": true,
+  "via": {
+    "product": "Orrery",
+    "sky": "https://orrery.lol",
+    "line": "Sealed via Orrery MCP"
+  }
+}
+```
+
+Because `via` is inside `payload`, it is covered by the Envelope signature.
+`POST /api/envelope/verify` echoes `via.line` and `via.sky` on successful
+verification when present.

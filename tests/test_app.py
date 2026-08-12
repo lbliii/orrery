@@ -485,3 +485,43 @@ class TestDirectStarMcpEndpoints:
             text = json.loads(response.text)["result"]["content"][0]["text"]
             assert "source-watch" in text
             assert "live_at_call" in text
+
+
+@pytest.mark.issue(319)
+class TestEnvelopeVerifyVia:
+    async def test_verify_echoes_payload_via(
+        self, example_app, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import sys
+
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+        from dogfood import verify_receipt as dogfood_verify_receipt
+        from stars.structure_audit.skill import build_skill
+
+        private = Ed25519PrivateKey.generate()
+        monkeypatch.setenv("ORRERY_STAR_PRIVATE_KEY", private.private_bytes_raw().hex())
+        monkeypatch.setenv("ORRERY_STAR_KEY_ID", "stars-2026-08")
+        skill = build_skill()
+        envelope = next(item for item in skill._pending if item.name == "audit").handler(
+            files=[
+                {
+                    "path": "docs/readme.md",
+                    "content": "---\ntitle: Readme\n---\n\n# Readme\n\nHello.\n",
+                }
+            ]
+        )
+        receipt = envelope.to_wire()
+        app_module = sys.modules["orrery_app_under_test"]
+        monkeypatch.setattr(
+            app_module,
+            "verify_receipt",
+            lambda payload: dogfood_verify_receipt(payload, skill=skill),
+        )
+        async with TestClient(example_app) as client:
+            response = await client.post("/api/envelope/verify", json=receipt)
+        assert response.status == 200
+        body = json.loads(response.text)
+        assert body["verified"] is True
+        assert body["via"]["line"] == "Sealed via Orrery MCP"
+        assert body["via"]["sky"] == "https://orrery.lol"
