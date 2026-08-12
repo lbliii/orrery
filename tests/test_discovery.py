@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 import json
+from pathlib import Path
 
 import pytest
 from chirp.testing import TestClient
@@ -371,6 +372,68 @@ async def test_connect_page_is_public(discovery_app) -> None:
             assert star["star"] in page.text
             assert star["href"] in page.text
         assert "orrery/stale-proof" in page.text
+
+
+@pytest.mark.issue(393)
+def test_starter_paths_fixture_matches_discovery_module() -> None:
+    from discovery import starter_paths_payload
+
+    payload = json.loads(
+        (Path(__file__).resolve().parent / "gaze-starter-paths.v1.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert payload == starter_paths_payload()
+    assert len(payload["paths"]) == 3
+
+
+@pytest.mark.issue(393)
+def test_starter_path_coverage_checks() -> None:
+    from catalog.coverage import check_coverage
+    from discovery import STARTER_PATHS
+
+    for path in STARTER_PATHS:
+        check = path.get("coverage_check")
+        if not check:
+            continue
+        star = str(check["star"])
+        params = {key: str(value) for key, value in check.items() if key != "star"}
+        result = check_coverage(star, params=params)
+        assert result.get("allowed") is True, f"{path['id']}: {result}"
+
+
+@pytest.mark.issue(393)
+@pytest.mark.asyncio
+async def test_starter_path_names_resolve(discovery_app) -> None:
+    from discovery import STARTER_PATHS
+
+    async with TestClient(discovery_app) as client:
+        for path in STARTER_PATHS:
+            name = str(path["name"])
+            response = await client.get(f"/api/resolve?name={name}", headers=HOST)
+            assert response.status == 200, name
+            record = json.loads(response.text)
+            assert record["name"] == name
+            assert record.get("endpoint"), name
+            assert path["tool"] in record.get("tools", ()), name
+
+
+@pytest.mark.issue(393)
+@pytest.mark.asyncio
+async def test_connect_and_llms_advertise_starter_paths(discovery_app) -> None:
+    from discovery import STARTER_PATHS, llms_txt
+
+    async with TestClient(discovery_app) as client:
+        connect = await client.get("/connect", headers=HOST)
+        llms = await client.get("/llms.txt", headers=HOST)
+        assert connect.status == llms.status == 200
+        assert 'id="starter-paths"' in connect.text
+        assert "Onboarding starter paths" in llms.text
+        for path in STARTER_PATHS:
+            assert path["name"] in connect.text
+            assert path["name"] in llms.text
+            assert path["expected_disposition"] in connect.text
+    assert "Onboarding starter paths" in llms_txt("https://orrery.lol")
 
 
 @pytest.mark.asyncio
