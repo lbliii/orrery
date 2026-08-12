@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.14"
 
 [[package]]
@@ -17,7 +17,7 @@ wheels = [
 [[package]]
 name = "bengal-chirp"
 version = "0.10.0"
-source = { git = "https://github.com/lbliii/chirp.git?rev=a84ee3f#a84ee3fc7328f46edb877f8d4dfaf6e203059f47" }
+source = { git = "https://github.com/lbliii/chirp.git?rev=560da9c5#560da9c56d78b50ec921660048e90319116e3d43" }
 dependencies = [
     { name = "anyio" },
     { name = "bengal-pounce" },
@@ -367,7 +367,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "bengal-chirp", extras = ["skill", "sessions", "testing"], git = "https://github.com/lbliii/chirp.git?rev=a84ee3f" },
+    { name = "bengal-chirp", extras = ["skill", "sessions", "testing"], git = "https://github.com/lbliii/chirp.git?rev=560da9c5" },
     { name = "boto3", specifier = ">=1.42,<2" },
     { name = "itsdangerous", specifier = ">=2.2.0" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.3,<4" },

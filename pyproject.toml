@@ -7,7 +7,7 @@ requires-python = ">=3.14"
 dependencies = [
   # chirp.skill (Envelope, mount_skills, publish oracle) is on Chirp main;
   # PyPI wheels do not yet expose the skill extra.
-  "bengal-chirp[skill,sessions,testing] @ git+https://github.com/lbliii/chirp.git@a84ee3f",
+  "bengal-chirp[skill,sessions,testing] @ git+https://github.com/lbliii/chirp.git@560da9c5",
   # Railway Bucket is S3-compatible; Postgres holds artifact metadata only.
   "boto3>=1.42,<2",
   "itsdangerous>=2.2.0",
