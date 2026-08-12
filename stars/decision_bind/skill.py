@@ -4,6 +4,7 @@ from typing import Any
 
 from chirp.skill import Skill
 
+from stars._core.attribution import with_via
 from stars.signing import public_star_signing_key
 
 from .contract import STAR_VERSION
@@ -35,6 +36,9 @@ def build_skill(*, private_key: Any | None = None) -> Skill:
         adr_url: str | None = None,
         issue_url: str | None = None,
     ) -> dict[str, object]:
-        return bind_decision(decision_id, statement, adr_url, issue_url)
+        result = bind_decision(decision_id, statement, adr_url, issue_url)
+        if "error" in result:
+            return result
+        return with_via(dict(result))
 
     return skill

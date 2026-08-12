@@ -18,6 +18,7 @@ from catalog.constellation_run import (
     run_constellation,
     status_for_run,
 )
+from stars._core.attribution import PAYLOAD_VIA
 
 
 @pytest.fixture(autouse=True)
@@ -162,5 +163,7 @@ def test_sync_run_constellation_still_works_via_store() -> None:
         private_key=key,
     )
     assert result["status"] == "completed"
+    assert result["via"] == PAYLOAD_VIA
     status = status_for_run(result["run_id"])
     assert status["run_id"] == result["run_id"]
+    assert status["via"] == PAYLOAD_VIA
