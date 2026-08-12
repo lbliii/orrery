@@ -146,6 +146,37 @@ TEACHING_TRIO: tuple[dict[str, str], ...] = (
     },
 )
 
+#: Frozen public marketing routes (design #328 — Wave 1 + Wave 2 inventory).
+PUBLIC_MARKETING_ROUTES: tuple[str, ...] = (
+    "/product",
+    "/receipts",
+    "/how-it-works",
+    "/for-harnesses",
+    "/pricing",
+)
+
+#: Product children already public — included in sitemap alongside marketing routes.
+PRODUCT_DISCOVERY_ROUTES: tuple[str, ...] = (
+    "/gaze",
+    "/resolve",
+    "/stars",
+    "/constellations",
+    "/namespaces",
+)
+
+#: URL paths advertised in sitemap.xml (trust center + connect + product IA).
+SITEMAP_PATHS: tuple[str, ...] = (
+    "/",
+    "/connect",
+    "/security",
+    "/privacy",
+    "/terms",
+    "/contact",
+    "/trust/allowlist",
+    *PUBLIC_MARKETING_ROUTES,
+    *PRODUCT_DISCOVERY_ROUTES,
+)
+
 #: Plain-language capability family blurbs for llms-full grouping (#225).
 CAPABILITY_FAMILY_DESCRIPTIONS: dict[str, str] = {
     "time_and_date": (
@@ -337,9 +368,16 @@ def llms_txt(origin: str) -> str:
         "",
         "## Product",
         "",
+        f"- [Overview]({origin}/product): product positioning and scope",
+        f"- [How it works]({origin}/how-it-works): architecture walkthrough",
         f"- [Gaze]({origin}/gaze): discover / match intent",
         f"- [Resolve]({origin}/resolve): Skill DNS lock (endpoint, digest, key, price)",
         f"- [Stars]({origin}/stars): callable hosted skills",
+        f"- [Constellations]({origin}/constellations): drawn policy graphs",
+        f"- [Receipts]({origin}/receipts): verifyable signed results",
+        f"- [Namespaces]({origin}/namespaces): Skill DNS namespaces",
+        f"- [For harnesses]({origin}/for-harnesses): agent harness integration",
+        f"- [Pricing]({origin}/pricing): public pricing",
         "- Skill DNS: `mcp://orrery.lol/…` (override host with `ORRERY_MCP_HOST`)",
         "",
         "## Optional",
@@ -523,7 +561,19 @@ def llms_full_txt(origin: str) -> str:
     return "\n".join(body)
 
 
+def sitemap_xml(origin: str) -> str:
+    """Sitemap URL set for crawlers — paths frozen in ``SITEMAP_PATHS`` (#328)."""
+    base = origin.rstrip("/")
+    urls = "".join(f"<url><loc>{base}{path}</loc></url>" for path in SITEMAP_PATHS)
+    return (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+        f"{urls}</urlset>"
+    )
+
+
 def robots_txt(origin: str) -> str:
+    marketing_allow = [f"Allow: {path}" for path in PUBLIC_MARKETING_ROUTES]
     return "\n".join(
         [
             "User-agent: *",
@@ -537,6 +587,7 @@ def robots_txt(origin: str) -> str:
             "Allow: /stars",
             "Allow: /constellations",
             "Allow: /namespaces",
+            *marketing_allow,
             "Allow: /skills",
             "Allow: /mcp",
             "Allow: /health",
