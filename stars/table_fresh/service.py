@@ -6,6 +6,8 @@ from stars.csv_url.service import Fetch
 from stars.csv_url.service import get as get_csv
 from stars.table_diff.service import diff
 
+from .contract import BASELINE_SCHEMA, EXAMPLE_BASELINE, INVALID_BASELINE_REMEDIATION
+
 
 def run(baseline: object, *, csv_fetch: Fetch | None = None) -> dict[str, object]:
     """Freshen a bounded current sample then compare it to caller-held baseline."""
@@ -13,20 +15,16 @@ def run(baseline: object, *, csv_fetch: Fetch | None = None) -> dict[str, object
     if "error" in current:
         return {"error": "current_source_failed", "current": current, "scope": "bounded_sample"}
     if not isinstance(baseline, dict) or not isinstance(baseline.get("rows"), list):
-        return {"error": "invalid_baseline", "scope": "bounded_sample"}
+        return _invalid_baseline()
     baseline_rows = _routes(baseline["rows"])
     current_rows = _routes(current["rows"])
     if baseline_rows is None or current_rows is None:
-        return {"error": "invalid_baseline", "scope": "bounded_sample"}
+        return _invalid_baseline()
     left = {"rows": baseline_rows, "digest": baseline.get("source_digest", baseline.get("digest"))}
     right = {"rows": current_rows, "digest": current["source_digest"]}
     verdict = diff(left, right, "route")
     if "error" in verdict:
-        return {
-            "error": "invalid_baseline",
-            "detail": verdict.get("detail"),
-            "scope": "bounded_sample",
-        }
+        return _invalid_baseline(detail=verdict.get("detail"))
     return {
         "constellation": "orrery/table-fresh",
         "scope": "bounded_sample",
@@ -70,6 +68,18 @@ def run(baseline: object, *, csv_fetch: Fetch | None = None) -> dict[str, object
         ),
         "live_at_call": True,
     }
+
+
+def _invalid_baseline(**extra: object) -> dict[str, object]:
+    item: dict[str, object] = {
+        "error": "invalid_baseline",
+        "scope": "bounded_sample",
+        "remediation": INVALID_BASELINE_REMEDIATION,
+        "expected_shape": BASELINE_SCHEMA,
+        "example": EXAMPLE_BASELINE,
+    }
+    item.update(extra)
+    return item
 
 
 def _routes(rows: object) -> list[dict[str, object]] | None:
