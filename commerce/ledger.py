@@ -310,6 +310,11 @@ class WalletLedger:
                 expired.append(terminal)
         return expired
 
+    def find_hold(self, idempotency_key: str) -> Hold | None:
+        """Return the hold for ``idempotency_key``, if any."""
+        with self._lock:
+            return self._holds.get(idempotency_key)
+
     def ledger_entries(self, owner_id: str | None = None) -> list[LedgerEntry]:
         with self._lock:
             if owner_id is None:

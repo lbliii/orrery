@@ -1,13 +1,12 @@
-"""Commerce hooks — stubs today; prepaid ledger alongside (Wave 2).
+"""Commerce hooks — ledger-backed verify wiring with stub fallback (Wave 2).
 
-Real Stripe top-up lives in ADR 0003. This package exposes **loud** charge-on-
-verify / refund-on-forge stubs (GitHub #35) plus the local prepaid ledger
-(ADR 0002 / #369).
+Real Stripe top-up lives in ADR 0003. Verify paths use the prepaid ledger when
+``ORRERY_WALLET_ENABLED`` is set; otherwise loud stubs remain (GitHub #35).
 """
 
 from .errors import InsufficientBalanceError
 from .ledger import Hold, HoldStatus, LedgerEntry, LedgerOp, WalletAccount, WalletLedger
-from .stubs import charge_on_verify, refund_on_forge
+from .verify_wire import charge_on_verify, get_ledger, refund_on_forge, reset_ledger, wallet_enabled
 
 __all__ = [
     "Hold",
@@ -18,5 +17,8 @@ __all__ = [
     "WalletAccount",
     "WalletLedger",
     "charge_on_verify",
+    "get_ledger",
     "refund_on_forge",
+    "reset_ledger",
+    "wallet_enabled",
 ]
