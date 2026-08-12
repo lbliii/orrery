@@ -43,6 +43,7 @@ BUILTIN_STAR_PACKAGES = (
     "stars.place_hours",
     "stars.holidays",
     "stars.decision_bind",
+    "stars.acceptance_bind",
     "stars.manifest_bind",
     "stars.manifest_preflight",
     "stars.patch_capture",

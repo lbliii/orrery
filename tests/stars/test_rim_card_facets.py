@@ -9,6 +9,7 @@ from catalog.agent_card import require_card
 # decision-bind → planner; protocol sensors → worker/low; review-ish → review/low
 _RIM_STAR_FACETS: dict[str, tuple[str, str | None]] = {
     "orrery/decision-bind": ("planner", None),
+    "orrery/acceptance-bind": ("planner", None),
     "orrery/manifest-bind": ("worker", "low"),
     "orrery/manifest-preflight": ("review", "low"),
     "orrery/patch-capture": ("worker", "low"),

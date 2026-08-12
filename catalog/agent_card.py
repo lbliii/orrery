@@ -1068,6 +1068,36 @@ _STAR_CARDS: dict[str, AgentCard] = {
         ),
         tree_role="planner",
     ),
+    "orrery/acceptance-bind": _card(
+        summary=(
+            "Seal sprint done-criteria into a citeable AcceptanceReceipt with a stable digest."
+        ),
+        use_when=(
+            "You need done-criteria frozen before workers start",
+            "You want offline-verifiable acceptance_digest evidence with VerifyRef pointers",
+        ),
+        not_for=(
+            "Running pytest, Playwright, or other evaluators inside Orrery",
+            "Hosting criteria text or ADR content",
+            "Putting acceptance digests in DecisionReceipt cites",
+        ),
+        example_intents=("seal acceptance contract", "bind acceptance receipt"),
+        tools=("bind",),
+        coverage_slug="acceptance-bind",
+        inputs=(
+            _io("acceptance_id", "string", required=True, note="stable caller id ≤128 chars"),
+            _io("criteria", "array", required=True, note="1-32 criterion objects"),
+            _io("adr_url", "string", note="optional HTTPS ADR link"),
+            _io("issue_url", "string", note="optional HTTPS tracker link"),
+        ),
+        outputs=(
+            _io("acceptance_digest", "string"),
+            _io("sealed_at", "string"),
+            _io("criteria", "array"),
+            *_ENVELOPE,
+        ),
+        tree_role="planner",
+    ),
     "orrery/manifest-bind": _card(
         summary="Bind caller-supplied file digests into a stable manifest_digest receipt.",
         use_when=(

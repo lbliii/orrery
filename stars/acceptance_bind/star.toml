@@ -1,0 +1,26 @@
+[star]
+name = "orrery/acceptance-bind"
+version = "0.1.0"
+description = "Seal a citeable AcceptanceReceipt with stable acceptance_digest"
+publisher = "orrery"
+publisher_key_id_env = "ORRERY_ACCEPTANCE_BIND_KEY_ID"
+direct_mcp_path = "/stars/acceptance-bind/mcp"
+tools = ["bind"]
+capability_families = ["security"]
+[pricing]
+unit = "call"
+price_per_call = "0.00"
+currency = "USD"
+[runtime]
+python_package = "stars.acceptance_bind"
+skill_factory = "stars.acceptance_bind.skill:build_skill"
+[policy]
+allowed_egress = []
+freshness = "static_profile"
+redirects = "deny"
+max_response_bytes = 65536
+[receipt]
+schema_version = "1"
+algorithm = "Ed25519"
+[publish]
+corpus = "stars.acceptance_bind.corpus:CORPUS"
