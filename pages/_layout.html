@@ -30,11 +30,24 @@
       <header class="topbar">
         <a class="brand" href="/">Orrery<span>.</span></a>
         <nav class="nav" aria-label="Primary">
-          <a href="/gaze"{% if nav.gaze %} aria-current="page"{% end %}>Gaze</a>
-          <a href="/resolve"{% if nav.resolve %} aria-current="page"{% end %}>Resolve</a>
-          <a href="/stars"{% if nav.stars %} aria-current="page"{% end %}>Stars</a>
-          <a href="/constellations"{% if nav.constellations %} aria-current="page"{% end %}>Constellations</a>
-          <a href="/namespaces"{% if nav.namespaces %} aria-current="page"{% end %}>Namespaces</a>
+          <details class="nav-dropdown"{% if nav.gaze or nav.resolve or nav.stars or nav.constellations or nav.namespaces or current_path == "/product" or current_path == "/receipts" or current_path == "/how-it-works" or current_path == "/for-harnesses" or current_path == "/pricing" %} open{% end %}>
+            <summary class="nav-dropdown-trigger{% if nav.gaze or nav.resolve or nav.stars or nav.constellations or nav.namespaces or current_path == "/product" or current_path == "/receipts" or current_path == "/how-it-works" or current_path == "/for-harnesses" or current_path == "/pricing" %} is-active{% end %}">
+              Product <span class="nav-caret" aria-hidden="true">▾</span>
+            </summary>
+            <div class="nav-dropdown-panel" role="menu">
+              <a href="/product" role="menuitem"{% if current_path == "/product" %} aria-current="page"{% end %}>Overview</a>
+              <a href="/how-it-works" role="menuitem"{% if current_path == "/how-it-works" %} aria-current="page"{% end %}>How it works</a>
+              <a href="/gaze" role="menuitem"{% if nav.gaze %} aria-current="page"{% end %}>Gaze</a>
+              <a href="/resolve" role="menuitem"{% if nav.resolve %} aria-current="page"{% end %}>Resolve</a>
+              <a href="/stars" role="menuitem"{% if nav.stars %} aria-current="page"{% end %}>Stars</a>
+              <a href="/constellations" role="menuitem"{% if nav.constellations %} aria-current="page"{% end %}>Constellations</a>
+              <a href="/receipts" role="menuitem"{% if current_path == "/receipts" %} aria-current="page"{% end %}>Receipts</a>
+              <a href="/namespaces" role="menuitem"{% if nav.namespaces %} aria-current="page"{% end %}>Namespaces</a>
+              <a href="/for-harnesses" role="menuitem"{% if current_path == "/for-harnesses" %} aria-current="page"{% end %}>For harnesses</a>
+              <a href="/pricing" role="menuitem"{% if current_path == "/pricing" %} aria-current="page"{% end %}>Pricing</a>
+            </div>
+          </details>
+          <a class="btn nav-cta" href="/connect"{% if nav.connect %} aria-current="page"{% end %}>Connect</a>
         </nav>
       </header>
 

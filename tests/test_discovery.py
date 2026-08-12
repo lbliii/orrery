@@ -348,3 +348,36 @@ async def test_footer_links_to_connect(discovery_app) -> None:
         assert page.status == 200
         assert 'href="/connect"' in page.text
         assert 'href="/llms.txt"' in page.text
+
+
+PRODUCT_NAV_HREFS = (
+    "/product",
+    "/how-it-works",
+    "/gaze",
+    "/resolve",
+    "/stars",
+    "/constellations",
+    "/receipts",
+    "/namespaces",
+    "/for-harnesses",
+    "/pricing",
+)
+
+
+@pytest.mark.issue(329)
+@pytest.mark.asyncio
+async def test_topbar_product_dropdown_and_connect(discovery_app) -> None:
+    """Primary nav: Product dropdown (#328) + Connect CTA in topbar."""
+    async with TestClient(discovery_app) as client:
+        page = await client.get("/", headers=HOST)
+        assert page.status == 200
+        nav_start = page.text.index('aria-label="Primary"')
+        nav_end = page.text.index("</nav>", nav_start)
+        primary = page.text[nav_start:nav_end]
+        assert 'class="nav-dropdown"' in primary
+        assert "Product" in primary
+        assert 'href="/connect"' in primary
+        assert 'class="btn nav-cta"' in primary
+        for href in PRODUCT_NAV_HREFS:
+            assert f'href="{href}"' in primary, href
+        assert "/console" not in primary

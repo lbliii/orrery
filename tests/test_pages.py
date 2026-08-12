@@ -127,9 +127,9 @@ class TestBrandChrome:
     async def test_active_nav_marked_per_page(self, example_app) -> None:
         async with TestClient(example_app) as client:
             gaze = await client.get("/gaze")
-            assert 'href="/gaze" aria-current="page"' in gaze.text
+            assert 'href="/gaze" role="menuitem" aria-current="page"' in gaze.text
             resolve = await client.get("/resolve")
-            assert 'href="/resolve" aria-current="page"' in resolve.text
+            assert 'href="/resolve" role="menuitem" aria-current="page"' in resolve.text
             console = await client.get("/console")
             assert "Skill console" in console.text
             assert "/console/html-to-pdf" in console.text
