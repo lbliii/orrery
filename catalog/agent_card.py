@@ -881,6 +881,72 @@ _STAR_CARDS: dict[str, AgentCard] = {
             *_ENVELOPE,
         ),
     ),
+    "orrery/fx-rate": _card(
+        summary="Pinned FX rate for allowlisted currency pair and as-of date.",
+        use_when=(
+            "You need an offline exchange rate for a quote join",
+            "You want sealed FX facts without a live market feed",
+            "You are composing money-light enrich context",
+        ),
+        not_for=(
+            "Live market trading or checkout paths",
+            "Wallet ledger or payment processing",
+            "Arbitrary currency pair lookup",
+        ),
+        example_intents=(
+            "usd to eur rate as of 2026-06-01",
+            "fx rate eur-gbp offline",
+            "exchange rate for quote join",
+        ),
+        tools=("fx_rate", "answer"),
+        coverage_slug="fx-rate",
+        inputs=(
+            _io("pair", "string", note="allowlisted base-quote token (e.g. usd-eur)"),
+            _io("as_of", "string", note="pinned calendar date for fixture revision"),
+        ),
+        outputs=(
+            _io("base", "string", note="ISO currency code for base leg"),
+            _io("quote", "string", note="ISO currency code for quote leg"),
+            _io("rate", "number", note="pinned exchange rate"),
+            _io("provider", "string", note="fixture attribution (orrery-fixtures)"),
+            *_ENVELOPE,
+        ),
+    ),
+    "orrery/tax-region": _card(
+        summary="Validate tax-jurisdiction record shape against a named static profile.",
+        use_when=(
+            "You need to validate jurisdiction codes before commerce joins",
+            "You want schema errors without tax API egress",
+            "You are checking sales-jurisdiction record shape offline",
+        ),
+        not_for=(
+            "Tax remittance, filing, or payout logic",
+            "Live rate lookup or nexus determination",
+            "Profiles outside the allowlist",
+        ),
+        example_intents=(
+            "validate us-ca jurisdiction",
+            "check tax region record shape",
+            "sales jurisdiction profile validate",
+        ),
+        tools=("validate",),
+        coverage_slug="tax-region",
+        inputs=(
+            _io("profile", "string", note="named static profile (sales-jurisdiction)"),
+            _io(
+                "jurisdiction",
+                "object",
+                required=True,
+                note="country, region, jurisdiction_key",
+            ),
+        ),
+        outputs=(
+            _io("valid", "boolean"),
+            _io("errors", "array", note="shape validation errors when invalid"),
+            _io("profile_digest", "string", note="deterministic schema identifier"),
+            *_ENVELOPE,
+        ),
+    ),
     "orrery/source-watch": _card(
         summary="Live official-source evidence, digest comparison, and bounded answers.",
         use_when=(
