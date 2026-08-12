@@ -16,6 +16,8 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
+from catalog.constellation_run import continue_guide_for
+
 
 class AgentCardError(ValueError):
     """An agent card is missing required fields or fails validation."""
@@ -184,6 +186,19 @@ def _io(
     note: str | None = None,
 ) -> AgentCardIO:
     return AgentCardIO(name=name, type=type_, required=required, note=note)
+
+
+def _run_contract_with_continue_guide(
+    name: str,
+    base: Mapping[str, object],
+) -> dict[str, object]:
+    """Attach MCP path + stage continue shapes from ops-frozen guides (#342)."""
+    merged = dict(base)
+    guide = continue_guide_for(name)
+    if guide is not None:
+        merged["mcp_path"] = guide["mcp_path"]
+        merged["continue_shapes"] = guide["continue_shapes"]
+    return merged
 
 
 def member_stars_from_policy(name: str) -> tuple[dict[str, object], ...]:
@@ -1730,19 +1745,22 @@ _STAR_CARDS: dict[str, AgentCard] = {
             _io("artifact_digest", "string"),
             *_ENVELOPE,
         ),
-        run_contract={
-            "entry_tool": "run",
-            "required_inputs": ["title", "summary"],
-            "optional_inputs": ["author", "caller_id"],
-            "composite_output": "signed-envelope-chain",
-            "continuation_tools": ["continue_run"],
-            "input_bundle": {
-                "title": {"type": "string", "required": True},
-                "summary": {"type": "string", "required": True},
-                "author": {"type": "string", "required": False},
-                "caller_id": {"type": "string", "required": False},
+        run_contract=_run_contract_with_continue_guide(
+            "orrery/board-memo",
+            {
+                "entry_tool": "run",
+                "required_inputs": ["title", "summary"],
+                "optional_inputs": ["author", "caller_id"],
+                "composite_output": "signed-envelope-chain",
+                "continuation_tools": ["continue_run"],
+                "input_bundle": {
+                    "title": {"type": "string", "required": True},
+                    "summary": {"type": "string", "required": True},
+                    "author": {"type": "string", "required": False},
+                    "caller_id": {"type": "string", "required": False},
+                },
             },
-        },
+        ),
         graph_summary="memo-bind → audience-choice → pdf-seal",
         dispositions=BOARD_MEMO_DISPOSITIONS,
         member_stars=member_stars_from_policy("orrery/board-memo"),
@@ -1789,18 +1807,21 @@ _STAR_CARDS: dict[str, AgentCard] = {
             _io("artifact_digest", "string"),
             *_ENVELOPE,
         ),
-        run_contract={
-            "entry_tool": "run",
-            "required_inputs": ["entries", "profile"],
-            "optional_inputs": ["caller_id"],
-            "composite_output": "signed-envelope-chain",
-            "continuation_tools": ["continue_run"],
-            "input_bundle": {
-                "entries": {"type": "array", "required": True},
-                "profile": {"type": "object", "required": True},
-                "caller_id": {"type": "string", "required": False},
+        run_contract=_run_contract_with_continue_guide(
+            "orrery/docs-migrate-to-mdx",
+            {
+                "entry_tool": "run",
+                "required_inputs": ["entries", "profile"],
+                "optional_inputs": ["caller_id"],
+                "composite_output": "signed-envelope-chain",
+                "continuation_tools": ["continue_run"],
+                "input_bundle": {
+                    "entries": {"type": "array", "required": True},
+                    "profile": {"type": "object", "required": True},
+                    "caller_id": {"type": "string", "required": False},
+                },
             },
-        },
+        ),
         graph_summary=(
             "inventory → choose-profile → safe-convert → unsupported-decision → "
             "validate-diff → artifact-seal"
@@ -1852,18 +1873,21 @@ _STAR_CARDS: dict[str, AgentCard] = {
             _io("artifact_digest", "string"),
             *_ENVELOPE,
         ),
-        run_contract={
-            "entry_tool": "run",
-            "required_inputs": ["entries", "profile"],
-            "optional_inputs": ["caller_id"],
-            "composite_output": "signed-envelope-chain",
-            "continuation_tools": ["continue_run"],
-            "input_bundle": {
-                "entries": {"type": "array", "required": True},
-                "profile": {"type": "object", "required": True},
-                "caller_id": {"type": "string", "required": False},
+        run_contract=_run_contract_with_continue_guide(
+            "orrery/api-spec-upgrade",
+            {
+                "entry_tool": "run",
+                "required_inputs": ["entries", "profile"],
+                "optional_inputs": ["caller_id"],
+                "composite_output": "signed-envelope-chain",
+                "continuation_tools": ["continue_run"],
+                "input_bundle": {
+                    "entries": {"type": "array", "required": True},
+                    "profile": {"type": "object", "required": True},
+                    "caller_id": {"type": "string", "required": False},
+                },
             },
-        },
+        ),
         graph_summary=(
             "inventory → choose-profile → safe-upgrade → breaking-approval → "
             "validate-target → compatibility-diff → artifact-seal"
