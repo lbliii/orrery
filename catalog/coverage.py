@@ -30,6 +30,7 @@ COVERAGE_GAPS: Final[tuple[str, ...]] = (
     "orrery/table-diff",  # caller-supplied snapshots
     "orrery/table-fresh",  # constellation over csv-url + table-diff
     "orrery/stale-proof",  # constellation over source-watch + world-time
+    "orrery/invite-ready",  # constellation over secretary enrich stars (#110)
     "orrery/board-memo",  # resumable pause → PDF seal dogfood (#154)
     "orrery/docs-migrate-to-mdx",  # frozen migration graph composer (#178)
     "orrery/api-spec-upgrade",  # frozen OpenAPI upgrade graph composer (#179)
@@ -39,6 +40,11 @@ COVERAGE_GAPS: Final[tuple[str, ...]] = (
 COVERAGE_GAP_UPSTREAM: Final[dict[str, tuple[str, ...]]] = {
     "orrery/table-fresh": ("orrery/csv-url",),
     "orrery/stale-proof": ("orrery/source-watch",),
+    "orrery/invite-ready": (
+        "orrery/flight-status",
+        "orrery/geocode",
+        "orrery/place-hours",
+    ),
 }
 
 

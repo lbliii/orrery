@@ -2107,6 +2107,70 @@ _STAR_CARDS: dict[str, AgentCard] = {
         tree_role="review",
         worker_cost="mid",
     ),
+    "orrery/invite-ready": _card(
+        summary=(
+            "Secretary enrich-before-seal: UTC clock, flight status, geocode, "
+            "and venue hours in one composite Envelope."
+        ),
+        use_when=(
+            "You need to enrich a draft invite before seal",
+            "You want clock + flight + place + hours evidence together",
+            "You are wiring Pidge atlas invite enrichment",
+        ),
+        not_for=(
+            "Google Maps or open geocoding (#139)",
+            "Live airline APIs or trip planning",
+            "Persisting invite drafts inside Orrery",
+        ),
+        example_intents=(
+            "invite ready enrichment",
+            "seal invite clock flight place hours",
+            "secretary enrich before seal",
+        ),
+        tools=("run",),
+        coverage_slug="invite-ready",
+        inputs=(
+            _io("place", "string", note="allowlisted geocode token"),
+            _io("venue", "string", note="allowlisted venue-hours token"),
+            _io("flight", "string", note="allowlisted flight id"),
+            _io("date", "string", note="pinned fixture date"),
+        ),
+        outputs=(_io("enrichment", "object"), *_ENVELOPE),
+        run_contract={
+            "entry_tool": "run",
+            "required_inputs": [],
+            "optional_inputs": ["place", "venue", "flight", "date"],
+            "composite_output": "signed-envelope-chain",
+            "input_bundle": {
+                "place": {
+                    "type": "string",
+                    "required": False,
+                    "note": "allowlisted geocode fixture (default new-york)",
+                },
+                "venue": {
+                    "type": "string",
+                    "required": False,
+                    "note": "allowlisted venue fixture (default central-park-cafe-nyc)",
+                },
+                "flight": {
+                    "type": "string",
+                    "required": False,
+                    "note": "allowlisted flight id (default AA100)",
+                },
+                "date": {
+                    "type": "string",
+                    "required": False,
+                    "note": "pinned fixture date (default 2026-08-11)",
+                },
+            },
+        },
+        graph_summary="world-time → flight-status → geocode → place-hours → seal",
+        dispositions=("enriched", "incomplete"),
+        member_stars=member_stars_from_policy("orrery/invite-ready"),
+        subtree_contract=subtree_contract_from_policy("orrery/invite-ready"),
+        tree_role="worker",
+        worker_cost="mid",
+    ),
     "orrery/csv-report": _card(
         summary="Queue a durable CSV report on Orrery's managed CPU worker.",
         use_when=(
