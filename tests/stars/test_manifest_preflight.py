@@ -41,7 +41,29 @@ def test_docs_only_policy_pass_and_fail() -> None:
     bad = check([DOCS_FILE, ROOT_FILE], POLICY_DOCS_ONLY)
     assert bad["passed"] is False
     assert bad["violation_codes"] == ["path_not_docs"]
-    assert bad["violations"] == [{"code": "path_not_docs", "path": "README.md"}]
+    assert bad["violations"] == [
+        {
+            "code": "path_not_docs",
+            "path": "README.md",
+            "remediation": (
+                "Move the file under docs/ with a docs-like suffix (.md, .rst, .txt, "
+                ".toml, .yaml, .yml, .json), or remove it from the manifest."
+            ),
+        }
+    ]
+
+
+@pytest.mark.issue(322)
+def test_failing_violations_include_remediation() -> None:
+    bad = check([DOCS_FILE, ROOT_FILE], POLICY_DOCS_ONLY)
+    remediations = [
+        item["remediation"]
+        for item in bad["violations"]
+        if isinstance(item.get("remediation"), str) and item["remediation"].strip()
+    ]
+    assert remediations
+    assert bad["passed"] is False
+    assert bad["violation_codes"] == ["path_not_docs"]
 
 
 @pytest.mark.issue(222)
