@@ -7,17 +7,50 @@
     scoped stars, audit retention, and no install on every laptop.
   </p>
   <div class="hero-actions">
-    <button
-      class="btn"
-      type="button"
-      disabled
-      aria-disabled="true"
-      style="opacity: 0.55; cursor: not-allowed; filter: none"
-    >
-      Coming soon
-    </button>
     <a class="btn btn-ghost" href="/resolve">See public resolve</a>
   </div>
+</section>
+
+<section class="panel" id="create" style="margin-bottom: 1.5rem" x-data="namespaceCreate()">
+  <p class="kicker" style="margin-bottom: 0.75rem">Create namespace</p>
+  <p class="lede" style="margin: 0 0 0.75rem; font-size: 0.95rem">
+    Pick a lowercase DNS label (2–63 characters). Your fleet resolves
+    <code class="mono">{id}/*</code> — a path prefix on the shared catalog,
+    not a separate hostname.
+  </p>
+  <form @submit.prevent="createNamespace()" style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; margin-bottom: 0.75rem">
+    <label class="mono" for="namespace_id">id</label>
+    <input
+      id="namespace_id"
+      name="id"
+      type="text"
+      x-model="slug"
+      placeholder="acme"
+      class="mono"
+      autocomplete="off"
+      spellcheck="false"
+      style="flex: 1; min-width: 12rem; padding: 0.35rem 0.5rem"
+    />
+    <button class="btn btn-brass" type="submit" :disabled="busy">
+      <span x-text="busy ? 'Creating…' : 'Create namespace'"></span>
+    </button>
+  </form>
+  <p x-show="error" x-text="error" class="lede" style="color: var(--brass, #c9a227); margin: 0 0 0.75rem; font-size: 0.95rem" role="alert"></p>
+  <div x-show="createdId" style="margin-top: 0.5rem">
+    <p class="lede" style="margin: 0 0 0.5rem; font-size: 0.95rem">
+      Namespace <code class="mono" x-text="createdId"></code> is live. Agents
+      resolve <code class="mono"><span x-text="createdId"></span>/*</code> —
+      scoped gaze and resolve on the path prefix.
+    </p>
+    <div class="hero-actions" style="margin-top: 0.75rem">
+      <a class="btn" :href="'/gaze?node=' + encodeURIComponent(createdId)">Browse in Gaze</a>
+      <a class="btn btn-ghost" :href="'/resolve?name=' + encodeURIComponent(createdId + '/demo')">Resolve demo star</a>
+    </div>
+  </div>
+  <p class="lede" style="margin: 0.75rem 0 0; font-size: 0.85rem">
+    Posts to <code class="mono">{{ create_api }}</code> with
+    <code class="mono">{"id": "…"}</code>.
+  </p>
 </section>
 
 <div class="ns-grid">
@@ -54,4 +87,42 @@ acme/release-gate
   → constellation: secret-scan → license → human-approve
   → namespace: private · seats billed monthly</pre>
 </div>
+
+<script>
+  function namespaceCreate() {
+    return {
+      slug: "",
+      busy: false,
+      error: "",
+      createdId: "",
+      async createNamespace() {
+        this.error = "";
+        this.createdId = "";
+        const id = (this.slug || "").trim();
+        if (!id) {
+          this.error = "Enter a namespace id.";
+          return;
+        }
+        this.busy = true;
+        try {
+          const response = await fetch("{{ create_api }}", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id }),
+          });
+          const body = await response.json();
+          if (!response.ok) {
+            this.error = body.error || "Namespace could not be created.";
+            return;
+          }
+          this.createdId = body.id || id;
+        } catch (err) {
+          this.error = "Network error creating namespace.";
+        } finally {
+          this.busy = false;
+        }
+      },
+    };
+  }
+</script>
 {% end %}

@@ -1130,6 +1130,48 @@ class TestNamespaces:
             assert "acme/*" in r.text
             assert "Private by default" in r.text
 
+    @pytest.mark.issue(383)
+    async def test_namespace_create_control_enabled(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/namespaces")
+            assert r.status == 200
+            assert "Coming soon" not in r.text
+            assert 'disabled\n      aria-disabled="true"' not in r.text
+            assert "/api/namespaces" in r.text
+            assert "Create namespace" in r.text
+            assert 'id="namespace_id"' in r.text
+
+    @pytest.mark.issue(383)
+    async def test_namespace_no_dead_hash_cta(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/namespaces")
+            assert r.status == 200
+            assert 'href="#"' not in r.text
+
+    @pytest.mark.issue(383)
+    async def test_namespace_create_success_path_documented(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/namespaces")
+            assert r.status == 200
+            assert "/gaze?node=" in r.text
+            assert "/resolve?name=" in r.text
+            assert "path prefix" in r.text.lower()
+            assert "{id}/*" in r.text
+
+    @pytest.mark.issue(383)
+    async def test_namespace_create_api_success(self, example_app) -> None:
+        from namespaces import reset_namespace_store
+
+        reset_namespace_store()
+        try:
+            async with TestClient(example_app) as client:
+                response = await client.post("/api/namespaces", json={"id": "widgetco"})
+            assert response.status == 201
+            body = json.loads(response.text)
+            assert body["id"] == "widgetco"
+        finally:
+            reset_namespace_store()
+
 
 @pytest.mark.issue(372)
 class TestWalletTopUpPage:

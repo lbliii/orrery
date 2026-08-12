@@ -60,7 +60,28 @@ uv run pytest tests/test_namespace_provision.py -q
 uv run ruff check .
 ```
 
+## Page UX (`/namespaces`)
+
+The Create form on `/namespaces` posts to `POST /api/namespaces` from the
+browser (Alpine + fetch). The disabled “Coming soon” CTA is replaced by an
+enabled slug field and **Create namespace** button.
+
+On `201`:
+
+1. Success panel shows the namespace id and path prefix (`{id}/*`) — scoped
+   gaze and resolve on the shared catalog, not a separate hostname promise.
+2. Next-step links: Gaze node (`/gaze?node={id}`) and Resolve demo
+   (`/resolve?name={id}/demo`).
+
+API `error` codes (`invalid_slug`, `reserved_slug`, `duplicate_namespace`)
+surface inline in the form.
+
+Verify page smoke:
+
+```bash
+uv run pytest tests/test_pages.py -q -k namespace
+```
+
 ## Related
 
 - Gaze node scoping: [gaze-namespace-scope.md](./gaze-namespace-scope.md)
-- `/namespaces` page CTA wiring — separate leaf (out of scope for #382)
