@@ -58,31 +58,59 @@ def test_describe_gh_file_at_ref_shape() -> None:
     payload = describe_coverage("gh-file-at-ref")
     assert payload is not None
     assert payload["star"] == "orrery/gh-file-at-ref"
-    assert payload["allowlist_kind"] == "github_repo"
+    assert payload["allowlist_kind"] == "named_target"
     assert payload["entries_truncated"] is False
     assert payload["total_count"] == len(payload["entries"])
-    assert "lbliii/orrery" in payload["entries"]
+    assert "orrery-readme" in payload["entries"]
     check = payload["check"]
     assert isinstance(check, dict)
-    assert check["href"].startswith("/coverage/gh-file-at-ref/check?repo=")
+    assert check["href"].startswith("/coverage/gh-file-at-ref/check?target=")
+    assert check["param"] == "target"
     assert check["returns"] == {"allowed": True, "reason": None}
     assert payload["coverage_href"] == coverage_href("orrery/gh-file-at-ref")
 
 
-def test_check_github_repo_membership() -> None:
-    ok = check_coverage("gh-file-at-ref", params={"repo": "lbliii/orrery"})
+def test_check_gh_file_at_ref_target_membership() -> None:
+    ok = check_coverage("gh-file-at-ref", params={"target": "orrery-readme"})
     assert ok == {
         "allowed": True,
         "reason": None,
         "star": "orrery/gh-file-at-ref",
     }
-    denied = check_coverage("gh-file-at-ref", params={"repo": "torvalds/linux"})
+    denied = check_coverage("gh-file-at-ref", params={"target": "not-a-real-target"})
     assert denied["allowed"] is False
     assert denied["reason"] == "not_allowlisted"
     assert denied["catalog_href"] == "/coverage/gh-file-at-ref"
     allowed_values = denied.get("allowed_values")
     assert isinstance(allowed_values, list) and allowed_values
-    assert "lbliii/orrery" in allowed_values
+    assert "orrery-readme" in allowed_values
+
+
+@pytest.mark.issue(344)
+def test_gh_file_at_ref_coverage_allowed_implies_runtime_target() -> None:
+    """Coverage uses runtime param; documented corpus args pass the allowlist."""
+    from stars.gh_file_at_ref.contract import TARGETS
+    from stars.gh_file_at_ref.corpus import CORPUS
+    from stars.gh_file_at_ref.service import get
+
+    example = CORPUS[0].arguments
+    target = str(example["target"])
+    ref = str(example["ref"])
+    ok = check_coverage("gh-file-at-ref", params={"target": target})
+    assert ok["allowed"] is True
+    assert target in TARGETS
+
+    source = json.dumps(
+        {"content": "IyBP\nc nJlcnk=\n".replace(" ", ""), "sha": "blob", "type": "file"}
+    ).encode()
+
+    result = get(
+        target=target,
+        ref=ref,
+        fetch=lambda url, **_: (url, 200, {}, source),
+    )
+    assert "error" not in result
+    assert result["target"] == target
 
 
 @pytest.mark.issue(340)
@@ -191,10 +219,10 @@ async def test_http_coverage_routes(example_app) -> None:
 
         meta = await client.get("/coverage/gh-file-at-ref", headers=HOST)
         assert meta.status == 200
-        assert json.loads(meta.text)["allowlist_kind"] == "github_repo"
+        assert json.loads(meta.text)["allowlist_kind"] == "named_target"
 
         allowed = await client.get(
-            "/coverage/gh-file-at-ref/check?repo=lbliii/orrery",
+            "/coverage/gh-file-at-ref/check?target=orrery-readme",
             headers=HOST,
         )
         assert allowed.status == 200
@@ -253,7 +281,7 @@ async def test_mcp_coverage_check_tool(example_app) -> None:
                     name="coverage_check",
                     arguments={
                         "star": "gh-release-notes",
-                        "repo": "pallets/flask",
+                        "target": "flask",
                     },
                 ),
             },

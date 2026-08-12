@@ -9,6 +9,7 @@ TARGETS: Final = {
     "orrery-readme": ("lbliii", "orrery", "README.md"),
     "orrery-pyproject": ("lbliii", "orrery", "pyproject.toml"),
 }
+# Coverage ``check_param`` is ``target`` (same as the ``get`` tool schema).
 MAX_BYTES: Final = 512 * 1024
 MAX_TEXT_CHARS: Final = 4000
 TOOL_SCHEMAS: Final = {

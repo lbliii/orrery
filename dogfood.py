@@ -153,8 +153,9 @@ def build_gaze_skill(*, private_key: Any | None = None) -> Skill:
         "coverage_check",
         description=(
             "Preflight an allowlist-gated star: pass star (or short id) plus the "
-            "check param (repo, package, target, host, …). Returns {allowed, reason}; "
-            "on deny, includes allowed_values sample and/or catalog_href."
+            "same param names as that star's MCP tools (target, package, host, …). "
+            "Returns {allowed, reason}; on deny, includes allowed_values sample "
+            "and/or catalog_href."
         ),
     )
     def coverage_check_tool(
