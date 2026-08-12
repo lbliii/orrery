@@ -18,7 +18,12 @@ from chirp.skill import sign_envelope
 
 from catalog.constellation import PolicyGraph, policy_for
 from stars._core.migration_profile import canonical_json, sha256_hex
-from stars.stale_proof.composite_receipt import normalize_cites, with_cites
+from stars.stale_proof.composite_receipt import (
+    normalize_acceptance_cites,
+    normalize_cites,
+    with_acceptance_cites,
+    with_cites,
+)
 
 RunStatus = Literal["in_flight", "completed"]
 RunDisposition = Literal[
@@ -88,6 +93,7 @@ class CheckpointRecord:
     artifact_digest: str | None = None
     lease_held: bool = False
     cites: tuple[str, ...] = ()
+    acceptance_cites: tuple[str, ...] = ()
 
 
 @dataclass(slots=True)
@@ -102,6 +108,7 @@ class RunState:
     chain: tuple[dict[str, Any], ...]
     release: dict[str, str]
     cites: tuple[str, ...] = ()
+    acceptance_cites: tuple[str, ...] = ()
 
 
 class ConstellationRunStore:
@@ -291,6 +298,8 @@ def checkpoint_status_payload(record: CheckpointRecord) -> dict[str, Any]:
         payload["chain"] = list(record.chain)
     if record.cites:
         payload["cites"] = list(record.cites)
+    if record.acceptance_cites:
+        payload["acceptance_cites"] = list(record.acceptance_cites)
     return payload
 
 
@@ -322,6 +331,7 @@ def cancel_checkpoint(
         chain=record.chain,
         lease_held=False,
         cites=record.cites,
+        acceptance_cites=record.acceptance_cites,
     )
     store.put_checkpoint(cancelled)
     return checkpoint_status_payload(cancelled)
@@ -483,6 +493,7 @@ def run_constellation(
     key_id: str,
     private_key: Any,
     cites: list[str] | tuple[str, ...] | None = None,
+    acceptance_cites: list[str] | tuple[str, ...] | None = None,
 ) -> dict[str, Any]:
     """Execute a constellation on a Doc Bundle and return the composite chain."""
     graph = policy_for(constellation)
@@ -525,6 +536,7 @@ def run_constellation(
         )
 
     cite_tuple = normalize_cites(cites)
+    acceptance_cite_tuple = normalize_acceptance_cites(acceptance_cites)
 
     state = RunState(
         run_id=run_id,
@@ -538,6 +550,7 @@ def run_constellation(
             "key_id": graph.release_key_id,
         },
         cites=cite_tuple,
+        acceptance_cites=acceptance_cite_tuple,
     )
     get_run_store().put_sync(state)
 
@@ -558,9 +571,12 @@ def _composite_receipt_payload(
         "chain": list(state.chain) if chain is None else chain,
         "release": state.release,
     }
+    result = payload
     if state.cites:
-        return with_cites(payload, state.cites)
-    return payload
+        result = with_cites(result, state.cites)
+    if state.acceptance_cites:
+        result = with_acceptance_cites(result, state.acceptance_cites)
+    return result
 
 
 def status_for_run(run_id: str = "") -> dict[str, Any]:
