@@ -14,7 +14,10 @@ class ConvertInput(TypedDict):
 
 TOOL_SCHEMAS: Final = {
     "convert": {
-        "description": "Render simple HTML to a short-lived downloadable PDF with checksums.",
+        "description": (
+            "Render simple HTML to a short-lived downloadable PDF synchronously "
+            "in the API process. Use for small jobs when the caller can wait."
+        ),
         "inputSchema": {
             "type": "object",
             "properties": {"html": {"type": "string"}},
@@ -26,7 +29,12 @@ TOOL_SCHEMAS: Final = {
         "inputSchema": {"type": "object", "properties": {}},
     },
     "submit": {
-        "description": "Queue a managed PDF run and return its run ID.",
+        "description": (
+            "Queue a managed PDF run on the private worker and return run_id plus "
+            "queued state. Poll result(run_id) until state is terminal. Prefer "
+            "convert for quick synchronous PDFs; use submit/result for durable "
+            "worker execution."
+        ),
         "inputSchema": {
             "type": "object",
             "properties": {"html": {"type": "string"}, "idempotency_key": {"type": "string"}},
@@ -34,7 +42,11 @@ TOOL_SCHEMAS: Final = {
         },
     },
     "result": {
-        "description": "Return queued state or the signed final receipt for a managed run.",
+        "description": (
+            "Poll a managed run by run_id from submit. Returns queued or running "
+            "state until the worker seals a signed final receipt. Unknown run_id "
+            "returns {error: run_not_found, run_id}."
+        ),
         "inputSchema": {
             "type": "object",
             "properties": {"run_id": {"type": "string"}},

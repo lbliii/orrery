@@ -22,7 +22,10 @@ def build_skill(
 
     @skill.tool(
         "submit",
-        description="Queue a safe PNG transform; returns only a run ID until worker completion",
+        description=(
+            "Queue a PNG transform on the managed worker; returns run_id and "
+            "queued state — poll result(run_id) for the signed receipt"
+        ),
     )
     def submit(color: str, idempotency_key: str) -> dict[str, object]:
         managed = service or configured_managed_service()
@@ -30,7 +33,13 @@ def build_skill(
             kind="image-transform", input={"color": color}, idempotency_key=idempotency_key
         )
 
-    @skill.tool("result", description="Get a queued run or its signed final receipt")
+    @skill.tool(
+        "result",
+        description=(
+            "Poll a managed PNG run by run_id; unknown run_id returns "
+            "error run_not_found"
+        ),
+    )
     def result(run_id: str) -> dict[str, object]:
         managed = service or configured_managed_service()
         return managed.result(run_id)
