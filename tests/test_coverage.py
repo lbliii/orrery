@@ -79,6 +79,46 @@ def test_check_github_repo_membership() -> None:
     denied = check_coverage("gh-file-at-ref", params={"repo": "torvalds/linux"})
     assert denied["allowed"] is False
     assert denied["reason"] == "not_allowlisted"
+    assert denied["catalog_href"] == "/coverage/gh-file-at-ref"
+    allowed_values = denied.get("allowed_values")
+    assert isinstance(allowed_values, list) and allowed_values
+    assert "lbliii/orrery" in allowed_values
+
+
+@pytest.mark.issue(340)
+def test_denied_coverage_check_includes_remediation() -> None:
+    """Denied checks expose allowed_values and/or catalog_href (#340)."""
+    denied = check_coverage("npm-release", params={"package": "express"})
+    assert denied["allowed"] is False
+    assert denied["reason"] == "not_allowlisted"
+    assert denied.get("catalog_href") == "/coverage/npm-release"
+    allowed_values = denied.get("allowed_values")
+    assert isinstance(allowed_values, list) and allowed_values
+    assert "zod" in allowed_values
+
+
+@pytest.mark.issue(340)
+def test_describe_table_fresh_gap_links_upstream() -> None:
+    payload = describe_coverage("table-fresh")
+    assert payload is not None
+    assert payload["kind"] == "coverage_gap"
+    assert payload["star"] == "orrery/table-fresh"
+    upstream = payload["upstream_allowlists"]
+    assert isinstance(upstream, list) and upstream
+    csv = next(item for item in upstream if item["star"] == "orrery/csv-url")
+    assert csv["catalog_href"] == "/coverage/csv-url"
+    assert csv["check_param"] == "dataset"
+    assert "flights-airport" in csv["allowed_values"]
+
+
+@pytest.mark.issue(340)
+def test_describe_stale_proof_gap_links_source_watch() -> None:
+    payload = describe_coverage("stale-proof")
+    assert payload is not None
+    upstream = payload["upstream_allowlists"]
+    watch = next(item for item in upstream if item["star"] == "orrery/source-watch")
+    assert watch["catalog_href"] == "/coverage/source-watch"
+    assert isinstance(watch.get("allowed_values"), list)
 
 
 def test_check_package_and_pep_section() -> None:
@@ -169,7 +209,18 @@ async def test_http_coverage_routes(example_app) -> None:
             headers=HOST,
         )
         assert denied.status == 200
-        assert json.loads(denied.text)["allowed"] is False
+        denied_body = json.loads(denied.text)
+        assert denied_body["allowed"] is False
+        assert denied_body.get("catalog_href") == "/coverage/http-head"
+        assert isinstance(denied_body.get("allowed_values"), list)
+
+        gap = await client.get("/coverage/table-fresh", headers=HOST)
+        assert gap.status == 200
+        gap_body = json.loads(gap.text)
+        assert gap_body["kind"] == "coverage_gap"
+        assert any(
+            u["star"] == "orrery/csv-url" for u in gap_body["upstream_allowlists"]
+        )
 
         missing = await client.get("/coverage/nope-star", headers=HOST)
         assert missing.status == 404
@@ -213,3 +264,32 @@ async def test_mcp_coverage_check_tool(example_app) -> None:
         assert "orrery/gh-release-notes" in text
         assert "allowed" in text
         assert "True" in text or "true" in text
+
+
+@pytest.mark.issue(340)
+@pytest.mark.asyncio
+async def test_mcp_coverage_check_denied_includes_remediation(example_app) -> None:
+    async with TestClient(example_app) as client:
+        called = await client.post(
+            "/mcp",
+            json={
+                "jsonrpc": "2.0",
+                "id": 3,
+                "method": "tools/call",
+                "params": _modern_mcp_params(
+                    name="coverage_check",
+                    arguments={
+                        "star": "npm-release",
+                        "package": "express",
+                    },
+                ),
+            },
+            headers=_modern_mcp_headers("tools/call", "coverage_check"),
+        )
+        assert called.status == 200
+        text = json.loads(called.text)["result"]["content"][0]["text"]
+        assert "not_allowlisted" in text
+        assert "catalog_href" in text
+        assert "/coverage/npm-release" in text
+        assert "allowed_values" in text
+        assert "zod" in text
