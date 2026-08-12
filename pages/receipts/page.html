@@ -1,0 +1,52 @@
+{% block content %}
+<section class="panel">
+  <p class="kicker">Product</p>
+  <h1>Receipts</h1>
+  <p class="lede">
+    When Orrery completes a call, it returns a signed Chirp Envelope — a receipt
+    that binds the tool, inputs, and result payload. Treat the Envelope as
+    evidence, not as self-evident truth: verify the signature before you trust
+    what it claims.
+  </p>
+
+  <h2>What a receipt is</h2>
+  <p>
+    A receipt is a structured, Ed25519-signed record of one bounded call. It
+    names the skill and tool, carries a digest of the inputs, and seals the
+    returned payload. Constellation runs chain step receipts into a composite
+    envelope so multi-step work stays auditable end to end.
+  </p>
+
+  <h2>Why verify matters</h2>
+  <p>
+    Catalog text, cached copies, and agent memory can drift. A verified receipt
+    proves Orrery signed this exact result at call time using a published key.
+    Verify before trust — do not treat an unsigned paste, a stale export, or a
+    paraphrased summary as equivalent to a live, checked Envelope.
+  </p>
+  <p>
+    Artifact bytes are a separate check: after the Envelope verifies, compare the
+    downloaded file’s SHA-256 with the digest named in the receipt payload.
+  </p>
+
+  <h2>Verify independently</h2>
+  <ul class="meta-list">
+    <li>
+      <span>Published keys</span>
+      <a class="mono" href="/.well-known/orrery/keys.json"
+        >/.well-known/orrery/keys.json</a
+      >
+    </li>
+    <li>
+      <span>Hosted verify</span>
+      <a class="mono" href="/api/envelope/verify">POST /api/envelope/verify</a>
+    </li>
+  </ul>
+  <p>
+    Prefer local verification with the published key set when you can; use the
+    verify endpoint when you need a hosted check. This page is an explainer —
+    not an ops console. For the call loop, start at
+    <a href="/connect">Connect</a>.
+  </p>
+</section>
+{% end %}
