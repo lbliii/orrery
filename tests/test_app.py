@@ -289,6 +289,68 @@ class TestOrreryHostFoundation:
             assert initialized.status == 200
             assert json.loads(initialized.text)["result"]["protocolVersion"] == "2025-06-18"
 
+    @pytest.mark.issue(363)
+    async def test_mcp_legacy_initialize_2025_11_25(self, example_app) -> None:
+        """Legacy streamable-HTTP clients on the current spec revision."""
+        async with TestClient(example_app) as client:
+            initialized = await client.post(
+                "/mcp",
+                json={
+                    "jsonrpc": "2.0",
+                    "method": "initialize",
+                    "id": 366,
+                    "params": {
+                        "protocolVersion": "2025-11-25",
+                        "capabilities": {},
+                        "clientInfo": {"name": "legacy-client", "version": "1"},
+                    },
+                },
+                headers={
+                    "content-type": "application/json",
+                    "mcp-protocol-version": "2025-11-25",
+                },
+            )
+            assert initialized.status == 200
+            init_body = json.loads(initialized.text)
+            assert init_body["result"]["protocolVersion"] == "2025-11-25"
+            assert "chirp/legacyOfframp" not in init_body["result"].get("_meta", {})
+
+            listed = await client.post(
+                "/mcp",
+                json={"jsonrpc": "2.0", "method": "tools/list", "id": 367},
+                headers={
+                    "content-type": "application/json",
+                    "mcp-protocol-version": "2025-11-25",
+                },
+            )
+            assert listed.status == 200
+            tool_names = {t["name"] for t in json.loads(listed.text)["result"]["tools"]}
+            assert tool_names >= {"gaze_match", "resolve_name"}
+
+    @pytest.mark.issue(363)
+    async def test_mcp_legacy_initialize_2025_06_18(self, example_app) -> None:
+        """Legacy clients pinned to 2025-06-18 (e.g. Codex)."""
+        async with TestClient(example_app) as client:
+            initialized = await client.post(
+                "/mcp",
+                json={
+                    "jsonrpc": "2.0",
+                    "method": "initialize",
+                    "id": 368,
+                    "params": {
+                        "protocolVersion": "2025-06-18",
+                        "capabilities": {},
+                        "clientInfo": {"name": "codex-mcp-client", "version": "1"},
+                    },
+                },
+                headers={
+                    "content-type": "application/json",
+                    "mcp-protocol-version": "2025-06-18",
+                },
+            )
+            assert initialized.status == 200
+            assert json.loads(initialized.text)["result"]["protocolVersion"] == "2025-06-18"
+
     async def test_agent_invocation_streams_on_home_feed(self, example_app) -> None:
         async with TestClient(example_app) as client:
 
