@@ -856,6 +856,14 @@ class TestConstellationRunContracts:
             assert "gaze_describe" in r.text
             assert "explain_policy" in r.text
 
+    async def test_connect_board_memo_continue_run_worked_example(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/connect")
+            assert r.status == 200
+            assert "orrery/board-memo" in r.text
+            assert "continue_run" in r.text
+            assert "audience-choice" in r.text
+
     async def test_explain_policy_mcp_returns_card_aligned_fields(self, example_app) -> None:
         async with TestClient(example_app) as client:
             called = await client.post(

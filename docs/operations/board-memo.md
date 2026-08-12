@@ -50,6 +50,52 @@ assert completed["artifact_digest"]
 Direct MCP: `POST /constellations/board-memo/mcp` — tools
 `run`, `status`, `continue_run`, `cancel`.
 
+## MCP sequence (run → continue_run → terminal)
+
+Copy-paste against `POST /constellations/board-memo/mcp` (Streamable HTTP JSON-RPC).
+
+**1. Start run** — expect `disposition: awaiting_input`, `graph_position: audience-choice`:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "run",
+    "arguments": {
+      "title": "Q3 Platform Update",
+      "summary": "Revenue grew 12% with stable infra costs.",
+      "author": "ops",
+      "caller_id": "demo-client"
+    }
+  }
+}
+```
+
+**2. Continue at `audience-choice`** — use `run_id` and
+`outstanding_action_requests[0].request_id` from step 1; terminal `disposition: completed`:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "tools/call",
+  "params": {
+    "name": "continue_run",
+    "arguments": {
+      "run_id": "<run_id>",
+      "request_id": "<request_id>",
+      "response": {"audience": "board", "recommendation": "approve"},
+      "caller_id": "demo-client"
+    }
+  }
+}
+```
+
+Also surfaced on the Agent Card `run_contract.continue_shapes` and via
+`explain_policy` (`mcp_sequence`, `continue_shapes`) for `orrery/board-memo`.
+
 ## Inputs
 
 | Field | Required | Notes |

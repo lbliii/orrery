@@ -337,6 +337,209 @@ def cancel_checkpoint(
     return checkpoint_status_payload(cancelled)
 
 
+_BOARD_MEMO_CONTINUE_RESPONSE: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "audience": {"type": "string", "enum": ["board", "executive", "investor"]},
+        "recommendation": {"type": "string", "enum": ["approve", "defer", "revise"]},
+    },
+    "required": ["audience", "recommendation"],
+}
+
+_MIGRATION_DECISIONS_RESPONSE: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "decisions": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+                "type": "object",
+                "properties": {
+                    "feature_id": {"type": "string", "minLength": 1},
+                    "action": {"type": "string"},
+                },
+                "required": ["feature_id", "action"],
+                "additionalProperties": False,
+            },
+        }
+    },
+    "required": ["decisions"],
+    "additionalProperties": False,
+}
+
+RESUMABLE_CONTINUE_GUIDES: dict[str, dict[str, Any]] = {
+    "orrery/board-memo": {
+        "mcp_path": "/constellations/board-memo/mcp",
+        "continue_shapes": {
+            "audience-choice": {
+                "tool": "continue_run",
+                "graph_position": "audience-choice",
+                "response_schema": _BOARD_MEMO_CONTINUE_RESPONSE,
+                "example_response": {"audience": "board", "recommendation": "approve"},
+            },
+        },
+        "mcp_sequence": [
+            {
+                "step": 1,
+                "tool": "run",
+                "arguments": {
+                    "title": "Q3 Platform Update",
+                    "summary": "Revenue grew 12% with stable infra costs.",
+                    "author": "ops",
+                    "caller_id": "demo-client",
+                },
+                "expect": {
+                    "disposition": "awaiting_input",
+                    "graph_position": "audience-choice",
+                },
+            },
+            {
+                "step": 2,
+                "tool": "continue_run",
+                "stage_id": "audience-choice",
+                "arguments": {
+                    "run_id": "<run_id from step 1>",
+                    "request_id": "<outstanding_action_requests[0].request_id>",
+                    "response": {"audience": "board", "recommendation": "approve"},
+                    "caller_id": "demo-client",
+                },
+                "expect": {"disposition": "completed", "terminal": "pdf-seal"},
+            },
+        ],
+    },
+    "orrery/docs-migrate-to-mdx": {
+        "mcp_path": "/constellations/docs-migrate-to-mdx/mcp",
+        "continue_shapes": {
+            "unsupported-decision": {
+                "tool": "continue_run",
+                "graph_position": "unsupported-decision",
+                "response_schema": {
+                    **_MIGRATION_DECISIONS_RESPONSE,
+                    "properties": {
+                        "decisions": {
+                            **_MIGRATION_DECISIONS_RESPONSE["properties"]["decisions"],
+                            "items": {
+                                **_MIGRATION_DECISIONS_RESPONSE["properties"]["decisions"]["items"],
+                                "properties": {
+                                    "feature_id": {"type": "string", "minLength": 1},
+                                    "action": {"type": "string", "enum": ["hold", "abort"]},
+                                },
+                            },
+                        }
+                    },
+                },
+                "example_response": {
+                    "decisions": [
+                        {"feature_id": "myst.directive.include", "action": "hold"},
+                    ],
+                },
+            },
+        },
+        "mcp_sequence": [
+            {
+                "step": 1,
+                "tool": "run",
+                "arguments": {
+                    "entries": [{"path": "index.md", "content": "..."}],
+                    "profile": {"profile_id": "docs-mdx/v1", "source_format": "myst"},
+                    "caller_id": "demo-client",
+                },
+                "expect": {
+                    "disposition": "awaiting_input",
+                    "graph_position": "unsupported-decision",
+                },
+            },
+            {
+                "step": 2,
+                "tool": "continue_run",
+                "stage_id": "unsupported-decision",
+                "arguments": {
+                    "run_id": "<run_id from step 1>",
+                    "request_id": "<outstanding_action_requests[0].request_id>",
+                    "response": {
+                        "decisions": [
+                            {"feature_id": "myst.directive.include", "action": "hold"},
+                        ],
+                    },
+                    "caller_id": "demo-client",
+                },
+                "expect": {"disposition": "completed", "terminal": "artifact-seal"},
+            },
+        ],
+    },
+    "orrery/api-spec-upgrade": {
+        "mcp_path": "/constellations/api-spec-upgrade/mcp",
+        "continue_shapes": {
+            "breaking-approval": {
+                "tool": "continue_run",
+                "graph_position": "breaking-approval",
+                "response_schema": {
+                    **_MIGRATION_DECISIONS_RESPONSE,
+                    "properties": {
+                        "decisions": {
+                            **_MIGRATION_DECISIONS_RESPONSE["properties"]["decisions"],
+                            "items": {
+                                **_MIGRATION_DECISIONS_RESPONSE["properties"]["decisions"]["items"],
+                                "properties": {
+                                    "feature_id": {"type": "string", "minLength": 1},
+                                    "action": {"type": "string", "enum": ["approve", "abort"]},
+                                },
+                            },
+                        }
+                    },
+                },
+                "example_response": {
+                    "decisions": [
+                        {"feature_id": "openapi.discriminator", "action": "approve"},
+                    ],
+                },
+            },
+        },
+        "mcp_sequence": [
+            {
+                "step": 1,
+                "tool": "run",
+                "arguments": {
+                    "entries": [{"path": "openapi.yaml", "content": "..."}],
+                    "profile": {
+                        "profile_id": "api-spec/v1",
+                        "source_version": "3.0",
+                        "target_version": "3.1",
+                    },
+                    "caller_id": "demo-client",
+                },
+                "expect": {
+                    "disposition": "awaiting_input",
+                    "graph_position": "breaking-approval",
+                },
+            },
+            {
+                "step": 2,
+                "tool": "continue_run",
+                "stage_id": "breaking-approval",
+                "arguments": {
+                    "run_id": "<run_id from step 1>",
+                    "request_id": "<outstanding_action_requests[0].request_id>",
+                    "response": {
+                        "decisions": [
+                            {"feature_id": "openapi.discriminator", "action": "approve"},
+                        ],
+                    },
+                    "caller_id": "demo-client",
+                },
+                "expect": {"disposition": "completed", "terminal": "artifact-seal"},
+            },
+        ],
+    },
+}
+
+
+def continue_guide_for(name: str) -> dict[str, Any] | None:
+    """Stage-specific ``continue_run`` shapes and MCP sequence for resumable graphs."""
+    guide = RESUMABLE_CONTINUE_GUIDES.get(name)
+    return None if guide is None else dict(guide)
+
+
 def explain_policy(name: str = "acme/launch-gate") -> dict[str, Any]:
     """Plain-language gates, repair loops, and fan-in for a constellation.
 
@@ -444,7 +647,8 @@ def explain_policy(name: str = "acme/launch-gate") -> dict[str, Any]:
             dispositions=tuple(dispositions),
         )
 
-    return {
+    guide = continue_guide_for(name)
+    payload: dict[str, Any] = {
         "constellation": name,
         "status": "ok",
         "graph_summary": graph_summary,
@@ -482,6 +686,16 @@ def explain_policy(name: str = "acme/launch-gate") -> dict[str, Any]:
         "narrative": " ".join(narrative),
         "footnote": graph.footnote,
     }
+    if guide is not None:
+        payload["mcp_path"] = guide["mcp_path"]
+        payload["continue_shapes"] = guide["continue_shapes"]
+        payload["mcp_sequence"] = guide["mcp_sequence"]
+        if run_contract is not None:
+            merged = dict(run_contract)
+            merged.setdefault("mcp_path", guide["mcp_path"])
+            merged.setdefault("continue_shapes", guide["continue_shapes"])
+            payload["run_contract"] = merged
+    return payload
 
 
 def run_constellation(

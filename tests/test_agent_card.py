@@ -257,6 +257,37 @@ def test_explain_policy_public_constellations_include_subtree_contract() -> None
         assert explained["subtree_contract"] == card.as_dict()["subtree_contract"]
 
 
+@pytest.mark.issue(342)
+def test_board_memo_run_contract_continue_shape_at_audience_choice() -> None:
+    card = require_card("orrery/board-memo")
+    assert card.run_contract is not None
+    shapes = card.run_contract["continue_shapes"]
+    pause = shapes["audience-choice"]
+    assert pause["tool"] == "continue_run"
+    assert pause["graph_position"] == "audience-choice"
+    example = pause["example_response"]
+    assert example == {"audience": "board", "recommendation": "approve"}
+    assert card.run_contract["mcp_path"] == "/constellations/board-memo/mcp"
+
+
+@pytest.mark.issue(342)
+def test_explain_policy_board_memo_includes_continue_run_sequence() -> None:
+    from catalog.constellation_run import explain_policy
+
+    explained = explain_policy("orrery/board-memo")
+    assert explained["status"] == "ok"
+    shapes = explained["continue_shapes"]
+    assert shapes["audience-choice"]["tool"] == "continue_run"
+    sequence = explained["mcp_sequence"]
+    assert sequence[0]["tool"] == "run"
+    assert sequence[0]["expect"]["graph_position"] == "audience-choice"
+    assert sequence[1]["tool"] == "continue_run"
+    assert sequence[1]["stage_id"] == "audience-choice"
+    assert sequence[1]["expect"]["disposition"] == "completed"
+    contract = explained["run_contract"]
+    assert contract["continue_shapes"]["audience-choice"]["example_response"]["audience"] == "board"
+
+
 async def test_well_known_agent_card_schema_route(example_app) -> None:
     async with TestClient(example_app) as client:
         response = await client.get("/.well-known/orrery/agent-card.schema.json")

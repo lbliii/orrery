@@ -59,7 +59,32 @@
       >
       <span>Fresh sample vs baseline verdict</span>
     </li>
+    <li>
+      <a class="mono" href="/constellations?name=orrery/board-memo"
+        >orrery/board-memo</a
+      >
+      <span>Resumable run → continue_run → PDF seal</span>
+    </li>
   </ul>
+</section>
+
+<section class="panel" style="margin-bottom: 1.5rem">
+  <p class="kicker" style="margin-bottom: 0.5rem">Worked example · board-memo</p>
+  <p class="lede" style="margin: 0 0 0.75rem; font-size: 0.95rem">
+    Multi-step constellations pause with one typed
+    <code class="mono">action_request</code>. Call
+    <code class="mono">explain_policy</code> with
+    <code class="mono">{"name":"orrery/board-memo"}</code> for
+    <code class="mono">mcp_sequence</code> and stage
+    <code class="mono">continue_shapes</code> at
+    <code class="mono">audience-choice</code>. Direct MCP:
+    <code class="mono">POST /constellations/board-memo/mcp</code>.
+  </p>
+  <pre class="mono" style="margin: 0; white-space: pre-wrap"># 1. run → awaiting_input at audience-choice
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"run","arguments":{"title":"Q3 Platform Update","summary":"Revenue grew 12%.","caller_id":"demo-client"}}}
+
+# 2. continue_run → completed (PDF artifact_digest)
+{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"continue_run","arguments":{"run_id":"&lt;run_id&gt;","request_id":"&lt;request_id&gt;","response":{"audience":"board","recommendation":"approve"},"caller_id":"demo-client"}}}</pre>
 </section>
 
 <section class="panel" style="margin-bottom: 1.5rem">
