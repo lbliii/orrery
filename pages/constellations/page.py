@@ -1,34 +1,49 @@
-"""Constellation detail — a drawn policy graph over stars.
+"""Constellation catalog and detail — frozen planner subgraphs over stars.
 
-Resolves ``?name=`` (defaults to the demo ``acme/launch-gate``) and renders the
-gate/loop/fan-in graph and composite receipt from ``design/constellation.html``.
-Surfaces Agent Card run-contract IO ("What to pass" / "What you get") above the
-SVG (#220). Backs GitHub epic #7 (Constellations / Policy).
+``/constellations`` lists public constellations (catalog UX akin to ``/stars``).
+``/constellations?name=`` renders the policy graph and composite receipt (#334).
 """
 
 from __future__ import annotations
 
-from chirp import Page, Request
+from chirp import NotFound, Page, Request
 
 from catalog import CATALOG
 from catalog.agent_card import card_for
 from catalog.constellation import policy_for
 
-_DEFAULT = "acme/launch-gate"
-
 
 def get(request: Request) -> Page:
-    name = (request.query.get("name") or _DEFAULT).strip()
+    """Render the constellation catalog or a named detail view."""
+    legacy_name = (request.query.get("name") or "").strip()
+    if legacy_name:
+        return page_for_constellation(legacy_name)
+
+    constellations = tuple(
+        record for record in CATALOG.public_records() if record.kind == "constellation"
+    )
+    return Page(
+        "constellations/index.html",
+        "content",
+        page_block_name="content",
+        constellations=constellations,
+        page_title="Explore Constellations — Orrery",
+        footer_note="Public Constellation catalog",
+        footer_meta="browse → understand → run",
+    )
+
+
+def page_for_constellation(name: str) -> Page:
+    """Render one constellation's policy graph and run-contract IO."""
     rec = CATALOG.resolve(name)
     if rec is None or rec.kind != "constellation":
-        rec = CATALOG.get(_DEFAULT)
+        raise NotFound(f"No constellation record for {name!r}")
     policy = policy_for(rec.name)
     if policy is None:
-        policy = policy_for(_DEFAULT)
-    assert policy is not None
+        raise NotFound(f"No policy graph for {rec.name!r}")
     card = rec.agent_card or card_for(rec.name)
     return Page(
-        "constellations/page.html",
+        "constellations/detail.html",
         "content",
         page_block_name="content",
         rec=rec,

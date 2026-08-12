@@ -822,7 +822,7 @@ class TestGazeConsole:
 class TestConstellation:
     async def test_graph_and_composite_receipt(self, example_app) -> None:
         async with TestClient(example_app) as client:
-            r = await client.get("/constellations")
+            r = await client.get("/constellations?name=acme/launch-gate")
             assert r.status == 200
             assert "data-constellation" in r.text
             assert "<svg" in r.text
@@ -835,6 +835,26 @@ class TestConstellation:
             assert "What you get" in r.text
             # Run-contract IO appears above the SVG.
             assert r.text.index("What to pass") < r.text.index("data-constellation")
+
+
+@pytest.mark.issue(334)
+class TestConstellationCatalogIndex:
+    async def test_index_lists_multiple_constellations(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/constellations")
+            assert r.status == 200
+            assert "Explore Constellations" in r.text or "Constellations" in r.text
+            assert "acme/launch-gate" in r.text
+            assert "orrery/stale-proof" in r.text
+            assert 'href="/constellations?name=' in r.text
+            assert "<svg" not in r.text
+
+    async def test_detail_renders_from_index_link(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/constellations?name=acme/launch-gate")
+            assert r.status == 200
+            assert "data-constellation" in r.text
+            assert "acme/launch-gate" in r.text
 
 
 @pytest.mark.issue(220)
