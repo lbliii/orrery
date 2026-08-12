@@ -1,10 +1,22 @@
-"""Commerce hooks — pricing stubs today, prepaid wallet later (Wave 2).
+"""Commerce hooks — stubs today; prepaid ledger alongside (Wave 2).
 
-Real ledger / Stripe live in design ADRs (``docs/adr/``). This package only
-exposes **loud** charge-on-verify / refund-on-forge stubs so agents never hit
-silent no-ops (GitHub #35).
+Real Stripe top-up lives in ADR 0003. This package exposes **loud** charge-on-
+verify / refund-on-forge stubs (GitHub #35) plus the local prepaid ledger
+(ADR 0002 / #369).
 """
 
+from .errors import InsufficientBalanceError
+from .ledger import Hold, HoldStatus, LedgerEntry, LedgerOp, WalletAccount, WalletLedger
 from .stubs import charge_on_verify, refund_on_forge
 
-__all__ = ["charge_on_verify", "refund_on_forge"]
+__all__ = [
+    "Hold",
+    "HoldStatus",
+    "InsufficientBalanceError",
+    "LedgerEntry",
+    "LedgerOp",
+    "WalletAccount",
+    "WalletLedger",
+    "charge_on_verify",
+    "refund_on_forge",
+]
