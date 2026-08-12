@@ -1,0 +1,51 @@
+{% block content %}
+<section class="catalog-hero">
+  <p class="kicker">Frozen planner subgraphs · {{ constellations|length }} Constellations</p>
+  <h1>Compose stars into policy you can run anywhere.</h1>
+  <p class="lede">A constellation is chalk lines across stars: gates, repair loops, and fan-in to a composite Envelope. Browse the catalog, then open the graph you need.</p>
+  <label class="catalog-search">
+    <span class="sr-only">Search Constellations</span>
+    <input type="search" data-constellation-search placeholder="Search by name, tool, or purpose" autocomplete="off" />
+  </label>
+</section>
+
+<section class="catalog-layout" aria-label="Constellation catalog">
+  <aside class="catalog-rail">
+    <p class="kicker">Explore</p>
+    <a href="/stars">Stars</a>
+    <a class="rail-current" href="/constellations">Constellations <span>{{ constellations|length }}</span></a>
+    <p class="rail-note">Constellations compose stars into a frozen policy graph. Stars are individual capabilities.</p>
+  </aside>
+  <div class="star-list" data-constellation-list aria-live="polite">
+    <p class="result-count" data-result-count>{{ constellations|length }} Constellations</p>
+    {% for item in constellations %}
+    <a class="star-row" href="{{ item.href }}" data-constellation-row data-search="{{ item.name }} {{ item.description }} {{ item.tools_display }}">
+      <span class="star-mark" aria-hidden="true"></span>
+      <span class="star-main"><strong>{{ item.name }}</strong><span class="star-family">Policy graph</span><span>{{ item.resolved_description() or "A frozen planner subgraph with a composite receipt." }}</span></span>
+      <span class="star-tools mono">{{ item.tools_display }}</span>
+      <span class="pill {% if item.is_paid %}pill-pay{% else %}pill-free{% end %}">{{ item.pricing_label }}</span>
+      <span class="row-arrow" aria-hidden="true">↗</span>
+    </a>
+    {% end %}
+    <p class="catalog-empty" data-constellation-empty hidden>No Constellations match that search.</p>
+  </div>
+</section>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const input = document.querySelector("[data-constellation-search]");
+  const rows = [...document.querySelectorAll("[data-constellation-row]")];
+  const empty = document.querySelector("[data-constellation-empty]");
+  const count = document.querySelector("[data-result-count]");
+  const applyFilters = () => {
+    const q = input.value.trim().toLowerCase(); let shown = 0;
+    rows.forEach((row) => {
+      const show = row.dataset.search.toLowerCase().includes(q);
+      row.hidden = !show; if (show) shown++;
+    });
+    empty.hidden = shown !== 0;
+    count.textContent = `${shown} ${shown === 1 ? "Constellation" : "Constellations"}`;
+  };
+  input?.addEventListener("input", applyFilters);
+});
+</script>
+{% end %}
