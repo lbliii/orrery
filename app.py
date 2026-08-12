@@ -51,7 +51,12 @@ from artifacts import safe_attachment_filename
 from catalog import CATALOG
 from catalog.coverage import check_coverage, coverage_index, describe_coverage
 from catalog.sync import refresh_catalog
-from commerce import charge_on_verify, refund_on_forge
+from commerce import (
+    charge_on_verify,
+    create_checkout_session,
+    handle_stripe_webhook,
+    refund_on_forge,
+)
 from discovery import (
     DISCOVERY_CACHE_CONTROL,
     DISCOVERY_CORS,
@@ -143,6 +148,8 @@ for middleware in secure_stack(
             "/mcp",
             DOGFOOD_MCP_PATH,
             "/api/envelope/verify",
+            "/api/wallet/stripe/checkout",
+            "/api/wallet/stripe/webhook",
             *_DIRECT_STAR_MCP_PATHS,
         })
     ),
@@ -580,6 +587,57 @@ async def api_envelope_verify(request: Request) -> JSONResponse:
                 if isinstance(line, str) and isinstance(sky, str):
                     response["via"] = {"line": line, "sky": sky}
     return JSONResponse.from_value(response)
+
+
+@app.route("/api/wallet/stripe/checkout", methods=["POST"], referenced=True)
+async def api_wallet_stripe_checkout(request: Request) -> JSONResponse:
+    """Create a Stripe Checkout Session with ``metadata.owner_id`` (ADR 0003)."""
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse.from_value({"error": "invalid_json"}, status=400)
+    if not isinstance(body, dict):
+        return JSONResponse.from_value({"error": "expected_object"}, status=400)
+    owner_id = body.get("owner_id")
+    if not isinstance(owner_id, str) or not owner_id.strip():
+        return JSONResponse.from_value({"error": "owner_id_required"}, status=400)
+    pack = body.get("pack")
+    if pack is not None and not isinstance(pack, str):
+        return JSONResponse.from_value({"error": "invalid_pack"}, status=400)
+    success_url = body.get("success_url")
+    if success_url is not None and not isinstance(success_url, str):
+        return JSONResponse.from_value({"error": "invalid_success_url"}, status=400)
+    cancel_url = body.get("cancel_url")
+    if cancel_url is not None and not isinstance(cancel_url, str):
+        return JSONResponse.from_value({"error": "invalid_cancel_url"}, status=400)
+    try:
+        session = create_checkout_session(
+            owner_id=owner_id.strip(),
+            pack=pack,
+            success_url=success_url,
+            cancel_url=cancel_url,
+        )
+    except ValueError as exc:
+        return JSONResponse.from_value({"error": str(exc)}, status=400)
+    except RuntimeError as exc:
+        return JSONResponse.from_value({"error": str(exc)}, status=503)
+    return JSONResponse.from_value(
+        {
+            "checkout_session_id": session.get("id"),
+            "url": session.get("url"),
+            "metadata": session.get("metadata"),
+            "amount_total": session.get("amount_total"),
+        }
+    )
+
+
+@app.route("/api/wallet/stripe/webhook", methods=["POST"], referenced=True)
+async def api_wallet_stripe_webhook(request: Request) -> JSONResponse:
+    """Verify Stripe webhook signature and credit the prepaid ledger once per event."""
+    payload = await request.body()
+    signature = request.headers.get("stripe-signature", "")
+    status, body = handle_stripe_webhook(payload, signature_header=signature)
+    return JSONResponse.from_value(body, status=status)
 
 
 # Publish-oracle dogfood: seed Skill DNS, then check → freeze → smoke with
