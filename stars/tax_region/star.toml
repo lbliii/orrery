@@ -1,0 +1,31 @@
+[star]
+name = "orrery/tax-region"
+version = "0.1.0"
+description = "Validate one tax-jurisdiction record against a named static profile"
+publisher = "orrery"
+publisher_key_id_env = "ORRERY_TAX_REGION_KEY_ID"
+direct_mcp_path = "/stars/tax-region/mcp"
+tools = ["validate"]
+capability_families = ["data"]
+
+[pricing]
+unit = "call"
+price_per_call = "0.00"
+currency = "USD"
+
+[runtime]
+python_package = "stars.tax_region"
+skill_factory = "stars.tax_region.skill:build_skill"
+
+[policy]
+allowed_egress = []
+freshness = "static_profile"
+redirects = "deny"
+max_response_bytes = 65536
+
+[receipt]
+schema_version = "1"
+algorithm = "Ed25519"
+
+[publish]
+corpus = "stars.tax_region.corpus:CORPUS"
