@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import json
+import sys
 from typing import Any
 
 import pytest
@@ -637,3 +638,21 @@ class TestEnvelopeVerifyVia:
         assert body["verified"] is True
         assert body["via"]["line"] == "Sealed via Orrery MCP"
         assert body["via"]["sky"] == "https://orrery.lol"
+
+
+@pytest.mark.issue(395)
+class TestCatalogMcpProbe:
+    def test_offline_probe_matrix_covers_public_catalog(self) -> None:
+        import subprocess
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parents[1]
+        result = subprocess.run(
+            [sys.executable, str(root / "scripts" / "probe_all_mcp.py"), "--offline"],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert result.returncode == 0, result.stderr
+        assert "total: 45" in result.stdout
