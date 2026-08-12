@@ -9,8 +9,21 @@ from query params.
 
 | Route | Purpose |
 | --- | --- |
+| ``GET /wallet/top-up`` | Public top-up page — balance + fixed Checkout packs |
+| ``GET /wallet`` | Checkout return UX (``?topup=success`` / ``?topup=cancel``); no credit from URL |
 | ``POST /api/wallet/stripe/checkout`` | Create Checkout Session (no ledger credit) |
 | ``POST /api/wallet/stripe/webhook`` | Verify signature; credit ledger once per ``event.id`` |
+
+## UX
+
+- **Top-up page** (``/wallet/top-up``): shows spendable balance when
+  ``owner_id`` is supplied; CTA posts to Checkout with a fixed pack
+  (``starter`` / ``standard`` / ``premium``). No per-call Stripe on this
+  surface.
+- **Success/cancel** (``/wallet?topup=…``): browser redirect only. Balance
+  changes after webhook credit — never from query params.
+- **`insufficient_balance`**: verify/hold errors include ``top_up_url`` pointing
+  at ``https://orrery.lol/wallet/top-up`` (see ADR 0002).
 
 ## Environment
 

@@ -1,0 +1,49 @@
+{% block content %}
+<header class="console-head">
+  <div>
+    <p class="kicker">Prepaid wallet</p>
+    <h1>Wallet</h1>
+  </div>
+</header>
+
+{% if topup_status == "success" %}
+<section class="panel" style="margin-bottom: 1.5rem">
+  <p class="kicker" style="margin-bottom: 0.75rem">Checkout complete</p>
+  <p class="lede" style="margin: 0; font-size: 0.95rem">
+    Stripe accepted payment. Your spendable balance updates only after Orrery
+    verifies the Stripe webhook and credits the ledger once per
+    <code class="mono">event.id</code>. Refreshing this success URL does
+    <strong>not</strong> add credit — query params are UX only (ADR 0003).
+  </p>
+</section>
+{% elif topup_status == "cancel" %}
+<section class="panel" style="margin-bottom: 1.5rem">
+  <p class="kicker" style="margin-bottom: 0.75rem">Checkout cancelled</p>
+  <p class="lede" style="margin: 0; font-size: 0.95rem">
+    No charge was made. Your ledger balance is unchanged.
+  </p>
+</section>
+{% else %}
+<p class="lede">
+  Prepaid wallet for paid Star calls. Top up ahead of time — holds and captures
+  never invoke Stripe per invocation.
+</p>
+{% end %}
+
+<section class="section" style="padding-top: 0">
+  <div class="hero-actions">
+    <a class="btn" href="/wallet/top-up">Top up balance</a>
+    <a class="btn btn-ghost" href="/pricing">Pricing</a>
+    <a class="btn btn-ghost" href="/connect">Connect MCP</a>
+  </div>
+</section>
+
+<section class="panel" style="margin-top: 1.5rem">
+  <p class="kicker" style="margin-bottom: 0.75rem">Agent errors</p>
+  <p class="lede" style="margin: 0; font-size: 0.95rem">
+    <code class="mono">insufficient_balance</code> responses include
+    <code class="mono">top_up_url</code>:
+    <a class="mono" href="{{ top_up_url }}">{{ top_up_url }}</a>.
+  </p>
+</section>
+{% end %}

@@ -153,6 +153,7 @@ PUBLIC_MARKETING_ROUTES: tuple[str, ...] = (
     "/how-it-works",
     "/for-harnesses",
     "/pricing",
+    "/wallet/top-up",
 )
 
 #: Product children already public — included in sitemap alongside marketing routes.
@@ -378,6 +379,7 @@ def llms_txt(origin: str) -> str:
         f"- [Namespaces]({origin}/namespaces): Skill DNS namespaces",
         f"- [For harnesses]({origin}/for-harnesses): agent harness integration",
         f"- [Pricing]({origin}/pricing): public pricing",
+        f"- [Wallet top-up]({origin}/wallet/top-up): prepaid balance Checkout packs",
         "- Skill DNS: `mcp://orrery.lol/…` (override host with `ORRERY_MCP_HOST`)",
         "",
         "## Optional",

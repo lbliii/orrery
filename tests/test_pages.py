@@ -1129,3 +1129,52 @@ class TestNamespaces:
             assert r.status == 200
             assert "acme/*" in r.text
             assert "Private by default" in r.text
+
+
+@pytest.mark.issue(372)
+class TestWalletTopUpPage:
+    async def test_wallet_top_up_route_returns_200(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/wallet/top-up")
+            assert r.status == 200
+            assert 'class="topbar"' in r.text
+            assert "Top up balance" in r.text
+
+    async def test_wallet_top_up_uses_checkout_packs_not_per_call_stripe(
+        self, example_app
+    ) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/wallet/top-up")
+            assert r.status == 200
+            assert "/api/wallet/stripe/checkout" in r.text
+            assert "starter" in r.text
+            assert "standard" in r.text
+            assert "premium" in r.text
+            assert "no per-call PaymentIntents" in r.text
+            assert "PaymentIntent" not in r.text.replace("PaymentIntents", "")
+
+    async def test_wallet_top_up_cites_top_up_url(self, example_app) -> None:
+        from commerce.errors import TOP_UP_URL
+
+        async with TestClient(example_app) as client:
+            r = await client.get("/wallet/top-up")
+            assert r.status == 200
+            assert TOP_UP_URL in r.text
+            assert "top_up_url" in r.text
+            assert "insufficient_balance" in r.text
+
+    async def test_wallet_success_return_does_not_claim_credit(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/wallet?topup=success")
+            assert r.status == 200
+            assert "does not" in r.text.lower() or "not" in r.text.lower()
+            assert "webhook" in r.text.lower()
+
+    def test_insufficient_balance_error_includes_top_up_url(self) -> None:
+        from commerce.errors import TOP_UP_URL, InsufficientBalanceError
+
+        err = InsufficientBalanceError(price_per_call_cents=2, balance_cents=0)
+        payload = err.to_dict()
+        assert payload["code"] == "insufficient_balance"
+        assert payload["top_up_url"] == TOP_UP_URL
+        assert payload["top_up_url"].endswith("/wallet/top-up")

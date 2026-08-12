@@ -1,0 +1,129 @@
+{% block content %}
+<header class="console-head">
+  <div>
+    <p class="kicker">Prepaid wallet</p>
+    <h1>Top up balance</h1>
+  </div>
+</header>
+
+<p class="lede">
+  Add prepaid credits before you call paid Stars. Top-ups use fixed Stripe
+  Checkout packs — not a card charge on every MCP invocation. Holds and
+  captures stay on the ledger hot path; Stripe runs only here.
+</p>
+
+<section class="panel" style="margin-bottom: 1.5rem">
+  <p class="kicker" style="margin-bottom: 0.75rem">Your balance</p>
+  {% if owner_id %}
+  <p class="lede" style="margin: 0 0 0.5rem; font-size: 0.95rem">
+    Owner <code class="mono">{{ owner_id }}</code>
+    {% if balance_display %}
+    · spendable <strong>{{ balance_display }}</strong>
+    {% elif not wallet_live %}
+    · ledger disabled in this environment
+    {% else %}
+    · balance unavailable
+    {% endif %}
+  </p>
+  {% else %}
+  <p class="lede" style="margin: 0 0 0.75rem; font-size: 0.95rem">
+    Enter your wallet owner id (the same value agents send on verify holds).
+    Balance appears after you identify yourself — nothing is inferred from the
+    URL alone.
+  </p>
+  {% end %}
+  <form method="get" action="/wallet/top-up" style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center">
+    <label class="mono" for="owner_id">owner_id</label>
+    <input
+      id="owner_id"
+      name="owner_id"
+      type="text"
+      value="{{ owner_id }}"
+      placeholder="your-wallet-owner"
+      class="mono"
+      style="flex: 1; min-width: 12rem; padding: 0.35rem 0.5rem"
+    />
+    <button class="btn btn-ghost" type="submit">Show balance</button>
+  </form>
+</section>
+
+<section class="panel" style="margin-bottom: 1.5rem" x-data="walletTopUp()">
+  <p class="kicker" style="margin-bottom: 0.75rem">Checkout packs</p>
+  <p class="lede" style="margin: 0 0 0.75rem; font-size: 0.95rem">
+    Pick a pack, then start Checkout. Amount credited always comes from the
+    verified Stripe webhook — never from browser query params.
+  </p>
+  <ul class="meta-list" style="margin-bottom: 1rem">
+    {% for pack in packs %}
+    <li>
+      <label style="display: flex; gap: 0.5rem; align-items: center; cursor: pointer">
+        <input type="radio" name="pack" value="{{ pack.key }}" x-model="pack" />
+        <span><strong>{{ pack.label }}</strong></span>
+        <span class="mono">{{ pack.key }}</span>
+      </label>
+    </li>
+    {% end %}
+  </ul>
+  <p x-show="error" x-text="error" class="lede" style="color: var(--brass, #c9a227); margin: 0 0 0.75rem; font-size: 0.95rem" role="alert"></p>
+  <button class="btn btn-brass" type="button" @click="startCheckout()" :disabled="busy">
+    <span x-text="busy ? 'Starting Checkout…' : 'Start Stripe Checkout'"></span>
+  </button>
+  <p class="lede" style="margin: 0.75rem 0 0; font-size: 0.85rem">
+    Posts to <code class="mono">{{ checkout_api }}</code> with
+    <code class="mono">owner_id</code> + <code class="mono">pack</code> only —
+    no per-call PaymentIntents.
+  </p>
+</section>
+
+<section class="panel" style="margin-bottom: 1.5rem">
+  <p class="kicker" style="margin-bottom: 0.75rem">When balance is low</p>
+  <p class="lede" style="margin: 0; font-size: 0.95rem">
+    Verify failures with code
+    <code class="mono">insufficient_balance</code> include
+    <code class="mono">top_up_url</code> pointing here
+    (<a class="mono" href="{{ top_up_url }}">{{ top_up_url }}</a>).
+    Resolve the record, then top up before retrying the call.
+  </p>
+</section>
+
+<script>
+  function walletTopUp() {
+    return {
+      pack: "starter",
+      busy: false,
+      error: "",
+      async startCheckout() {
+        this.error = "";
+        const ownerInput = document.getElementById("owner_id");
+        const ownerId = (ownerInput && ownerInput.value ? ownerInput.value : "{{ owner_id }}").trim();
+        if (!ownerId) {
+          this.error = "Enter owner_id before starting Checkout.";
+          return;
+        }
+        this.busy = true;
+        try {
+          const response = await fetch("{{ checkout_api }}", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ owner_id: ownerId, pack: this.pack }),
+          });
+          const body = await response.json();
+          if (!response.ok) {
+            this.error = body.error || "Checkout could not start.";
+            return;
+          }
+          if (body.url) {
+            window.location.href = body.url;
+            return;
+          }
+          this.error = "Checkout session missing redirect URL.";
+        } catch (err) {
+          this.error = "Network error starting Checkout.";
+        } finally {
+          this.busy = false;
+        }
+      },
+    };
+  }
+</script>
+{% end %}
