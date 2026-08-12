@@ -23,6 +23,11 @@ class ManagedAdmissionRejected(ValueError):
         super().__init__(code)
 
 
+def run_not_found_error(*, run_id: str) -> dict[str, object]:
+    """Structured sealed error for unknown or inaccessible managed runs."""
+    return {"error": "run_not_found", "run_id": run_id}
+
+
 class ManagedStarService:
     def __init__(
         self, submission: ManagedRunSubmission, runs: Any, *, worker: Any | None = None
@@ -63,13 +68,13 @@ class ManagedStarService:
             receipt={"kind": "cancel", "code": "caller_cancelled"},
         )
         if record is None:
-            raise ValueError("run not found")
+            return run_not_found_error(run_id=run_id)
         return {"run_id": record.run_id, "state": record.state.value}
 
     def result(self, run_id: str) -> dict[str, object]:
         run = self._runs.get(run_id)
         if run is None:
-            raise ValueError("run not found")
+            return run_not_found_error(run_id=run_id)
         payload: dict[str, object] = {"run_id": run.run_id, "state": run.state.value}
         if run.is_terminal:
             # Chirp seals this final-receipt payload in an Ed25519 Envelope.

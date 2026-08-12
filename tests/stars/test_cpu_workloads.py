@@ -93,3 +93,12 @@ def test_pdf_mcp_submit_is_queued_then_result_is_an_envelope_signed_final_receip
     assert final.payload["receipt"]["executor"] == "managed-cpu-worker"
     # Chirp's returned Envelope (not a hand-written dict) signs the final receipt payload.
     assert final.signature
+
+
+def test_pdf_mcp_result_unknown_run_id_returns_structured_run_not_found() -> None:
+    submit, _, repository, _, _ = _system()
+    service = ManagedStarService(submit, repository)
+    skill = build_pdf_skill(managed_service=service)
+    result_handler = next(tool for tool in skill._pending if tool.name == "result").handler
+    envelope = result_handler(run_id="does-not-exist")
+    assert envelope.payload == {"error": "run_not_found", "run_id": "does-not-exist"}

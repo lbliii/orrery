@@ -21,7 +21,11 @@ def build_skill(
     )
 
     @skill.tool(
-        "submit", description="Queue a CSV report; returns only a run ID until worker completion"
+        "submit",
+        description=(
+            "Queue a CSV report on the managed worker; returns run_id and queued "
+            "state — poll result(run_id) for the signed receipt"
+        ),
     )
     def submit(rows: list[dict[str, object]], idempotency_key: str) -> dict[str, object]:
         managed = service or configured_managed_service()
@@ -29,7 +33,13 @@ def build_skill(
             kind="csv-report", input={"rows": rows}, idempotency_key=idempotency_key
         )
 
-    @skill.tool("result", description="Get a queued run or its signed final receipt")
+    @skill.tool(
+        "result",
+        description=(
+            "Poll a managed CSV run by run_id; unknown run_id returns "
+            "error run_not_found"
+        ),
+    )
     def result(run_id: str) -> dict[str, object]:
         managed = service or configured_managed_service()
         return managed.result(run_id)

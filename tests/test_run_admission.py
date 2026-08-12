@@ -172,10 +172,10 @@ def test_unauthorized_cancel_and_result_do_not_leak_other_callers() -> None:
         kind="csv-report",
         input={"rows": [{"n": 1}]},
     )
-    with pytest.raises(ValueError, match="run not found"):
-        service.cancel(run_id=run.run_id, caller_id="agent:mallory")
-    with pytest.raises(ValueError, match="run not found"):
-        service.result("does-not-exist")
+    cancel_error = service.cancel(run_id=run.run_id, caller_id="agent:mallory")
+    assert cancel_error == {"error": "run_not_found", "run_id": run.run_id}
+    result_error = service.result("does-not-exist")
+    assert result_error == {"error": "run_not_found", "run_id": "does-not-exist"}
 
 
 def test_accepted_run_stores_budget_policy_snapshot() -> None:
