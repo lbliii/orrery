@@ -66,11 +66,6 @@ def _sorted_unique(values: object) -> tuple[str, ...]:
     return tuple(sorted({str(item) for item in items}))
 
 
-def _github_repos(targets: Mapping[str, tuple[str, ...]]) -> tuple[str, ...]:
-    repos = {f"{owner}/{repo}" for owner, repo, *_rest in targets.values()}
-    return tuple(sorted(repos))
-
-
 def _build_registry() -> dict[str, CoverageAllowlist]:
     """Import public star contracts and project allowlists (lazy-friendly)."""
     from stars.cert_expiry.contract import HOSTS as CERT_HOSTS
@@ -184,15 +179,15 @@ def _build_registry() -> dict[str, CoverageAllowlist]:
         ),
         CoverageAllowlist(
             star="orrery/gh-file-at-ref",
-            allowlist_kind="github_repo",
-            check_param="repo",
-            entries=_github_repos(GH_FILE_TARGETS),
+            allowlist_kind="named_target",
+            check_param="target",
+            entries=_sorted_unique(GH_FILE_TARGETS),
         ),
         CoverageAllowlist(
             star="orrery/gh-release-notes",
-            allowlist_kind="github_repo",
-            check_param="repo",
-            entries=_github_repos(GH_RELEASE_TARGETS),
+            allowlist_kind="named_target",
+            check_param="target",
+            entries=_sorted_unique(GH_RELEASE_TARGETS),
         ),
         CoverageAllowlist(
             star="orrery/source-watch",
@@ -322,8 +317,7 @@ def coverage_href(star_or_family: str) -> str:
 
 def _check_href(spec: CoverageAllowlist) -> str:
     short = spec.star.partition("/")[2] or spec.star
-    sample = "owner/name" if spec.check_param == "repo" else "value"
-    href = f"/coverage/{short}/check?{spec.check_param}={quote(sample, safe='/')}"
+    href = f"/coverage/{short}/check?{spec.check_param}={quote('value', safe='/')}"
     if spec.secondary_param:
         href += f"&{spec.secondary_param}=value"
     return href
