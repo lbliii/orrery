@@ -1,0 +1,69 @@
+{% block content %}
+<header class="console-head">
+  <div>
+    <p class="kicker">Public sky</p>
+    <h1>Pricing honesty</h1>
+  </div>
+</header>
+
+<p class="lede">
+  Every public Star and Constellation on the shelf shows a price pill — today
+  that pill reads <strong>Free</strong> for all registered public capabilities.
+  That label reflects the current catalog, not a promise that every skill stays
+  free forever or that future commercial terms are fixed today.
+</p>
+
+<section class="panel" style="margin-bottom: 1.5rem">
+  <p class="kicker" style="margin-bottom: 0.75rem">Catalog label vs future terms</p>
+  <ul class="meta-list">
+    <li>
+      <span><strong>What you see now</strong></span>
+      <span>Gaze, Resolve, and the Star catalog surface <code class="mono">price_per_call</code> as a toll label — zero today, shown as Free.</span>
+    </li>
+    <li>
+      <span><strong>What it is not</strong></span>
+      <span>A perpetual gratis license, a seat checkout, or a card charge on every tool call.</span>
+    </li>
+    <li>
+      <span><strong>What may change</strong></span>
+      <span>Paid Stars, prepaid wallet balance, and publisher-specific terms arrive in later waves — always resolve the record before you call.</span>
+    </li>
+  </ul>
+  <p class="lede" style="margin: 0.75rem 0 0; font-size: 0.95rem">
+    Browse the live shelf at <a class="mono" href="/stars">/stars</a> or
+    <a class="mono" href="/gaze">/gaze</a> — pills match the catalog, not a
+    checkout cart.
+  </p>
+</section>
+
+<section class="panel" style="margin-bottom: 1.5rem">
+  <p class="kicker" style="margin-bottom: 0.75rem">Commerce direction (Wave 2)</p>
+  <p class="lede" style="margin: 0 0 0.75rem; font-size: 0.95rem">
+    When paid use lands, Orrery follows prepaid-wallet design: top up balance
+    ahead of calls — not Stripe authorization on every MCP invocation. The hot
+    path (gaze, resolve, hold, verify) stays off Stripe.
+  </p>
+  <ul class="meta-list">
+    <li><span>·</span><span>No per-call card micropayments</span></li>
+    <li><span>·</span><span>No fake seat checkout on this page</span></li>
+    <li><span>·</span><span>Wallet and ledger stubs today; real billing ships with accepted ADRs</span></li>
+  </ul>
+</section>
+
+<section class="panel" style="margin-bottom: 1.5rem">
+  <p class="kicker" style="margin-bottom: 0.75rem">Start without a price gate</p>
+  <p class="lede" style="margin: 0; font-size: 0.95rem">
+    Discovery is public; the default MCP host needs no bearer. Point your
+    harness at Orrery, gaze the shelf, resolve a record, and call the publisher
+    — sealed Envelopes are the evidence layer, not a catalog description.
+  </p>
+</section>
+
+<section class="section" style="padding-top: 0">
+  <div class="hero-actions">
+    <a class="btn" href="/connect">Connect MCP</a>
+    <a class="btn btn-ghost" href="/stars">Browse Stars</a>
+    <a class="btn btn-ghost" href="/product">Product overview</a>
+  </div>
+</section>
+{% end %}
