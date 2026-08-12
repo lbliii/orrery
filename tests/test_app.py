@@ -239,6 +239,56 @@ class TestOrreryHostFoundation:
             assert called.status == 200
             assert "orrery/html-to-pdf" in json.loads(called.text)["result"]["content"][0]["text"]
 
+    @pytest.mark.issue(363)
+    async def test_mcp_connect_default_for_omitted_initialize_version(self, example_app) -> None:
+        """Cursor streamableHttp may omit params.protocolVersion on connect."""
+        async with TestClient(example_app) as client:
+            initialized = await client.post(
+                "/mcp",
+                json={
+                    "jsonrpc": "2.0",
+                    "method": "initialize",
+                    "id": 363,
+                    "params": {
+                        "capabilities": {},
+                        "clientInfo": {"name": "cursor", "version": "1"},
+                    },
+                },
+                headers={"content-type": "application/json"},
+            )
+            assert initialized.status == 200
+            init_body = json.loads(initialized.text)
+            assert init_body["result"]["protocolVersion"] == "2025-06-18"
+            assert "chirp/legacyOfframp" not in init_body["result"].get("_meta", {})
+
+            listed = await client.post(
+                "/mcp",
+                json={"jsonrpc": "2.0", "method": "tools/list", "id": 364},
+                headers=_standard_mcp_headers(),
+            )
+            assert listed.status == 200
+            tool_names = {t["name"] for t in json.loads(listed.text)["result"]["tools"]}
+            assert tool_names >= {"gaze_match", "resolve_name"}
+
+    @pytest.mark.issue(363)
+    async def test_mcp_connect_default_for_header_only_initialize(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            initialized = await client.post(
+                "/mcp",
+                json={
+                    "jsonrpc": "2.0",
+                    "method": "initialize",
+                    "id": 365,
+                    "params": {
+                        "capabilities": {},
+                        "clientInfo": {"name": "cursor", "version": "1"},
+                    },
+                },
+                headers=_standard_mcp_headers(),
+            )
+            assert initialized.status == 200
+            assert json.loads(initialized.text)["result"]["protocolVersion"] == "2025-06-18"
+
     async def test_agent_invocation_streams_on_home_feed(self, example_app) -> None:
         async with TestClient(example_app) as client:
 

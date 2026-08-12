@@ -10,6 +10,7 @@ from chirp.testing import TestClient
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from discovery import (
+    MCP_PROTOCOL_VERSION,
     MCP_TOOLS,
     MCP_TOOLS_ALLOWLIST,
     MCP_TOOLS_DENYLIST,
@@ -192,6 +193,7 @@ async def test_mcp_server_card(discovery_app) -> None:
         assert _header(response, "access-control-allow-origin") == "*"
         assert "application/json" in (response.content_type or "")
         card = json.loads(response.text)
+        assert card["protocolVersion"] == MCP_PROTOCOL_VERSION
         assert card["serverInfo"]["name"] == "orrery"
         assert card["transport"]["endpoint"] == "https://orrery.lol/mcp"
         assert card["authentication"]["required"] is False
@@ -361,6 +363,8 @@ async def test_connect_page_is_public(discovery_app) -> None:
         assert 'href="/llms.txt"' in page.text
         assert 'href="/skills"' in page.text
         assert "Teaching trio" in page.text
+        assert "2025-06-18" in page.text
+        assert "Cursor" in page.text
         assert "Do not install or clone for live truth" in page.text
         assert SLIM_MCP_COPY in page.text
         for star in TEACHING_TRIO:
