@@ -43,6 +43,8 @@ BUILTIN_STAR_PACKAGES = (
     "stars.flight_status",
     "stars.place_hours",
     "stars.holidays",
+    "stars.fx_rate",
+    "stars.tax_region",
     "stars.decision_bind",
     "stars.acceptance_bind",
     "stars.manifest_bind",
