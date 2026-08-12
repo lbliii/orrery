@@ -17,6 +17,8 @@ from urllib.parse import quote
 
 # Soft cap so huge future allowlists stay agent-scannable.
 MAX_ENTRIES: Final = 50
+# Sample size returned on deny so first users see valid values without scrolling.
+DENIED_SAMPLE_SIZE: Final = 10
 
 # Stars / constellations with no machine-readable named allowlist yet (or whose
 # gating is not a named public SKU map). Documented for agents and operators.
@@ -32,6 +34,12 @@ COVERAGE_GAPS: Final[tuple[str, ...]] = (
     "orrery/docs-migrate-to-mdx",  # frozen migration graph composer (#178)
     "orrery/api-spec-upgrade",  # frozen OpenAPI upgrade graph composer (#179)
 )
+
+# Constellation gaps whose allowlists live on member stars (#340).
+COVERAGE_GAP_UPSTREAM: Final[dict[str, tuple[str, ...]]] = {
+    "orrery/table-fresh": ("orrery/csv-url",),
+    "orrery/stale-proof": ("orrery/source-watch",),
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -229,6 +237,15 @@ def list_coverage_stars() -> list[CoverageAllowlist]:
     return [seen[name] for name in sorted(seen)]
 
 
+def _normalize_star_id(star_or_family: str) -> str:
+    key = (star_or_family or "").strip().strip("/")
+    if not key:
+        return ""
+    if key.startswith("orrery/"):
+        return key
+    return f"orrery/{key}"
+
+
 def resolve_coverage(star_or_family: str) -> CoverageAllowlist | None:
     """Resolve a star id, short name, or alias to a coverage spec."""
     key = (star_or_family or "").strip().strip("/")
@@ -240,6 +257,61 @@ def resolve_coverage(star_or_family: str) -> CoverageAllowlist | None:
     if not key.startswith("orrery/") and f"orrery/{key}" in registry:
         return registry[f"orrery/{key}"]
     return None
+
+
+def _sample_allowed_values(
+    spec: CoverageAllowlist,
+    *,
+    limit: int = DENIED_SAMPLE_SIZE,
+) -> list[str]:
+    return list(spec.entries[:limit])
+
+
+def _deny_remediation(
+    spec: CoverageAllowlist,
+    base: dict[str, object],
+) -> dict[str, object]:
+    """Add discovery fields to a denied coverage check (#340)."""
+    base["catalog_href"] = coverage_href(spec.star)
+    sample = _sample_allowed_values(spec)
+    if sample:
+        base["allowed_values"] = sample
+        total = len(spec.entries)
+        if total > len(sample):
+            base["allowed_values_truncated"] = True
+            base["allowed_values_total"] = total
+    return base
+
+
+def describe_coverage_gap(star_or_family: str) -> dict[str, object] | None:
+    """Metadata for a known gap star, linking upstream allowlists when defined."""
+    star = _normalize_star_id(star_or_family)
+    if star not in COVERAGE_GAPS:
+        return None
+    upstream_links: list[dict[str, object]] = []
+    for upstream_star in COVERAGE_GAP_UPSTREAM.get(star, ()):
+        upstream_spec = resolve_coverage(upstream_star)
+        if upstream_spec is None:
+            continue
+        link: dict[str, object] = {
+            "star": upstream_spec.star,
+            "allowlist_kind": upstream_spec.allowlist_kind,
+            "check_param": upstream_spec.check_param,
+            "catalog_href": coverage_href(upstream_spec.star),
+        }
+        sample = _sample_allowed_values(upstream_spec)
+        if sample:
+            link["allowed_values"] = sample
+        upstream_links.append(link)
+    return {
+        "star": star,
+        "kind": "coverage_gap",
+        "upstream_allowlists": upstream_links,
+        "note": (
+            "No named allowlist on this star; check upstream member stars "
+            "for valid values before calling."
+        ),
+    }
 
 
 def coverage_href(star_or_family: str) -> str:
@@ -261,7 +333,7 @@ def describe_coverage(star_or_family: str) -> dict[str, object] | None:
     """Public coverage metadata for one star, or ``None`` if unknown."""
     spec = resolve_coverage(star_or_family)
     if spec is None:
-        return None
+        return describe_coverage_gap(star_or_family)
     total = len(spec.entries)
     truncated = total > MAX_ENTRIES
     entries = list(spec.entries[:MAX_ENTRIES])
@@ -323,12 +395,15 @@ def check_coverage(
 
     if allowed:
         return {"allowed": True, "reason": None, "star": spec.star}
-    return {
-        "allowed": False,
-        "reason": "not_allowlisted",
-        "star": spec.star,
-        "allowlist_kind": spec.allowlist_kind,
-    }
+    return _deny_remediation(
+        spec,
+        {
+            "allowed": False,
+            "reason": "not_allowlisted",
+            "star": spec.star,
+            "allowlist_kind": spec.allowlist_kind,
+        },
+    )
 
 
 def coverage_index() -> dict[str, object]:
