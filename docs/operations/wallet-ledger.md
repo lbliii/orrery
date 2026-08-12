@@ -14,6 +14,49 @@ from commerce import charge_on_verify, refund_on_forge, wallet_enabled
 When ``ORRERY_WALLET_ENABLED=1``, ``POST /api/envelope/verify`` captures or
 releases via the ledger. Otherwise loud stubs in ``commerce.stubs`` remain.
 
+## Hold sequence
+
+Agents open a prepaid hold **before** calling the publisher (ADR 0002):
+
+```text
+POST /api/wallet/hold  (idempotent on payment_id)
+  → publisher tools/call
+  → POST /api/envelope/verify  (capture or release)
+```
+
+| Step | Endpoint | Ledger op |
+| --- | --- | --- |
+| Call time | ``POST /api/wallet/hold`` | ``hold`` (soft reserve) |
+| Verify ok | ``POST /api/envelope/verify`` | ``capture`` |
+| Forge / fail | ``POST /api/envelope/verify`` | ``release`` |
+
+Request body (machine clients — CSRF exempt):
+
+```json
+{
+  "owner_id": "user-abc",
+  "payment_id": "env-envelope-id",
+  "price_per_call": "$0.02",
+  "skill": "html-to-pdf"
+}
+```
+
+``payment_id`` must match the Envelope id carried on the receipt. ``skill`` may
+substitute catalog ``price_per_call`` when omitted. ``amount_cents`` is an
+alternate to ``price_per_call``.
+
+Success (``200``): open hold payload with ``hold_id``, ``hold_status: open``,
+``expires_at``. Replay with the same ``payment_id`` returns the existing open
+hold — no double reserve.
+
+Insufficient balance (``402``): ADR 0002 JSON (``code: insufficient_balance``,
+``top_up_url``).
+
+Wallet disabled (``503``): ``{"error": "wallet_disabled", "wallet_enabled": false}``
+— no ledger touch; enable ``ORRERY_WALLET_ENABLED=1`` for real holds.
+
+Never calls Stripe on the hold path.
+
 ## Verify sequence
 
 Envelope verify is the commit point for prepaid tolls (ADR 0002):
@@ -82,6 +125,6 @@ No network calls on resolve, hold, or verify paths.
 ## Acceptance
 
 ```bash
-uv run pytest tests/test_wallet_verify_wire.py tests/test_wallet_ledger.py -q
+uv run pytest tests/test_wallet_hold_api.py tests/test_wallet_verify_wire.py tests/test_wallet_ledger.py -q
 uv run ruff check .
 ```

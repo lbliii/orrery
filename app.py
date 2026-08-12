@@ -52,9 +52,13 @@ from catalog import CATALOG
 from catalog.coverage import check_coverage, coverage_index, describe_coverage
 from catalog.sync import refresh_catalog
 from commerce import (
+    HoldRequestError,
+    InsufficientBalanceError,
+    WalletDisabledError,
     charge_on_verify,
     create_checkout_session,
     handle_stripe_webhook,
+    open_hold,
     refund_on_forge,
 )
 from discovery import (
@@ -148,6 +152,7 @@ for middleware in secure_stack(
             "/mcp",
             DOGFOOD_MCP_PATH,
             "/api/envelope/verify",
+            "/api/wallet/hold",
             "/api/wallet/stripe/checkout",
             "/api/wallet/stripe/webhook",
             *_DIRECT_STAR_MCP_PATHS,
@@ -587,6 +592,58 @@ async def api_envelope_verify(request: Request) -> JSONResponse:
                 if isinstance(line, str) and isinstance(sky, str):
                     response["via"] = {"line": line, "sky": sky}
     return JSONResponse.from_value(response)
+
+
+@app.route("/api/wallet/hold", methods=["POST"], referenced=True)
+async def api_wallet_hold(request: Request) -> JSONResponse:
+    """Open an idempotent prepaid hold before a publisher call (ADR 0002)."""
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse.from_value({"error": "invalid_json"}, status=400)
+    if not isinstance(body, dict):
+        return JSONResponse.from_value({"error": "expected_object"}, status=400)
+
+    owner_id = body.get("owner_id")
+    if not isinstance(owner_id, str):
+        return JSONResponse.from_value({"error": "owner_id_required"}, status=400)
+    payment_id = body.get("payment_id")
+    if not isinstance(payment_id, str):
+        return JSONResponse.from_value({"error": "payment_id_required"}, status=400)
+
+    price_per_call = body.get("price_per_call")
+    if price_per_call is not None and not isinstance(price_per_call, str):
+        return JSONResponse.from_value({"error": "invalid_price_per_call"}, status=400)
+    if price_per_call is None and isinstance(body.get("skill"), str):
+        skill_name = body["skill"]
+        record = CATALOG.resolve(skill_name) or CATALOG.resolve(f"orrery/{skill_name}")
+        if record is not None:
+            price_per_call = record.price_per_call
+    amount_cents = body.get("amount_cents")
+    if amount_cents is not None and not isinstance(amount_cents, int):
+        return JSONResponse.from_value({"error": "invalid_amount_cents"}, status=400)
+    skill = body.get("skill")
+    if skill is not None and not isinstance(skill, str):
+        return JSONResponse.from_value({"error": "invalid_skill"}, status=400)
+
+    try:
+        result = open_hold(
+            owner_id=owner_id,
+            payment_id=payment_id,
+            price_per_call=price_per_call,
+            amount_cents=amount_cents,
+            skill=skill,
+        )
+    except WalletDisabledError:
+        return JSONResponse.from_value(
+            {"error": "wallet_disabled", "wallet_enabled": False},
+            status=503,
+        )
+    except HoldRequestError as exc:
+        return JSONResponse.from_value({"error": exc.code}, status=400)
+    except InsufficientBalanceError as exc:
+        return JSONResponse.from_value(exc.to_dict(), status=402)
+    return JSONResponse.from_value(result)
 
 
 @app.route("/api/wallet/stripe/checkout", methods=["POST"], referenced=True)
