@@ -271,6 +271,119 @@ STALE_PROOF_POLICY = PolicyGraph(
     release_key_id="orrery-stale-proof-1",
 )
 
+INVITE_READY_POLICY = PolicyGraph(
+    nodes=(
+        PolicyNode(
+            id="world-time",
+            label="world-time",
+            node_kind="gate",
+            star_ref="orrery/world-time",
+            x=120,
+            y=120,
+            step=0,
+            status_label="now",
+        ),
+        PolicyNode(
+            id="flight-status",
+            label="flight-status",
+            node_kind="gate",
+            star_ref="orrery/flight-status",
+            x=320,
+            y=120,
+            step=1,
+            status_label="flight",
+        ),
+        PolicyNode(
+            id="geocode",
+            label="geocode",
+            node_kind="gate",
+            star_ref="orrery/geocode",
+            x=520,
+            y=120,
+            step=2,
+            status_label="place",
+        ),
+        PolicyNode(
+            id="place-hours",
+            label="place-hours",
+            node_kind="gate",
+            star_ref="orrery/place-hours",
+            x=720,
+            y=120,
+            step=3,
+            status_label="hours",
+        ),
+        PolicyNode(
+            id="seal",
+            label="seal",
+            node_kind="composite",
+            x=460,
+            y=320,
+            step=4,
+            status_label="composite",
+            r=18,
+        ),
+    ),
+    edges=(
+        PolicyEdge(
+            id="ir1",
+            source="world-time",
+            target="seal",
+            kind="fan_in",
+            path_d="M120 160 C120 260, 320 300, 420 320",
+            step=4,
+            stroke="#9aafc2",
+            stroke_width=1.2,
+            opacity=0.55,
+        ),
+        PolicyEdge(
+            id="ir2",
+            source="flight-status",
+            target="seal",
+            kind="fan_in",
+            path_d="M320 160 C360 240, 400 280, 440 310",
+            step=4,
+            stroke="#9aafc2",
+            stroke_width=1.2,
+            opacity=0.55,
+        ),
+        PolicyEdge(
+            id="ir3",
+            source="geocode",
+            target="seal",
+            kind="fan_in",
+            path_d="M520 160 C500 240, 480 280, 470 310",
+            step=4,
+            stroke="#9aafc2",
+            stroke_width=1.2,
+            opacity=0.55,
+        ),
+        PolicyEdge(
+            id="ir4",
+            source="place-hours",
+            target="seal",
+            kind="fan_in",
+            path_d="M720 160 C620 260, 520 300, 490 320",
+            step=4,
+            stroke="#9aafc2",
+            stroke_width=1.4,
+        ),
+    ),
+    repair_loop_max=None,
+    footnote=(
+        "Secretary enrich-before-seal · fixture allowlists only · attach composite "
+        "to draft invites before seal (Pidge atlas poster child)."
+    ),
+    composite_chain=(
+        CompositeStep(1, "world-time", "Envelope ✓", "now"),
+        CompositeStep(2, "flight-status", "Envelope ✓", "flight fixture"),
+        CompositeStep(3, "geocode", "Envelope ✓", "place fixture"),
+        CompositeStep(4, "place-hours", "Envelope ✓", "venue hours"),
+    ),
+    release_digest="sha256:invite…",
+    release_key_id="orrery-invite-ready-1",
+)
+
 TABLE_FRESH_POLICY = PolicyGraph(
     nodes=(
         PolicyNode("csv-url", "csv-url", "gate", 180, 200, 0, "orrery/csv-url", "fresh"),
@@ -1082,6 +1195,7 @@ API_SPEC_UPGRADE_POLICY = PolicyGraph(
 POLICIES: dict[str, PolicyGraph] = {
     "acme/launch-gate": LAUNCH_GATE_POLICY,
     "orrery/stale-proof": STALE_PROOF_POLICY,
+    "orrery/invite-ready": INVITE_READY_POLICY,
     "orrery/table-fresh": TABLE_FRESH_POLICY,
     "orrery/ship-check": SHIP_CHECK_POLICY,
     "orrery/content-readiness": CONTENT_READINESS_POLICY,

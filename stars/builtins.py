@@ -30,6 +30,7 @@ BUILTIN_STAR_PACKAGES = (
     "stars.ship_check",
     "stars.source_watch",
     "stars.stale_proof",
+    "stars.invite_ready",
     "stars.content_readiness",
     "stars.authorized_content_patch",
     "stars.publish_gate",

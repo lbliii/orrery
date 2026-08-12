@@ -1,0 +1,32 @@
+[star]
+name = "orrery/invite-ready"
+kind = "constellation"
+version = "0.1.0"
+description = "Secretary enrich-before-seal: clock + flight + place + venue hours composite"
+publisher = "orrery"
+publisher_key_id_env = "ORRERY_INVITE_READY_KEY_ID"
+direct_mcp_path = "/constellations/invite-ready/mcp"
+tools = ["run"]
+capability_families = ["time_and_date"]
+
+[pricing]
+unit = "call"
+price_per_call = "0.00"
+currency = "USD"
+
+[runtime]
+python_package = "stars.invite_ready"
+skill_factory = "stars.invite_ready.skill:build_skill"
+
+[policy]
+allowed_egress = ["https://timeapi.io", "https://www.google.com"]
+freshness = "at_call"
+redirects = "deny"
+max_response_bytes = 1048576
+
+[receipt]
+schema_version = "1"
+algorithm = "Ed25519"
+
+[publish]
+corpus = "stars.invite_ready.corpus:CORPUS"
