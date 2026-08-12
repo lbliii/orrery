@@ -28,7 +28,8 @@ def build_skill(*, private_key: Any | None = None) -> Skill:
         "run",
         description=(
             "Freshen a bounded flight sample and compare it to a caller baseline. "
-            "Input bundle: baseline* (object with tabular rows for table-diff). "
+            "Input bundle: baseline* (object with rows[] of {origin, destination, count}; "
+            "optional source_digest). Fetches flights-airport via csv-url internally. "
             "Returns signed fresh-verdict Envelope chain "
             "(dispositions: ready | not-ready | stale | blocked)."
         ),

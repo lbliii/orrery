@@ -1395,7 +1395,18 @@ _STAR_CARDS: dict[str, AgentCard] = {
                 "baseline": {
                     "type": "object",
                     "required": True,
-                    "note": "caller-provided tabular baseline for table-diff",
+                    "note": (
+                        "caller-held rows from prior flights-airport sample; "
+                        "each row: {origin, destination, count}. "
+                        "Not dataset (use orrery/csv-url for that)."
+                    ),
+                    "example": {
+                        "rows": [
+                            {"origin": "ABE", "destination": "ATL", "count": 853},
+                            {"origin": "ABE", "destination": "BHM", "count": 1},
+                        ],
+                        "source_digest": "sha256:prior",
+                    },
                 }
             },
         },
