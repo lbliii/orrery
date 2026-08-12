@@ -1,6 +1,6 @@
 # ADR 0002: Prepaid wallet ledger (hold / capture on verify)
 
-- **Status:** Design accepted (implementation gated)
+- **Status:** Design accepted (implementation unblocked)
 - **Date:** 2026-08-08
 - **Issue:** [#38](https://github.com/lbliii/orrery/issues/38)
 - **Parent epic:** [#9](https://github.com/lbliii/orrery/issues/9) Trust & Commerce
