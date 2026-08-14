@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "k": 3,
+  "note": "Recall@k harness for flagged gaze retrieval. expect is a relevant set, not a winner.",
+  "fixtures": [
+    {
+      "intent": "live utc now",
+      "expect": ["orrery/world-time"]
+    },
+    {
+      "intent": "html to pdf",
+      "expect": ["orrery/html-to-pdf"]
+    },
+    {
+      "intent": "http head python docs",
+      "expect": ["orrery/http-head"]
+    },
+    {
+      "intent": "read well-known document",
+      "expect": ["orrery/well-known"]
+    },
+    {
+      "intent": "cert expiry for host",
+      "expect": ["orrery/cert-expiry"]
+    },
+    {
+      "intent": "rfc section text",
+      "expect": ["orrery/rfc-section"]
+    },
+    {
+      "intent": "pep section text",
+      "expect": ["orrery/pep-section"]
+    },
+    {
+      "intent": "spdx license text",
+      "expect": ["orrery/spdx-license"]
+    },
+    {
+      "intent": "lookup flight row",
+      "expect": ["orrery/row-lookup"]
+    },
+    {
+      "intent": "diff two table snapshots",
+      "expect": ["orrery/table-diff"]
+    },
+    {
+      "intent": "pypi latest version",
+      "expect": ["orrery/pypi-release"]
+    },
+    {
+      "intent": "github release notes",
+      "expect": ["orrery/gh-release-notes"]
+    },
+    {
+      "intent": "stale proof seal",
+      "expect": ["orrery/stale-proof"]
+    },
+    {
+      "intent": "get README at commit",
+      "expect": ["orrery/gh-file-at-ref"]
+    },
+    {
+      "intent": "observe python release notes",
+      "expect": ["orrery/source-watch"]
+    },
+    {
+      "intent": "run release gate",
+      "expect": ["acme/release-gate"],
+      "node": "acme"
+    },
+    {
+      "intent": "explain launch gate ship policy",
+      "expect": ["acme/launch-gate", "acme/release-gate"],
+      "node": "acme"
+    }
+  ]
+}
