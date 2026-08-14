@@ -1309,3 +1309,33 @@ class TestHomeFourStepLoop:
             assert "Pay only for truth" not in r.text
             assert "verifyable" not in r.text
             assert "verifiable" in r.text
+
+
+@pytest.mark.issue(432)
+class TestMcpCopyAdr0010:
+    async def test_connect_describes_slim_mcp_not_legacy_bridge(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/connect")
+            assert r.status == 200
+            text = r.text
+            lowered = text.lower()
+            assert "legacy bridge" not in lowered
+            assert "discovery only" not in lowered
+            assert "slim discovery" in lowered
+            assert "call_skill" in text
+            assert "forwarder" in lowered
+            assert "canonical" in lowered
+            assert 'id="kida-demo"' in text
+
+    async def test_gaze_kicker_does_not_say_route(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/gaze")
+            assert r.status == 200
+            head_start = r.text.index('class="console-head"')
+            kicker_start = r.text.index('class="kicker"', head_start)
+            kicker_open = r.text.index(">", kicker_start) + 1
+            kicker = r.text[kicker_open : r.text.index("</p>", kicker_open)]
+            assert "route" not in kicker.lower()
+            assert "browse" in kicker.lower()
+            assert "point" in kicker.lower()
+            assert "install" in kicker.lower()

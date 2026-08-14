@@ -36,3 +36,16 @@ class TestHowItWorksPage:
             assert "/api/envelope/verify" in text
             assert "orrery/world-time" in text
             assert "orrery/html-to-pdf" in text
+
+    @pytest.mark.issue(432)
+    async def test_how_it_works_mcp_is_not_legacy_bridge(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/how-it-works")
+            text = r.text
+            lowered = text.lower()
+            assert "legacy bridge" not in lowered
+            assert "discovery only" not in lowered
+            assert "slim discovery" in lowered
+            assert "call_skill" in text
+            assert "forwarder" in lowered
+            assert "canonical" in lowered
