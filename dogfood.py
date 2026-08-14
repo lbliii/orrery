@@ -32,6 +32,7 @@ from chirp.tools.schema import function_to_schema
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from catalog import CATALOG, GAZE_DEFAULT_LIMIT, GAZE_MAX_LIMIT
+from catalog.call_skill_proxy import forward_call_skill
 from catalog.constellation_run import explain_policy, run_constellation, status_for_run
 from catalog.coverage import check_coverage, describe_coverage
 from discovery import MCP_TOOLS_ALLOWLIST
@@ -232,6 +233,25 @@ def build_resolve_skill(*, private_key: Any | None = None) -> Skill:
         return payload
 
     return skill
+
+
+def _register_call_skill_tool(app: Any) -> None:
+    """Mount unsigned ``call_skill`` on aggregate ``/mcp`` (returns JSON, not Envelope)."""
+
+    @app.tool(
+        "call_skill",
+        description=(
+            "Execute one publisher tool for a Skill DNS name via same-origin forward. "
+            "Inputs: name (Skill DNS), tool (publisher tool), arguments (object, default {}). "
+            "Returns JSON status/payload/envelope_wire; off-origin names require publisher-direct."
+        ),
+    )
+    async def call_skill(
+        name: str,
+        tool: str,
+        arguments: dict[str, object] | None = None,
+    ) -> dict[str, object]:
+        return await forward_call_skill(app, name=name, tool=tool, arguments=arguments)
 
 
 def build_html_to_pdf_skill(*, private_key: Any | None = None) -> Skill:
@@ -565,6 +585,7 @@ def mount_orrery_skills(
     """Wire slim ``/mcp``, labeled ``/mcp/dogfood``, discovery, and live invocation log."""
     for skill in discovery_skills:
         use_skill(app, skill)
+    _register_call_skill_tool(app)
     _register_skill_discovery(app, registry, discovery_path)
     if invocation_log_path is not None:
         mount_invocation_log(app, path=invocation_log_path)

@@ -6,10 +6,10 @@ fixture**, not a new MCP tool. ADR 0005: agent ranks; Orrery documents frozen ar
 
 ## Prerequisite
 
-Point a streamable-HTTP MCP client at ``/mcp`` for gaze/resolve only. Call
+Point a streamable-HTTP MCP client at ``/mcp`` for gaze/resolve. Call
 ``check`` and ``render`` on the **publisher** endpoints returned by
-``resolve_name`` (ADR 0004) — not aggregate ``/mcp`` execution until
-[#390](https://github.com/lbliii/orrery/issues/390) ``call_skill``.
+``resolve_name`` (ADR 0004), or use ``call_skill`` on aggregate ``/mcp`` for
+same-origin stars when mounting a single MCP URL.
 
 ## Narrative
 
