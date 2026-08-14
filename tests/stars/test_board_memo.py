@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import base64
+import json
 
 import pytest
+from chirp.testing import TestClient
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from catalog.agent_card import BOARD_MEMO_DISPOSITIONS, require_card
@@ -14,6 +16,34 @@ from catalog.sync import build_star_records
 from stars.board_memo.service import cancel, continue_run, run, status
 from stars.board_memo.skill import build_skill
 from stars.builtins import build_direct_skills, builtin_registry
+
+_META_PROTOCOL_VERSION = "io.modelcontextprotocol/protocolVersion"
+
+
+def _modern_mcp_params(**extra: object) -> dict[str, object]:
+    params: dict[str, object] = {
+        "_meta": {
+            _META_PROTOCOL_VERSION: "2026-07-28",
+            "io.modelcontextprotocol/clientCapabilities": {},
+        },
+    }
+    params.update(extra)
+    return params
+
+
+def _modern_mcp_headers(method: str, name: str | None = None) -> dict[str, str]:
+    headers = {
+        "content-type": "application/json",
+        "mcp-protocol-version": "2026-07-28",
+        "mcp-method": method,
+    }
+    if name is not None:
+        headers["mcp-name"] = name
+    return headers
+
+
+def _mcp_tool_body(response_text: str) -> dict[str, object]:
+    return json.loads(json.loads(response_text)["result"]["content"][0]["text"])
 
 
 @pytest.fixture(autouse=True)
@@ -34,6 +64,48 @@ def _run_kwargs(key: Ed25519PrivateKey) -> dict[str, object]:
         "private_key": key,
         "caller_id": "test-caller-154",
     }
+
+
+@pytest.mark.issue(394)
+@pytest.mark.asyncio
+async def test_board_memo_mcp_run_surfaces_pause_contract(example_app) -> None:
+    """Direct MCP ``run`` returns ADR 0010 JSON with pause/resume contract (#394)."""
+    async with TestClient(example_app) as client:
+        response = await client.post(
+            "/constellations/board-memo/mcp",
+            json={
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "id": 394,
+                "params": _modern_mcp_params(
+                    name="run",
+                    arguments={
+                        "title": "Q3 Platform Update",
+                        "summary": "Revenue grew 12% with stable infra costs.",
+                        "author": "ops",
+                        "caller_id": "test-caller-394",
+                    },
+                ),
+            },
+            headers=_modern_mcp_headers("tools/call", "run"),
+        )
+        assert response.status == 200
+        body = _mcp_tool_body(response.text)
+        assert body["status"] == "ok"
+        assert body["tool"] == "run"
+        assert not str(body).startswith("Envelope(")
+        assert body["disposition"] == "awaiting_input"
+        assert isinstance(body["run_id"], str) and body["run_id"]
+        payload = body["payload"]
+        assert isinstance(payload, dict)
+        assert payload["disposition"] == "awaiting_input"
+        requests = body["outstanding_action_requests"]
+        assert isinstance(requests, list) and len(requests) == 1
+        assert requests[0]["request_id"]
+        assert requests[0]["kind"] == "audience_recommendation_choice"
+        assert isinstance(requests[0]["schema"], dict)
+        assert isinstance(requests[0]["prompt"], str)
+        assert payload["outstanding_action_requests"][0]["request_id"] == requests[0]["request_id"]
 
 
 @pytest.mark.issue(154)
