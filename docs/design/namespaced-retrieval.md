@@ -100,6 +100,20 @@ Add `tests/gaze-retrieval.v1.json` plus a recall@k helper:
 - A short note in this doc or the issue: public-sky baseline and
   whether v1 moved anything (honest zero is acceptable).
 
+### Eval numbers (2026-08-14, #467)
+
+Public + `acme` suite in `tests/gaze-retrieval.v1.json` (17 queries,
+macro recall@3, relevant-set overlap, no top-1 mandate):
+
+| Mode | recall@3 |
+| --- | --- |
+| Flag off (lexical `score_record` only) | 1.00 |
+| Flag on + v1 `LexicalGazeRetriever` | 1.00 |
+
+v1 did not move public-sky recall. That is acceptable: the current
+catalog already scores every in-node row. The harness is the product
+of this leaf.
+
 ### What leaves may assume
 
 - No new ADR. Cite ADR 0005 + this note.
