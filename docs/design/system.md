@@ -157,7 +157,7 @@ Reusable across routes:
 
 | Class | Role |
 | --- | --- |
-| `.topbar`, `.nav`, `.footer` | Chrome |
+| `.topbar`, `.nav`, `.footer`, `.skip-link` | Chrome |
 | `.panel` | Glass content block |
 | `.lookup`, `.resolve-row` | Lookup form row |
 | `.meta-list` | Label → value rows |
@@ -230,10 +230,24 @@ Reusable across routes:
 5. **Wide tables** — wrap `.record-table` in `.table-scroll` so narrow
    viewports scroll horizontally instead of blowing the shell.
 
+## Chrome / nav
+
+Primary nav: **Product ▾** (native `<details class="nav-dropdown">`) + **Connect**
+(`.btn.nav-cta`). Nav state lives in [`pages/_context.py`](../../pages/_context.py)
+(`nav.product` + per-route flags). Product children include `/star/*`.
+
+- **Product menu stays closed on load.** Never set `open` on `<details>` because
+  a child route is current; highlight the trigger with `.is-active` via
+  `nav.product` instead.
+- **Dismiss:** Alpine on the details only — `@click.outside` and
+  `@keydown.escape.window` remove `open`. Not in `motion.js`.
+- **Connect CTA:** `.nav a.btn` / `.nav-cta` resets text to `--ink` on brass
+  (`.nav a { color: var(--mist) }` must not win).
+- **Skip link:** `.skip-link` → `#main`, visually hidden until `:focus`.
+
 ## `/console` note
 
 `/console` is Chirp host **ops** (`mount_console`), not a product surface.
-Primary nav stays Gaze / Resolve / Stars / Constellations / Namespaces; the
-footer links **Ops · console**. Product trust is the Resolve/Star oracle pill.
-Orrery does not restyle Chirp console chrome unless a theming hook lands
-upstream.
+Product routes sit under the Product dropdown; the footer links **Ops · console**.
+Product trust is the Resolve/Star oracle pill. Orrery does not restyle Chirp
+console chrome unless a theming hook lands upstream.

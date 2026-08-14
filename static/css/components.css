@@ -1,5 +1,24 @@
 /* Orrery components — reusable chrome across routes */
 
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  padding: 0.65rem 1rem;
+  background: var(--brass);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: var(--radius);
+}
+
+.skip-link:focus {
+  left: 1rem;
+  top: 1rem;
+}
+
 .topbar {
   display: flex;
   align-items: center;
@@ -92,6 +111,16 @@
 .nav-dropdown-panel a[aria-current="page"] {
   color: var(--signal);
   background: color-mix(in oklab, var(--signal) 8%, transparent);
+}
+
+.nav a.btn,
+.nav a.nav-cta {
+  color: var(--ink);
+}
+
+.nav a.btn:hover,
+.nav a.nav-cta:hover {
+  color: var(--ink);
 }
 
 .nav-cta {
