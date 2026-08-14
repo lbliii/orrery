@@ -24,7 +24,9 @@ or footer **Ops · console** for host reliability scores.
 from __future__ import annotations
 
 import asyncio
+import dataclasses
 import os
+import secrets
 from pathlib import Path
 
 from chirp import (
@@ -37,7 +39,8 @@ from chirp import (
     Request,
     secure_stack,
 )
-from chirp.http.response import Response
+from chirp.http.response import FileResponse, Response, StreamingResponse
+from chirp.middleware.csp_nonce import _reset_csp_nonce, _set_csp_nonce
 from chirp.middleware.csrf import CSRFConfig
 from chirp.middleware.security_headers import SecurityHeadersConfig
 from chirp.skill import (
@@ -113,19 +116,45 @@ _ROOT = Path(__file__).parent
 PAGES_DIR = _ROOT / "pages"
 STATIC_DIR = _ROOT / "static"
 
-# Default secure_stack CSP allows CDN scripts but NOT inline <style>, style=, or
-# fonts.googleapis.com — which blanked the branded pages in production. Keep
-# scripts host-allowlisted; permit inline CSS (mock parity) + Google Fonts.
-# 'unsafe-eval' is required for the standard Alpine.js build used on /gaze.
+# Base CSP; script-src is appended per request with a nonce (see below).
+# Default secure_stack CSP omits inline <style> and fonts.googleapis.com —
+# which blanked branded pages in production. alpine_csp is the CSP-safe Alpine.
 _ORRERY_CSP = (
     "default-src 'self'; "
     "img-src 'self' data:; "
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
     "font-src 'self' https://fonts.gstatic.com data:; "
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net; "
     "connect-src 'self'; "
     "base-uri 'self'; frame-ancestors 'none'; object-src 'none'"
 )
+_ORRERY_SCRIPT_ORIGINS = "https://unpkg.com https://cdn.jsdelivr.net"
+
+
+class _OrreryCSPNonce:
+    """Per-request nonce CSP without rewriting HTML bodies.
+
+    Chirp's CSPNonceMiddleware inserts nonce= into every ``<script>`` opener,
+    including JSON inside ``alpine_json_config``. Injected tags already carry
+    the live nonce via snippet factories.
+    """
+
+    async def __call__(self, request: Request, next):
+        nonce = secrets.token_urlsafe(22)
+        token = _set_csp_nonce(nonce)
+        try:
+            response = await next(request)
+            if isinstance(response, (Response, StreamingResponse, FileResponse)):
+                csp = (
+                    f"{_ORRERY_CSP}; "
+                    f"script-src 'self' 'nonce-{nonce}' {_ORRERY_SCRIPT_ORIGINS}"
+                )
+                response = response.with_header("Content-Security-Policy", csp)
+                if isinstance(response, StreamingResponse):
+                    response = dataclasses.replace(response, csp_nonce=nonce)
+            return response
+        finally:
+            _reset_csp_nonce(token)
+
 
 _DEFAULT_SECRET = "change-me-before-deploying"
 _secret = os.environ.get("CHIRP_SECRET_KEY", _DEFAULT_SECRET)
@@ -145,6 +174,9 @@ config = AppConfig.from_env(
     static_dir=STATIC_DIR,
     worker_mode="async",
     mcp_connect_default=MCP_PROTOCOL_VERSION,
+    htmx=True,
+    alpine=True,
+    alpine_csp=True,
 )
 app = App(config=config)
 sky_vitals = SkyVitalsStore()
@@ -176,9 +208,12 @@ for middleware in secure_stack(
             *_DIRECT_STAR_MCP_PATHS,
         })
     ),
-    headers=SecurityHeadersConfig(content_security_policy=_ORRERY_CSP),
+    # Nonce middleware owns Content-Security-Policy so a second header
+    # cannot overwrite the per-request script-src nonce.
+    headers=SecurityHeadersConfig(content_security_policy=None),
 ):
     app.add_middleware(middleware)
+app.add_middleware(_OrreryCSPNonce())
 
 
 # ---------------------------------------------------------------------------

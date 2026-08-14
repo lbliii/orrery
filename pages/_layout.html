@@ -19,9 +19,6 @@
     <link rel="stylesheet" href="/static/css/widgets.css" />
     <link rel="stylesheet" href="/static/css/layouts.css" />
     <link rel="stylesheet" href="/static/css/motion.css" />
-    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js"></script>
-    <script src="https://unpkg.com/htmx-ext-sse@2.2.2/sse.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
   </head>
   <body>
     <div class="cosmos" aria-hidden="true">
@@ -77,5 +74,7 @@
       </footer>
     </div>
     <script src="/static/motion.js"></script>
+    {# Chirp htmx 2 inject is core-only; local SSE keeps the home feed. #}
+    <script defer src="/static/htmx-ext-sse.js"></script>
   </body>
 </html>
