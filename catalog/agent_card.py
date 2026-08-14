@@ -1377,6 +1377,43 @@ _STAR_CARDS: dict[str, AgentCard] = {
         tree_role="review",
         worker_cost="low",
     ),
+    "orrery/kida-render": _card(
+        summary="Sync Kida HTML render from caller template bytes and JSON data.",
+        use_when=(
+            "You need rendered HTML from a Kida template plus JSON context",
+            "You want template_digest, data_digest, and output_digest in a sealed Envelope",
+            "You have in-memory template bytes and no egress requirement",
+        ),
+        not_for=(
+            "Static template validation without render (use kida-check)",
+            "Fetching templates from disk or the network",
+            "PDF or markdown surfaces (html only in v1)",
+            "Outputs larger than the sync cap (future async artifact path)",
+        ),
+        example_intents=(
+            "render Kida badge to HTML",
+            "Kida template plus JSON data",
+            "sync HTML render with digests",
+            "in-memory Kida render no egress",
+        ),
+        tools=("render",),
+        coverage_slug="kida-render",
+        inputs=(
+            _io("template", "string", required=True, note="Kida template string or bundle"),
+            _io("data", "object", required=True),
+            _io("surface", "string", note="html only in v1"),
+        ),
+        outputs=(
+            _io("html", "string"),
+            _io("template_digest", "string"),
+            _io("data_digest", "string"),
+            _io("output_digest", "string"),
+            _io("surface", "string"),
+            *_ENVELOPE,
+        ),
+        tree_role="worker",
+        worker_cost="low",
+    ),
     "orrery/link-check-bounded": _card(
         summary="Bounded allowlisted HTTPS link reachability over markdown/html bundles.",
         use_when=(

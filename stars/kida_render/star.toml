@@ -1,0 +1,26 @@
+[star]
+name = "orrery/kida-render"
+version = "0.1.0"
+description = "Sync Kida HTML render from caller template bytes and JSON data — no egress"
+publisher = "orrery"
+publisher_key_id_env = "ORRERY_KIDA_RENDER_KEY_ID"
+direct_mcp_path = "/stars/kida-render/mcp"
+tools = ["render"]
+capability_families = ["document_processing"]
+[pricing]
+unit = "call"
+price_per_call = "0.00"
+currency = "USD"
+[runtime]
+python_package = "stars.kida_render"
+skill_factory = "stars.kida_render.skill:build_skill"
+[policy]
+allowed_egress = []
+freshness = "caller_provided"
+redirects = "deny"
+max_response_bytes = 524288
+[receipt]
+schema_version = "1"
+algorithm = "Ed25519"
+[publish]
+corpus = "stars.kida_render.corpus:CORPUS"
