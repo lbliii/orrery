@@ -9,6 +9,8 @@ from typing import Any
 
 from chirp.skill import Envelope
 
+from catalog.constellation_run import pause_resume_contract
+
 
 def mcp_error_response(
     code: str,
@@ -42,6 +44,10 @@ def mcp_ok_response(
     }
     if envelope_wire is not None:
         body["envelope_wire"] = envelope_wire
+    if isinstance(payload, dict):
+        pause = pause_resume_contract(payload)
+        if pause is not None:
+            body.update(pause)
     return body
 
 

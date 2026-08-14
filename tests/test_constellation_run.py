@@ -13,11 +13,13 @@ from catalog.constellation_run import (
     cancel_checkpoint,
     checkpoint_status_payload,
     get_run_store,
+    pause_resume_contract,
     payload_digest_for,
     reset_run_store,
     run_constellation,
     status_for_run,
 )
+from catalog.mcp_tool_content import mcp_ok_response, structured_tool_body
 from stars._core.attribution import PAYLOAD_VIA
 
 
@@ -149,6 +151,99 @@ def test_cancel_checkpoint_terminalizes_waiting_run() -> None:
     assert result["disposition"] == "cancelled"
     assert result["outstanding_action_requests"] == []
     assert result["lease_held"] is False
+
+
+@pytest.mark.issue(394)
+def test_pause_resume_contract_surfaces_action_requests() -> None:
+    action = ActionRequest(
+        request_id="req-394",
+        run_id="run-394",
+        kind="audience_recommendation_choice",
+        schema={"type": "object", "properties": {"audience": {"type": "string"}}},
+        audience="decision_maker",
+        expires_at="2099-01-01T00:00:00+00:00",
+        prompt="Choose audience before seal.",
+    )
+    record = CheckpointRecord(
+        run_id="run-394",
+        caller_id="caller-a",
+        constellation="orrery/board-memo",
+        disposition="awaiting_input",
+        policy_digest="sha256:" + "f" * 64,
+        release={"digest": "sha256:board-memo…", "key_id": "orrery-board-memo-1"},
+        graph_position="audience-choice",
+        stage_receipt_digests=("a" * 64,),
+        outstanding_action_requests=(action,),
+        bundle={"title": "T", "summary": "S"},
+        lease_held=False,
+    )
+    status = checkpoint_status_payload(record)
+    contract = pause_resume_contract(status)
+    assert contract is not None
+    assert contract["disposition"] == "awaiting_input"
+    assert contract["run_id"] == "run-394"
+    assert contract["outstanding_action_requests"][0]["request_id"] == "req-394"
+    assert contract["outstanding_action_requests"][0]["kind"] == "audience_recommendation_choice"
+    assert contract["outstanding_action_requests"][0]["prompt"] == "Choose audience before seal."
+
+
+@pytest.mark.issue(394)
+def test_pause_resume_contract_returns_none_when_not_paused() -> None:
+    assert pause_resume_contract({"disposition": "completed", "run_id": "run-1"}) is None
+    assert pause_resume_contract({"disposition": "awaiting_input"}) is None
+
+
+@pytest.mark.issue(394)
+def test_mcp_ok_response_promotes_pause_contract_to_top_level() -> None:
+    payload = {
+        "run_id": "run-394",
+        "disposition": "awaiting_input",
+        "outstanding_action_requests": [
+            {
+                "request_id": "req-394",
+                "kind": "audience_recommendation_choice",
+                "schema": {"type": "object"},
+                "prompt": "Choose audience.",
+            }
+        ],
+    }
+    body = mcp_ok_response("board-memo", "run", payload, None)
+    assert body["status"] == "ok"
+    assert body["disposition"] == "awaiting_input"
+    assert body["run_id"] == "run-394"
+    assert body["outstanding_action_requests"][0]["request_id"] == "req-394"
+    assert body["payload"] == payload
+
+
+@pytest.mark.issue(394)
+def test_structured_tool_body_promotes_pause_contract_from_envelope() -> None:
+    from chirp.skill import sign_envelope
+
+    key = Ed25519PrivateKey.generate()
+    payload = {
+        "run_id": "run-394",
+        "disposition": "awaiting_input",
+        "outstanding_action_requests": [
+            {
+                "request_id": "req-394",
+                "kind": "audience_recommendation_choice",
+                "schema": {"type": "object"},
+                "prompt": "Choose audience.",
+            }
+        ],
+    }
+    envelope = sign_envelope(
+        payload=payload,
+        skill="board-memo",
+        version="0.1.0",
+        tool="run",
+        input_digest="sha256:" + "a" * 64,
+        private_key=key,
+        key_id="test-board-memo",
+    )
+    body = structured_tool_body(envelope, skill="board-memo", tool="run")
+    assert body["disposition"] == "awaiting_input"
+    assert body["outstanding_action_requests"][0]["request_id"] == "req-394"
 
 
 @pytest.mark.issue(245)

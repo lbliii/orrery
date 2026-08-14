@@ -39,6 +39,10 @@ RunDisposition = Literal[
     "expired",
 ]
 
+PAUSE_DISPOSITIONS: frozenset[RunDisposition] = frozenset(
+    {"awaiting_input", "awaiting_witness", "awaiting_external"}
+)
+
 ReplayKey = tuple[str, str, str, str]
 
 
@@ -273,6 +277,49 @@ def _sign_gate_envelope(
         nonce=f"{run_id}-{order}",
     )
     return env.to_wire()
+
+
+def pause_resume_contract(payload: Mapping[str, Any]) -> dict[str, Any] | None:
+    """ADR 0007 pause contract for MCP ``content[].text`` (#394).
+
+    When a resumable constellation pauses, agents need ``disposition``,
+    ``run_id``, and ``outstanding_action_requests`` without parsing Envelope
+    repr or reading ADR 0007 first. Returns ``None`` when not paused.
+    """
+    disposition = payload.get("disposition")
+    if disposition not in PAUSE_DISPOSITIONS:
+        return None
+    run_id = payload.get("run_id")
+    if not isinstance(run_id, str) or not run_id.strip():
+        return None
+    raw_requests = payload.get("outstanding_action_requests")
+    if not isinstance(raw_requests, list):
+        return None
+    requests: list[dict[str, Any]] = []
+    for item in raw_requests:
+        if not isinstance(item, dict):
+            continue
+        request_id = item.get("request_id")
+        if not isinstance(request_id, str) or not request_id.strip():
+            continue
+        entry: dict[str, Any] = {"request_id": request_id}
+        kind = item.get("kind")
+        if isinstance(kind, str):
+            entry["kind"] = kind
+        schema = item.get("schema")
+        if isinstance(schema, dict):
+            entry["schema"] = dict(schema)
+        prompt = item.get("prompt")
+        if isinstance(prompt, str):
+            entry["prompt"] = prompt
+        requests.append(entry)
+    if not requests:
+        return None
+    return {
+        "disposition": disposition,
+        "run_id": run_id,
+        "outstanding_action_requests": requests,
+    }
 
 
 def checkpoint_status_payload(record: CheckpointRecord) -> dict[str, Any]:
