@@ -72,11 +72,9 @@ def test_describe_gh_file_at_ref_shape() -> None:
 
 def test_check_gh_file_at_ref_target_membership() -> None:
     ok = check_coverage("gh-file-at-ref", params={"target": "orrery-readme"})
-    assert ok == {
-        "allowed": True,
-        "reason": None,
-        "star": "orrery/gh-file-at-ref",
-    }
+    assert ok["allowed"] is True
+    assert ok["reason"] is None
+    assert ok["star"] == "orrery/gh-file-at-ref"
     denied = check_coverage("gh-file-at-ref", params={"target": "not-a-real-target"})
     assert denied["allowed"] is False
     assert denied["reason"] == "not_allowlisted"
@@ -226,11 +224,12 @@ async def test_http_coverage_routes(example_app) -> None:
             headers=HOST,
         )
         assert allowed.status == 200
-        assert json.loads(allowed.text) == {
-            "allowed": True,
-            "reason": None,
-            "star": "orrery/gh-file-at-ref",
-        }
+        allowed_body = json.loads(allowed.text)
+        assert allowed_body["allowed"] is True
+        assert allowed_body["reason"] is None
+        assert allowed_body["star"] == "orrery/gh-file-at-ref"
+        examples = allowed_body.get("example_arguments")
+        assert isinstance(examples, dict) and "get" in examples
 
         denied = await client.get(
             "/coverage/http-head/check?target=not-a-real-target",
@@ -321,3 +320,31 @@ async def test_mcp_coverage_check_denied_includes_remediation(example_app) -> No
         assert "/coverage/npm-release" in text
         assert "allowed_values" in text
         assert "zod" in text
+
+
+@pytest.mark.issue(392)
+def test_coverage_check_allow_includes_example_arguments() -> None:
+    ok = check_coverage("gh-file-at-ref", params={"target": "orrery-readme"})
+    examples = ok.get("example_arguments")
+    assert isinstance(examples, dict)
+    get_args = examples.get("get")
+    assert isinstance(get_args, dict)
+    assert get_args.get("target") == "orrery-readme"
+    ref = get_args.get("ref")
+    assert isinstance(ref, str)
+    assert len(ref) == 40
+    assert all(ch in "0123456789abcdef" for ch in ref)
+
+
+@pytest.mark.issue(392)
+def test_coverage_check_deny_includes_first_allowed_example() -> None:
+    denied = check_coverage("gh-file-at-ref", params={"target": "not-a-real-target"})
+    examples = denied.get("example_arguments")
+    assert isinstance(examples, dict)
+    get_args = examples.get("get")
+    assert isinstance(get_args, dict)
+    allowed_values = denied.get("allowed_values")
+    assert isinstance(allowed_values, list) and allowed_values
+    assert get_args.get("target") == allowed_values[0]
+    ref = get_args.get("ref")
+    assert isinstance(ref, str) and len(ref) == 40

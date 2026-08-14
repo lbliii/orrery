@@ -394,16 +394,34 @@ def check_coverage(
         allowed = primary in spec.entries
 
     if allowed:
-        return {"allowed": True, "reason": None, "star": spec.star}
-    return _deny_remediation(
-        spec,
-        {
-            "allowed": False,
-            "reason": "not_allowlisted",
+        result: dict[str, object] = {
+            "allowed": True,
+            "reason": None,
             "star": spec.star,
-            "allowlist_kind": spec.allowlist_kind,
-        },
+        }
+    else:
+        result = _deny_remediation(
+            spec,
+            {
+                "allowed": False,
+                "reason": "not_allowlisted",
+                "star": spec.star,
+                "allowlist_kind": spec.allowlist_kind,
+            },
+        )
+    from catalog.example_arguments import example_arguments_for_coverage
+
+    allowed_values = result.get("allowed_values")
+    sample = allowed_values if isinstance(allowed_values, list) else None
+    examples = example_arguments_for_coverage(
+        spec,
+        params=params,
+        allowed=allowed,
+        allowed_values=sample,
     )
+    if examples:
+        result["example_arguments"] = examples
+    return result
 
 
 def coverage_index() -> dict[str, object]:
