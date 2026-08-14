@@ -11,6 +11,7 @@ dependencies = [
   # Railway Bucket is S3-compatible; Postgres holds artifact metadata only.
   "boto3>=1.42,<2",
   "itsdangerous>=2.2.0",
+  "kida-templates>=0.12.0",
   "psycopg[binary]>=3.3,<4",
   "redis>=5.2,<7",
 ]
