@@ -99,6 +99,7 @@ from namespaces import (
     provision_namespace,
 )
 from public_keys import KEY_SET_CACHE_CONTROL, key_set_url, public_key_set
+from sky import SkyVitalsStore, attach_vitals_to_tool_events
 from stars._core.corpus import corpus_ok_by_star, validate_public_star_corpora
 from stars._core.direct_mcp import mount_direct_mcp
 from stars.builtins import build_direct_skills, builtin_registry
@@ -143,6 +144,8 @@ config = AppConfig.from_env(
     mcp_connect_default=MCP_PROTOCOL_VERSION,
 )
 app = App(config=config)
+sky_vitals = SkyVitalsStore()
+attach_vitals_to_tool_events(app, sky_vitals)
 star_registry = builtin_registry()
 direct_star_skills = build_direct_skills(star_registry)
 _DIRECT_STAR_MCP_PATHS = frozenset(definition.direct_mcp_path for definition in star_registry)
@@ -738,6 +741,7 @@ async def api_envelope_verify(request: Request) -> JSONResponse:
         "commerce": commerce,
     }
     if ok:
+        sky_vitals.record_seal()
         signed_payload = payload.get("payload")
         if isinstance(signed_payload, dict):
             via = signed_payload.get("via")
@@ -747,6 +751,15 @@ async def api_envelope_verify(request: Request) -> JSONResponse:
                 if isinstance(line, str) and isinstance(sky, str):
                     response["via"] = {"line": line, "sky": sky}
     return JSONResponse.from_value(response)
+
+
+@app.route("/api/sky/vitals", referenced=True)
+def api_sky_vitals(_request: Request) -> JSONResponse:
+    """Public host-truth sky metrics (anonymous, no-store)."""
+    return JSONResponse.from_value(
+        sky_vitals.snapshot(),
+        headers={"Cache-Control": "no-store"},
+    )
 
 
 @app.route("/api/wallet/hold", methods=["POST"], referenced=True)
