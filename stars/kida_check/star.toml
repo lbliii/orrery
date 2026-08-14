@@ -1,0 +1,26 @@
+[star]
+name = "orrery/kida-check"
+version = "0.1.0"
+description = "Static Kida template validation with coded findings — no render"
+publisher = "orrery"
+publisher_key_id_env = "ORRERY_KIDA_CHECK_KEY_ID"
+direct_mcp_path = "/stars/kida-check/mcp"
+tools = ["check"]
+capability_families = ["document_processing"]
+[pricing]
+unit = "call"
+price_per_call = "0.00"
+currency = "USD"
+[runtime]
+python_package = "stars.kida_check"
+skill_factory = "stars.kida_check.skill:build_skill"
+[policy]
+allowed_egress = []
+freshness = "caller_provided"
+redirects = "deny"
+max_response_bytes = 65536
+[receipt]
+schema_version = "1"
+algorithm = "Ed25519"
+[publish]
+corpus = "stars.kida_check.corpus:CORPUS"

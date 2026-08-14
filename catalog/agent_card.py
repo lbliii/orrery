@@ -1343,6 +1343,40 @@ _STAR_CARDS: dict[str, AgentCard] = {
             *_ENVELOPE,
         ),
     ),
+    "orrery/kida-check": _card(
+        summary="Static Kida template validation with coded findings — no render.",
+        use_when=(
+            "You need Kida component call-site findings before render",
+            "You want a sealed check over caller-supplied templates with no egress",
+        ),
+        not_for=(
+            "Rendering Kida to HTML (sibling kida-render, not this star)",
+            "Fetching templates from the network",
+            "Markdown structure audit (use structure-audit)",
+        ),
+        example_intents=(
+            "validate Kida templates",
+            "catch badge call-site typos",
+            "K-CMP-001 unknown component params",
+            "static Kida check no render",
+            "template bundle findings",
+        ),
+        tools=("check",),
+        coverage_slug="kida-check",
+        inputs=(
+            _io("templates", "array", required=True, note="[{path, content}] .html/.kida"),
+            _io("validate_calls", "boolean", note="default true"),
+            _io("strict", "boolean", note="default false"),
+        ),
+        outputs=(
+            _io("findings", "array"),
+            _io("finding_codes", "array"),
+            _io("passed", "boolean"),
+            *_ENVELOPE,
+        ),
+        tree_role="review",
+        worker_cost="low",
+    ),
     "orrery/link-check-bounded": _card(
         summary="Bounded allowlisted HTTPS link reachability over markdown/html bundles.",
         use_when=(

@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.14"
 
 [[package]]
@@ -353,6 +353,7 @@ dependencies = [
     { name = "bengal-chirp", extra = ["sessions", "skill", "testing"] },
     { name = "boto3" },
     { name = "itsdangerous" },
+    { name = "kida-templates" },
     { name = "psycopg", extra = ["binary"] },
     { name = "redis" },
 ]
@@ -370,6 +371,7 @@ requires-dist = [
     { name = "bengal-chirp", extras = ["skill", "sessions", "testing"], git = "https://github.com/lbliii/chirp.git?rev=560da9c5" },
     { name = "boto3", specifier = ">=1.42,<2" },
     { name = "itsdangerous", specifier = ">=2.2.0" },
+    { name = "kida-templates", specifier = ">=0.12.0" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.3,<4" },
     { name = "redis", specifier = ">=5.2,<7" },
 ]
