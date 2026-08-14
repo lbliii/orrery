@@ -15,9 +15,37 @@
   outline-offset: 2px;
 }
 
-/* Arrive — .alert at --settle (gaze hits / feed row keep existing fades) */
+/* Arrive — .alert and one-shot feed rows at --settle */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.25rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 .alert {
   animation: fade-in var(--settle) var(--ease);
+}
+
+/* Kill list-wide load fade; only a new row with the one-shot class Arrives. */
+.activity-item {
+  animation: none;
+}
+
+.activity-item.is-arriving {
+  animation: fade-in var(--settle) var(--ease);
+}
+
+/* Copied — [data-copy-mcp] uses --flash (JS reads the token too) */
+[data-copy-mcp].is-copied {
+  background: var(--phosphor);
+  border-color: var(--phosphor);
+  color: var(--ink);
+  transition-duration: var(--flash);
 }
 
 @media (max-width: 860px) {
@@ -148,9 +176,15 @@
   .orb,
   .live-dot,
   .edge-draw,
-  .node-pulse,
-  .alert {
+  .node-pulse {
     animation: none !important;
+  }
+
+  .alert,
+  .activity-item.is-arriving {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
   }
 
   .cosmos-meteor {
@@ -173,13 +207,23 @@
     filter: none;
   }
 
+  [data-digest].value-settled {
+    transition: none;
+  }
+
   [data-receipt] {
     opacity: 1;
     transform: none;
+    transition: none;
   }
 
   [data-receipt] .verify-ok {
     opacity: 1;
+    transition: none;
+  }
+
+  [data-copy-mcp].is-copied {
+    transition: none;
   }
 
   .btn:active,
