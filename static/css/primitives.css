@@ -1,0 +1,195 @@
+/* Orrery primitives — scarce structural classes. No ChirpUI / .p-4 utilities */
+
+a {
+  color: inherit;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
+a:hover {
+  color: var(--brass);
+}
+
+.brand {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.15rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.brand span {
+  color: var(--brass);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border: var(--stroke) solid var(--brass);
+  background: var(--brass);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0.7rem 1.1rem;
+  border-radius: var(--radius);
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    transform var(--flash) var(--ease),
+    filter var(--flash) var(--ease),
+    background var(--flash) var(--ease);
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+  color: var(--ink);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--signal);
+  border-color: color-mix(in oklab, var(--signal) 35%, transparent);
+}
+
+.btn-ghost:hover {
+  background: color-mix(in oklab, var(--signal) 8%, transparent);
+  color: var(--signal);
+  filter: none;
+}
+
+.btn-brass {
+  background: transparent;
+  color: var(--brass);
+  border-color: var(--brass);
+}
+
+.btn-brass:hover {
+  background: color-mix(in oklab, var(--brass) 16%, transparent);
+  color: var(--brass);
+  filter: none;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.45rem;
+  border: var(--stroke) solid currentColor;
+}
+
+.pill-ok {
+  color: var(--phosphor);
+}
+
+.pill-pay {
+  color: var(--brass);
+}
+
+.pill-free {
+  color: var(--phosphor);
+  opacity: 0.85;
+}
+
+.pill-fail {
+  color: var(--danger);
+}
+
+.pill-priv {
+  color: var(--fog);
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+}
+
+.kicker {
+  font-family: var(--font-display);
+  font-size: var(--text-kicker);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--brass);
+  margin: 0 0 var(--space-1);
+}
+
+.lede {
+  color: var(--fog);
+  font-size: var(--text-lede);
+  max-width: 36rem;
+  margin: 0 0 var(--space-4);
+}
+
+.muted {
+  color: var(--fog);
+}
+
+.price {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0.25rem 0 1rem;
+  color: var(--signal);
+}
+
+.price small {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--mist);
+}
+
+.field,
+.resolve-row input,
+.lookup input {
+  width: 100%;
+  border: var(--stroke) solid color-mix(in oklab, var(--brass) 45%, transparent);
+  background: color-mix(in oklab, var(--void) 75%, transparent);
+  color: var(--signal);
+  backdrop-filter: blur(8px);
+  padding: 0.95rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.98rem;
+  border-radius: var(--radius);
+}
+
+.resolve-row input:focus,
+.lookup input:focus {
+  outline: 2px solid color-mix(in oklab, var(--brass) 70%, transparent);
+  outline-offset: 2px;
+}
+
+.alert {
+  margin: 0 0 var(--space-2);
+  color: var(--danger);
+  font-size: var(--text-body);
+}
+
+.stack {
+  display: grid;
+  gap: var(--space-2);
+}
+
+[x-cloak] {
+  display: none !important;
+}
+
+.table-row-link {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+a.table-row-link:hover,
+.record-table tr.table-row-link:hover {
+  background: color-mix(in oklab, var(--brass) 8%, transparent);
+  color: var(--signal);
+}

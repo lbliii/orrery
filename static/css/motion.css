@@ -1,0 +1,191 @@
+/* Orrery motion — instrument beats + responsive. See docs/design/motion.md */
+
+/* Press — :active --tick on .btn .gaze-node .field */
+.btn:active,
+.gaze-node:active,
+.field:active {
+  transform: translateY(0);
+  transition-duration: var(--tick);
+}
+
+/* Focus — brass :focus-visible only */
+.btn:focus-visible,
+.field:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
+}
+
+/* Arrive — .alert at --settle (gaze hits / feed row keep existing fades) */
+.alert {
+  animation: fade-in var(--settle) var(--ease);
+}
+
+@media (max-width: 860px) {
+  .detail-grid,
+  .ns-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .orb-stage {
+    opacity: 0.45;
+    width: min(18rem, 72vw);
+    right: -8%;
+    bottom: auto;
+    top: 4%;
+  }
+
+  .constellation {
+    min-height: 320px;
+  }
+
+  .resolve-row,
+  .lookup {
+    grid-template-columns: 1fr;
+  }
+
+  .catalog-layout,
+  .star-page {
+    grid-template-columns: 1fr;
+  }
+
+  .catalog-rail,
+  .entity-rail,
+  .action-rail {
+    position: static;
+  }
+
+  .catalog-rail {
+    display: none;
+  }
+
+  .entity-rail {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1rem;
+  }
+
+  .entity-rail .back-link {
+    margin: 0;
+  }
+
+  .entity-rail .kicker,
+  .entity-rail .entity-name {
+    display: none;
+  }
+
+  .entity-rail nav {
+    display: flex;
+    gap: 0.8rem;
+    overflow: auto;
+  }
+
+  .entity-rail nav a {
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .star-row {
+    grid-template-columns: auto 1fr auto;
+  }
+
+  .star-tools {
+    display: none;
+  }
+
+  .star-row .pill {
+    display: none;
+  }
+
+  .relation-list a {
+    grid-template-columns: 1fr auto;
+  }
+
+  .relation-list span {
+    grid-column: 1;
+  }
+
+  .relation-list b {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}
+
+@media (min-width: 861px) and (max-width: 1100px) {
+  .orb-stage {
+    width: min(24rem, 42vw);
+    right: -2%;
+    bottom: clamp(9rem, 30%, 14rem);
+  }
+}
+
+@media (min-width: 1400px) {
+  .orb-stage {
+    width: min(30rem, 34vw);
+    right: 0;
+    bottom: clamp(9rem, 26%, 15rem);
+  }
+}
+
+@media (min-height: 960px) {
+  .hero {
+    align-content: center;
+    padding-block: clamp(3rem, 7vh, 5.5rem) 4.5rem;
+  }
+
+  .orb-stage {
+    bottom: clamp(10rem, 32%, 16rem);
+  }
+}
+
+/* Reduced motion — jump to end state; color/border still change */
+@media (prefers-reduced-motion: reduce) {
+  .cosmos-milky,
+  .cosmos-dust,
+  .cosmos-stars-far,
+  .cosmos-stars-mid,
+  .cosmos-stars-near,
+  .cosmos-meteor,
+  .orb,
+  .live-dot,
+  .edge-draw,
+  .node-pulse,
+  .alert {
+    animation: none !important;
+  }
+
+  .cosmos-meteor {
+    display: none;
+  }
+
+  .cosmos-stars-far,
+  .cosmos-stars-mid,
+  .cosmos-stars-near {
+    opacity: 0.65;
+  }
+
+  .record-table tbody tr {
+    opacity: 1;
+    transform: none;
+    transition: background 120ms linear;
+  }
+
+  body.resolve-focus .cosmos {
+    filter: none;
+  }
+
+  [data-receipt] {
+    opacity: 1;
+    transform: none;
+  }
+
+  [data-receipt] .verify-ok {
+    opacity: 1;
+  }
+
+  .btn:active,
+  .gaze-node:active,
+  .field:active {
+    transform: none;
+    transition: none;
+  }
+}

@@ -1,0 +1,23 @@
+/* Orrery base — document defaults. Tokens only from tokens.css */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  color: var(--signal);
+  background: var(--void);
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  line-height: var(--leading);
+  min-height: 100vh;
+  overflow-x: hidden;
+}

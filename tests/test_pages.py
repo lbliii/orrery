@@ -104,12 +104,19 @@ class TestResolveApi:
 
 @pytest.mark.issue(15)
 @pytest.mark.issue(16)
+@pytest.mark.issue(473)
 class TestBrandChrome:
     async def test_static_design_assets_served(self, example_app) -> None:
         async with TestClient(example_app) as client:
-            css = await client.get("/static/styles.css")
-            assert css.status == 200
-            assert ".cosmos" in css.text
+            tokens = await client.get("/static/css/tokens.css")
+            assert tokens.status == 200
+            assert "--ink" in tokens.text
+            assert "--tick" in tokens.text
+            assert "--space-3" in tokens.text
+            assert "--glow-brass" in tokens.text
+            sky = await client.get("/static/css/atmosphere.css")
+            assert sky.status == 200
+            assert ".cosmos" in sky.text
             js = await client.get("/static/motion.js")
             assert js.status == 200
             assert "settleDigest" in js.text
@@ -121,7 +128,7 @@ class TestBrandChrome:
                 assert r.status == 200, path
                 assert 'class="topbar"' in r.text, path
                 assert 'class="cosmos"' in r.text, path
-                assert "/static/styles.css" in r.text, path
+                assert "/static/css/tokens.css" in r.text, path
                 assert "fonts.googleapis.com" in r.text, path
                 # Ops console is footer-only — not primary product nav.
                 assert ">Ops · console<" in r.text, path
@@ -141,6 +148,21 @@ class TestBrandChrome:
             console = await client.get("/console")
             assert "Skill console" in console.text
             assert "/console/html-to-pdf" in console.text
+
+
+@pytest.mark.issue(473)
+class TestCssTokenLayers:
+    async def test_primitives_and_motion_beats_exist(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            primitives = await client.get("/static/css/primitives.css")
+            assert primitives.status == 200
+            for name in (".field", ".alert", ".stack", "[x-cloak]", ".table-row-link"):
+                assert name in primitives.text
+            motion = await client.get("/static/css/motion.css")
+            assert motion.status == 200
+            assert ":active" in motion.text
+            assert ":focus-visible" in motion.text
+            assert "var(--tick)" in motion.text
 
 
 @pytest.mark.issue(21)
@@ -194,7 +216,7 @@ class TestStarDetail:
             r = await client.get("/star/orrery/world-time")
             assert r.status == 200
             assert "<!DOCTYPE html>" in r.text
-            assert "/static/styles.css" in r.text
+            assert "/static/css/tokens.css" in r.text
             assert 'class="topbar"' in r.text
             assert "orrery/world-time" in r.text
             assert "Use this when" in r.text

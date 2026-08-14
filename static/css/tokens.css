@@ -1,0 +1,53 @@
+/* Orrery tokens — sole :root catalog. See docs/design/system.md */
+
+:root {
+  /* Color */
+  --void: #070b12;
+  --night: #0d1520;
+  --night-2: #121c2a;
+  --fog: #9aafc2;
+  --mist: #6d8296;
+  --brass: #c4a06a;
+  --brass-dim: #8a6d42;
+  --phosphor: #7ec8a3;
+  --signal: #d4e4f0;
+  --danger: #c47a7a;
+  --ink: #140f08;
+  --line: color-mix(in oklab, var(--signal) 12%, transparent);
+  --glass: color-mix(in oklab, var(--night-2) 68%, transparent);
+
+  /* Type */
+  --font-display: "Bricolage Grotesque", "Avenir Next", sans-serif;
+  --font-body: "Source Serif 4", Georgia, serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --text-kicker: 0.78rem;
+  --text-body: 1.05rem;
+  --text-mono: 0.9rem;
+  --text-lede: 1.05rem;
+  --leading: 1.55;
+
+  /* Space — consumed by primitives, not .p-4 utilities */
+  --space-1: 0.35rem;
+  --space-2: 0.75rem;
+  --space-3: 1.5rem;
+  --space-4: 2rem;
+  --space-5: 3.5rem;
+
+  /* Shape */
+  --radius: 2px;
+  --radius-orb: 50%;
+  --stroke: 1px;
+
+  /* Motion */
+  --tick: 80ms;
+  --flash: 180ms;
+  --settle: 280ms;
+  --seal: 360ms;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Glow / z */
+  --glow-brass: 0 0 48px color-mix(in oklab, var(--brass) 18%, transparent);
+  --glow-phosphor: 0 0 20px color-mix(in oklab, var(--phosphor) 16%, transparent);
+  --z-cosmos: 0;
+  --z-shell: 1;
+}

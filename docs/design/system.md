@@ -2,6 +2,7 @@
 
 Layered inventory of the night-observatory UI. Soft bind: product nouns stay
 celestial; structural classes stay plain. See [`identity.md`](./identity.md).
+Motion beats: [`motion.md`](./motion.md). Freeze: [#472](https://github.com/lbliii/orrery/issues/472).
 
 ```mermaid
 flowchart TB
@@ -22,24 +23,103 @@ flowchart TB
   widgets --> templates
 ```
 
-Live CSS: [`static/styles.css`](../../static/styles.css) (single file, sectioned
-by layer). Mock twin: [`design/styles.css`](../../design/styles.css).
+Live CSS is layered files under [`static/css/`](../../static/css/). Sole `:root`
+catalog: [`tokens.css`](../../static/css/tokens.css). Shim:
+[`static/styles.css`](../../static/styles.css) `@import`s the layers. Mock twin:
+[`design/styles.css`](../../design/styles.css) (frozen reference, not live).
+
+| Layer | Path |
+| --- | --- |
+| Tokens | [`static/css/tokens.css`](../../static/css/tokens.css) |
+| Base | [`static/css/base.css`](../../static/css/base.css) |
+| Atmosphere | [`static/css/atmosphere.css`](../../static/css/atmosphere.css) |
+| Primitives | [`static/css/primitives.css`](../../static/css/primitives.css) |
+| Components | [`static/css/components.css`](../../static/css/components.css) |
+| Widgets | [`static/css/widgets.css`](../../static/css/widgets.css) |
+| Layouts | [`static/css/layouts.css`](../../static/css/layouts.css) |
+| Motion | [`static/css/motion.css`](../../static/css/motion.css) |
+
+Taste over kit. No ChirpUI names. No `.p-4` utilities. Later CSS does not
+invent brand hex or raw `80` / `180` / `280` / `360ms`.
 
 ## 1. Tokens
 
-Defined on `:root`:
+Defined once on `:root` in `tokens.css`:
+
+### Color
+
+| Token | Value | Role |
+| --- | --- | --- |
+| `--void` | `#070b12` | Page depth |
+| `--night` | `#0d1520` | Panel fill |
+| `--night-2` | `#121c2a` | Raised fill |
+| `--signal` | `#d4e4f0` | Primary text |
+| `--fog` | `#9aafc2` | Secondary text |
+| `--mist` | `#6d8296` | Tertiary text |
+| `--brass` | `#c4a06a` | Lock, commit, brand accent |
+| `--brass-dim` | `#8a6d42` | Dimmed brass |
+| `--phosphor` | `#7ec8a3` | Verified / live / gate-pass |
+| `--danger` | `#c47a7a` | Fail / forge reject — use this, not `#f07178` |
+| `--ink` | `#140f08` | Dark writing / warm surface ink |
+| `--line` | `color-mix(… signal 12%)` | Hairline |
+| `--glass` | `color-mix(… night-2 68%)` | Frosted surface |
+
+### Type
+
+| Token | Value | Role |
+| --- | --- | --- |
+| `--font-display` | Bricolage Grotesque | Chrome |
+| `--font-body` | Source Serif 4 | Prose |
+| `--font-mono` | IBM Plex Mono | Machine |
+| `--text-kicker` | `0.78rem` | Uppercase labels |
+| `--text-body` | `1.05rem` | Body size |
+| `--text-mono` | `0.9rem` | Machine size |
+| `--text-lede` | `1.05rem` | Supporting paragraph |
+| `--leading` | `1.55` | Body line-height |
+
+No `xs`–`3xl` type ramp.
+
+### Space
+
+Consumed by primitives — not utility classes.
+
+| Token | Value |
+| --- | --- |
+| `--space-1` | `0.35rem` |
+| `--space-2` | `0.75rem` |
+| `--space-3` | `1.5rem` |
+| `--space-4` | `2rem` |
+| `--space-5` | `3.5rem` |
+
+### Shape
+
+| Token | Value | Role |
+| --- | --- | --- |
+| `--radius` | `2px` | Sharp instrument edge |
+| `--radius-orb` | `50%` | Disks / live-dot |
+| `--stroke` | `1px` | Hairline width |
+
+### Motion
+
+| Token | Value | Beat |
+| --- | --- | --- |
+| `--tick` | `80ms` | Press |
+| `--flash` | `180ms` | Copied / short fades |
+| `--settle` | `280ms` | Arrive / settle |
+| `--seal` | `360ms` | Seal / reveal edges |
+| `--ease` | `cubic-bezier(0.22, 1, 0.36, 1)` | Shared curve |
+
+### Glow / z
 
 | Token | Role |
 | --- | --- |
-| `--void`, `--night`, `--night-2` | Depth / panel fill |
-| `--signal`, `--fog`, `--mist` | Primary / secondary / tertiary text |
-| `--brass`, `--brass-dim` | Lock, commit, brand accent |
-| `--phosphor` | Verified / live / gate-pass |
-| `--danger` | Fail / forge reject |
-| `--line`, `--glass` | Hairline + frosted surface |
-| `--font-display`, `--font-body`, `--font-mono` | Chrome / prose / machine |
-| `--radius` | Sharp instrument edge (2px) |
-| `--ease` | Shared motion curve |
+| `--glow-brass` | Orb / brass halo |
+| `--glow-phosphor` | Sealed receipt halo |
+| `--z-cosmos` | Sky stack (`0`) |
+| `--z-shell` | Content above sky (`1`) |
+
+Do not tokenize orb coordinates, constellation `--step`, theme modes, or
+`--chirpui-*`.
 
 ## 2. Atmosphere
 
@@ -64,6 +144,11 @@ hard `overflow: hidden` when glows extend past a box.
 | `.btn`, `.btn-ghost`, `.btn-brass` | Actions |
 | `.pill`, `.pill-ok\|pay\|free\|fail\|priv` | Status chips |
 | `.price` | Commerce emphasis |
+| `.field` | Shared form control (also `.resolve-row` / `.lookup` inputs) |
+| `.alert` | Fail / status line (`--danger`) |
+| `.stack` | Vertical gap via `--space-2` |
+| `[x-cloak]` | Hide Alpine until ready |
+| `.table-row-link` | Clickable row / row-shaped link |
 | `a` | Link (inherits; brass on hover) |
 
 ## 4. Components
@@ -105,6 +190,7 @@ Reusable across routes:
 | `.section` | Content section |
 | `.detail-grid`, `.ns-grid` | Multi-column bodies |
 | `.featured` | Emphasized ns-grid cell |
+| `.catalog-*`, `.star-*` | Public sky / star field guide |
 
 ## 7. Templates / partials
 
@@ -139,8 +225,8 @@ Reusable across routes:
    - `max-width: 860px` — stack grids, denser orb, single-column forms
    - `861px–1100px` / `min-width: 1400px` — orb scale/placement
    - `min-height: 960px` — center hero composition
-4. **Motion** — sparse; all continuous animations honor
-   `prefers-reduced-motion: reduce`.
+4. **Motion** — sparse named beats; all continuous animations honor
+   `prefers-reduced-motion: reduce`. See [`motion.md`](./motion.md).
 5. **Wide tables** — wrap `.record-table` in `.table-scroll` so narrow
    viewports scroll horizontally instead of blowing the shell.
 

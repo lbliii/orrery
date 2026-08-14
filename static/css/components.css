@@ -1,0 +1,273 @@
+/* Orrery components — reusable chrome across routes */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 0 0.75rem;
+}
+
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.25rem;
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.nav a {
+  text-decoration: none;
+  color: var(--mist);
+}
+
+.nav a[aria-current="page"],
+.nav a:hover {
+  color: var(--signal);
+}
+
+.nav-dropdown {
+  position: relative;
+}
+
+.nav-dropdown-trigger {
+  list-style: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  color: var(--mist);
+  background: none;
+  border: none;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.nav-dropdown-trigger::-webkit-details-marker {
+  display: none;
+}
+
+.nav-dropdown-trigger.is-active,
+.nav-dropdown-trigger:hover,
+.nav-dropdown[open] > .nav-dropdown-trigger {
+  color: var(--signal);
+}
+
+.nav-caret {
+  font-size: 0.75em;
+  transition: transform var(--flash) var(--ease);
+}
+
+.nav-dropdown[open] .nav-caret {
+  transform: rotate(180deg);
+}
+
+.nav-dropdown-panel {
+  position: absolute;
+  top: calc(100% + 0.45rem);
+  left: 0;
+  z-index: 20;
+  min-width: 11.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.55rem 0.65rem;
+  border: var(--stroke) solid var(--line);
+  border-radius: var(--radius);
+  background: color-mix(in oklab, var(--ink) 92%, transparent);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 12px 32px color-mix(in oklab, #000 35%, transparent);
+}
+
+.nav-dropdown-panel a {
+  padding: 0.35rem 0.45rem;
+  border-radius: calc(var(--radius) - 2px);
+  white-space: nowrap;
+}
+
+.nav-dropdown-panel a:hover,
+.nav-dropdown-panel a[aria-current="page"] {
+  color: var(--signal);
+  background: color-mix(in oklab, var(--signal) 8%, transparent);
+}
+
+.nav-cta {
+  padding: 0.45rem 0.85rem;
+  font-size: 0.85rem;
+}
+
+.footer {
+  border-top: var(--stroke) solid var(--line);
+  padding: var(--space-3) 0 2.5rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  color: var(--mist);
+}
+
+.panel {
+  border: var(--stroke) solid var(--line);
+  background: var(--glass);
+  backdrop-filter: blur(10px);
+  padding: 1.25rem 1.35rem;
+}
+
+.resolve-row,
+.lookup {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.meta-list {
+  display: grid;
+  gap: 0.65rem;
+  margin: 1.25rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+.meta-list li {
+  display: grid;
+  grid-template-columns: 7.5rem 1fr;
+  gap: 0.75rem;
+  font-size: 0.95rem;
+}
+
+.meta-list span:first-child {
+  font-family: var(--font-display);
+  font-size: var(--text-kicker);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--mist);
+  padding-top: 0.15rem;
+}
+
+.record-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.record-table th {
+  text-align: left;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--text-kicker);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--mist);
+  padding: 0.65rem 0.4rem;
+  border-bottom: var(--stroke) solid var(--line);
+}
+
+.record-table td {
+  padding: 1rem 0.4rem;
+  border-bottom: var(--stroke) solid var(--line);
+  vertical-align: middle;
+}
+
+.record-table tbody tr:hover {
+  background: color-mix(in oklab, var(--brass) 8%, transparent);
+}
+
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-scroll .record-table {
+  min-width: 40rem;
+}
+
+.steps {
+  display: grid;
+  gap: 1.25rem;
+  counter-reset: step;
+  margin: 0;
+  padding: 0;
+}
+
+.steps li {
+  list-style: none;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+.steps li::before {
+  counter-increment: step;
+  content: counter(step, decimal-leading-zero);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--brass);
+  padding-top: 0.25rem;
+}
+
+.steps strong {
+  font-family: var(--font-display);
+  display: block;
+  margin-bottom: 0.15rem;
+  color: var(--signal);
+}
+
+.live-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: var(--radius-orb);
+  background: var(--phosphor);
+  display: inline-block;
+  animation: pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.85);
+  }
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  color: var(--fog);
+  margin-bottom: var(--space-4);
+}
+
+.legend i {
+  display: inline-block;
+  width: 1.1rem;
+  height: 2px;
+  margin-right: 0.4rem;
+  vertical-align: middle;
+  background: var(--brass);
+}
+
+.legend .gate {
+  background: var(--brass);
+}
+
+.legend .loop {
+  background: var(--phosphor);
+}
+
+.legend .fan {
+  background: var(--fog);
+}
