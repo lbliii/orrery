@@ -24,6 +24,7 @@ from .gaze import (
     tool_hit,
 )
 from .models import ResolveRecord
+from .retrieval import active_retriever, retrieval_enabled
 
 
 class Catalog:
@@ -97,11 +98,21 @@ class Catalog:
         """Rank catalog records for an agent intent (bounded shortlist)."""
         cap = clamp_gaze_limit(limit)
         tokens = _tokens(intent)
+        pool = self.records_for_node(node)
         scored: list[tuple[int, ResolveRecord]] = []
-        for record in self.records_for_node(node):
+        for record in pool:
             score = score_record(record, tokens)
             if score > 0:
                 scored.append((score, record))
+        if retrieval_enabled():
+            by_name = {record.name: record for record in pool}
+            seen = {record.name for _, record in scored}
+            for name in active_retriever().retrieve(intent, pool):
+                record = by_name.get(name)
+                if record is None or name in seen:
+                    continue
+                seen.add(name)
+                scored.append((score_record(record, tokens), record))
         scored.sort(
             key=lambda item: (-item[0], bool(item[1].index_tier), item[1].name)
         )
