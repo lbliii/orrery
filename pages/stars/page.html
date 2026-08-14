@@ -1,11 +1,17 @@
 {% block content %}
+<div
+  x-data="starsCatalog"
+  x-init="syncUi()"
+  @input="syncUi()"
+  @change="syncUi()"
+>
 <section class="catalog-hero">
   <p class="kicker">Public sky · {{ stars|length }} Stars</p>
   <h1>Find something your agent can point at.</h1>
   <p class="lede">Every Star is a live capability with a stable MCP address and a trail of evidence. Browse the field guide, then open the one you need.</p>
   <label class="catalog-search">
     <span class="sr-only">Search Stars</span>
-    <input type="search" data-star-search placeholder="Search Stars by name, tool, or purpose" autocomplete="off" />
+    <input type="search" data-star-search placeholder="Search Stars by name, tool, or purpose" autocomplete="off" x-model="q" />
   </label>
 </section>
 
@@ -18,15 +24,15 @@
       <fieldset>
         <legend>Capability</legend>
         {% for value, label in families %}
-        <label><input type="checkbox" data-star-facet data-facet="family" value="{{ value }}" /> {{ label }}</label>
+        <label><input type="checkbox" data-star-facet data-facet="family" value="{{ value }}" x-model="families" /> {{ label }}</label>
         {% end %}
       </fieldset>
       <fieldset>
         <legend>Signals</legend>
-        <label><input type="checkbox" data-star-facet data-facet="live" /> Live at call time</label>
-        <label><input type="checkbox" data-star-facet data-facet="verified" /> Verified</label>
-        <label><input type="checkbox" data-star-facet data-facet="free" /> Free</label>
-        <label><input type="checkbox" data-star-facet data-facet="constellation" /> Used in constellations</label>
+        <label><input type="checkbox" data-star-facet data-facet="live" x-model="live" /> Live at call time</label>
+        <label><input type="checkbox" data-star-facet data-facet="verified" x-model="verified" /> Verified</label>
+        <label><input type="checkbox" data-star-facet data-facet="free" x-model="free" /> Free</label>
+        <label><input type="checkbox" data-star-facet data-facet="constellation" x-model="constellation" /> Used in constellations</label>
       </fieldset>
     </form>
     <p class="rail-note">Stars are individual capabilities. Constellations compose them into a policy.</p>
@@ -45,32 +51,41 @@
     <p class="catalog-empty" data-star-empty hidden>No Stars match that signal.</p>
   </div>
 </section>
+</div>
 <script>
-document.addEventListener("DOMContentLoaded", () => {
-  const input = document.querySelector("[data-star-search]");
-  const rows = [...document.querySelectorAll("[data-star-row]")];
-  const empty = document.querySelector("[data-star-empty]");
-  const facets = [...document.querySelectorAll("[data-star-facet]")];
-  const count = document.querySelector("[data-result-count]");
-  const applyFilters = () => {
-    const q = input.value.trim().toLowerCase(); let shown = 0;
-    const families = facets.filter((el) => el.dataset.facet === "family" && el.checked).map((el) => el.value);
-    const active = (name) => facets.some((el) => el.dataset.facet === name && el.checked);
-    rows.forEach((row) => {
-      const rowFamilies = row.dataset.families.split(",");
-      const show = row.dataset.search.toLowerCase().includes(q)
-        && (!families.length || families.some((family) => rowFamilies.includes(family)))
-        && (!active("live") || row.dataset.freshness === "live_at_call")
-        && (!active("verified") || row.dataset.verified === "true")
-        && (!active("free") || row.dataset.free === "true")
-        && (!active("constellation") || Number(row.dataset.constellations) > 0);
-      row.hidden = !show; if (show) shown++;
-    });
-    empty.hidden = shown !== 0;
-    count.textContent = `${shown} ${shown === 1 ? "Star" : "Stars"}`;
-  };
-  input?.addEventListener("input", applyFilters);
-  facets.forEach((facet) => facet.addEventListener("change", applyFilters));
+document.addEventListener("alpine:init", () => {
+  const start = () => Alpine.safeData("starsCatalog", () => ({
+    q: "",
+    families: [],
+    live: false,
+    verified: false,
+    free: false,
+    constellation: false,
+    rowVisible(el) {
+      const q = this.q.trim().toLowerCase();
+      const rowFamilies = el.dataset.families.split(",");
+      return el.dataset.search.toLowerCase().includes(q)
+        && (!this.families.length || this.families.some((family) => rowFamilies.includes(family)))
+        && (!this.live || el.dataset.freshness === "live_at_call")
+        && (!this.verified || el.dataset.verified === "true")
+        && (!this.free || el.dataset.free === "true")
+        && (!this.constellation || Number(el.dataset.constellations) > 0);
+    },
+    syncUi() {
+      let shown = 0;
+      this.$root.querySelectorAll("[data-star-row]").forEach((row) => {
+        const show = this.rowVisible(row);
+        row.hidden = !show;
+        if (show) shown++;
+      });
+      const empty = this.$root.querySelector("[data-star-empty]");
+      if (empty) empty.hidden = shown !== 0;
+      const count = this.$root.querySelector("[data-result-count]");
+      if (count) count.textContent = `${shown} ${shown === 1 ? "Star" : "Stars"}`;
+    },
+  }));
+  if (typeof Alpine.safeData === "function") start();
+  else queueMicrotask(start);
 });
 </script>
 {% end %}
