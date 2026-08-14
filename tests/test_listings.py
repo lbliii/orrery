@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 import pytest
+from chirp.testing import TestClient
 
 from catalog import CATALOG
 from catalog.agent_card import required_public_card_names
@@ -109,3 +110,50 @@ def test_allowlist_fixture_merges_into_catalog(_restore_catalog) -> None:
 def test_listings_exempt_from_agent_card_ci() -> None:
     assert "new/invoice-check" not in required_public_card_names()
     assert "publisher/invoice-check" not in required_public_card_names()
+
+
+def _seed_newcomer(_restore_catalog) -> None:
+    reset_listing_store()
+    loaded = load_allowlist_fixtures(path=ALLOWLIST_PATH)
+    assert loaded
+    upsert_listing(loaded[0])
+
+
+@pytest.mark.issue(443)
+def test_gaze_node_new_and_newcomer_facet(_restore_catalog) -> None:
+    _seed_newcomer(_restore_catalog)
+    record = CATALOG.get("new/invoice-check")
+    assert record is not None
+    nodes = {n.id for n in CATALOG.gaze_nodes()}
+    assert "new" in nodes
+    hits = CATALOG.match("invoice", node="new")
+    assert any(h.name == "new/invoice-check" for h in hits)
+    hit = next(h for h in hits if h.name == "new/invoice-check")
+    wire = hit.as_dict()
+    assert wire["index_tier"] == "newcomer"
+    assert wire["oracle_ok"] is False
+    assert "rate_listing" in (wire["rate_after_verify"] or "")
+    described = CATALOG.describe("new/invoice-check")
+    assert described["index_tier"] == "newcomer"
+    assert "rate_listing" in described["rate_after_verify"]
+
+
+@pytest.mark.issue(443)
+def test_empty_intent_browse_keeps_first_party_ahead(example_app, _restore_catalog) -> None:
+    _seed_newcomer(_restore_catalog)
+    hits = CATALOG.hits_for_node("public")
+    names = [h.name for h in hits]
+    assert "orrery/html-to-pdf" in names
+    if "new/invoice-check" in names:
+        assert names.index("orrery/html-to-pdf") < names.index("new/invoice-check")
+
+
+@pytest.mark.issue(443)
+@pytest.mark.asyncio
+async def test_stars_page_excludes_newcomers(example_app, _restore_catalog) -> None:
+    _seed_newcomer(_restore_catalog)
+    async with TestClient(example_app) as client:
+        response = await client.get("/stars")
+    assert response.status == 200
+    assert "new/invoice-check" not in response.text
+    assert "orrery/html-to-pdf" in response.text

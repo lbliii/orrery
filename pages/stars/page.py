@@ -16,7 +16,11 @@ def get(request: Request) -> Page:
 
         return page_for_star(legacy_name, request=request)
 
-    stars = tuple(record for record in CATALOG.public_records() if record.kind == "star")
+    stars = tuple(
+        record
+        for record in CATALOG.public_records()
+        if record.kind == "star" and not record.index_tier
+    )
     families = tuple(
         (family, CAPABILITY_FAMILY_LABELS[family])
         for family in sorted({family for star in stars for family in star.capability_families})

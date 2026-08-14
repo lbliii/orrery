@@ -180,6 +180,8 @@ class GazeHit:
     summary: str | None = None
     use_when: tuple[str, ...] = ()
     inputs_summary: str | None = None
+    index_tier: str | None = None
+    rate_after_verify: str | None = None
 
     @property
     def pricing_label(self) -> str:
@@ -236,6 +238,8 @@ class GazeHit:
             "summary": self.summary,
             "use_when": list(self.use_when),
             "inputs_summary": self.inputs_summary,
+            "index_tier": self.index_tier,
+            "rate_after_verify": self.rate_after_verify,
         }
 
 
@@ -301,6 +305,12 @@ def hit_from_record(record: ResolveRecord) -> GazeHit:
         summary=None if card is None else card.summary,
         use_when=() if card is None else card.use_when[:3],
         inputs_summary=_inputs_summary_for(record),
+        index_tier=record.index_tier,
+        rate_after_verify=(
+            "After you seal, rate_listing (useful | stale | broken | wrong-price)."
+            if record.index_tier == "newcomer"
+            else None
+        ),
     )
 
 
