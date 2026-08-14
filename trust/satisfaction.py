@@ -95,6 +95,8 @@ class SatisfactionStore(Protocol):
         since: datetime | None = None,
     ) -> SatisfactionAggregate: ...
 
+    def records_for(self, star_name: str) -> tuple[SatisfactionRecord, ...]: ...
+
 
 class InMemorySatisfactionStore:
     """Process-local stub store for #68 / #69."""
@@ -142,6 +144,12 @@ class InMemorySatisfactionStore:
             content_digest=content_digest,
             counts=ordered,
             total=sum(counts.values()),
+        )
+
+    def records_for(self, star_name: str) -> tuple[SatisfactionRecord, ...]:
+        """All stored ratings for one Skill DNS name (any digest)."""
+        return tuple(
+            record for record in self._records.values() if record.star_name == star_name
         )
 
 
