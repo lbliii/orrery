@@ -1424,6 +1424,19 @@ class TestMcpCopyAdr0010:
             assert "canonical" in lowered
             assert 'id="kida-demo"' in text
 
+
+@pytest.mark.issue(445)
+class TestGetListedConnect:
+    async def test_connect_get_listed_section(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/connect")
+            assert r.status == 200
+            text = r.text
+            assert 'id="get-listed"' in text
+            assert "Get listed (newcomer shelf)" in text
+            assert "index_ping" in text
+            assert "rate_listing" in text
+
     async def test_gaze_kicker_does_not_say_route(self, example_app) -> None:
         async with TestClient(example_app) as client:
             r = await client.get("/gaze")
