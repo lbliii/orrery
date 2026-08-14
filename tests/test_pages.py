@@ -1449,3 +1449,24 @@ class TestGetListedConnect:
             assert "browse" in kicker.lower()
             assert "point" in kicker.lower()
             assert "install" in kicker.lower()
+
+
+@pytest.mark.issue(454)
+class TestGetListedHomepagePointer:
+    async def test_home_points_at_get_listed_index_ping(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/")
+            assert r.status == 200
+            text = r.text
+            assert "/connect#get-listed" in text
+            assert "index_ping" in text
+
+    async def test_for_harnesses_points_at_get_listed_index_ping(
+        self, example_app
+    ) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/for-harnesses")
+            assert r.status == 200
+            text = r.text
+            assert "/connect#get-listed" in text
+            assert "index_ping" in text
