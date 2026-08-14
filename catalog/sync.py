@@ -84,7 +84,13 @@ def refresh_catalog(
     receipt: PublishReceipt | None = None,
 ) -> tuple[ResolveRecord, ...]:
     """Replace the process catalog with live stars + constellation seeds."""
-    records = build_star_records(stars, direct_skills, receipt=receipt) + CONSTELLATION_SEEDS
+    from listings.store import listing_records
+
+    records = (
+        build_star_records(stars, direct_skills, receipt=receipt)
+        + CONSTELLATION_SEEDS
+        + listing_records()
+    )
 
     from trust.oracle import oracle_ok_for_record
 
@@ -111,13 +117,17 @@ def refresh_catalog(
             key_id=r.key_id,
             alg=r.alg,
             price_per_call=r.price_per_call,
-            oracle_ok=oracle_ok_for_record(r),
+            oracle_ok=False if r.index_tier else oracle_ok_for_record(r),
             tools=r.tools,
             provider_card=r.provider_card,
             agent_card=r.agent_card,
             capability_families=r.capability_families,
             freshness=r.freshness,
             constellation_memberships=memberships(r.name) if r.kind == "star" else (),
+            index_tier=r.index_tier,
+            claimed_name=r.claimed_name,
+            listing_url=r.listing_url,
+            promoted_to=r.promoted_to,
         )
         for r in records
     )
