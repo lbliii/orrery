@@ -13,6 +13,7 @@ from catalog.agent_card import required_public_card_names
 from catalog.store import replace_catalog
 from listings.fetch import assert_public_https_url, fetch_and_cap
 from listings.ping import ping_listing
+from listings.promote import apply_promotion, promotion_ready
 from listings.records import listing_to_record
 from listings.schema import ListingError, assert_proof_of_control, parse_listing
 from listings.store import (
@@ -22,6 +23,7 @@ from listings.store import (
     upsert_listing,
 )
 from namespaces.validation import is_reserved_slug
+from trust.satisfaction import InMemorySatisfactionStore, SatisfactionRecord
 
 FIXTURE = Path(__file__).resolve().parent.parent / "listings" / "fixtures" / "example-invoice.json"
 
@@ -203,3 +205,62 @@ def test_boot_fixture_present_after_app_import(example_app) -> None:
     assert record is not None
     assert record.index_tier == "newcomer"
     assert record.oracle_ok is False
+
+
+@pytest.mark.issue(446)
+def test_promotion_ready_requires_distinct_callers() -> None:
+    ratings = [
+        SatisfactionRecord(
+            star_name="new/invoice-check",
+            content_digest="sha256:abc",
+            verdict="useful",
+            created_at="2026-08-14T12:00:00Z",
+            envelope_id=f"env-{i}",
+            caller_namespace="same-swarm",
+        )
+        for i in range(20)
+    ]
+    assert (
+        promotion_ready(
+            ratings,
+            star_name="new/invoice-check",
+            content_digest="sha256:abc",
+            min_useful=10,
+            min_callers=10,
+        )
+        is False
+    )
+
+
+@pytest.mark.issue(446)
+def test_apply_promotion_moves_claimed_name(example_app, _restore_catalog, monkeypatch) -> None:
+    store = InMemorySatisfactionStore()
+    monkeypatch.setattr("trust.satisfaction._default_store", store)
+    live = CATALOG.get("new/invoice-check")
+    assert live is not None
+    digest = live.content_digest
+    for i in range(10):
+        store.put(
+            SatisfactionRecord(
+                star_name="new/invoice-check",
+                content_digest=digest,
+                verdict="useful",
+                created_at="2026-08-14T12:00:00Z",
+                envelope_id=f"env-{i}",
+                caller_namespace=f"caller-{i}",
+            )
+        )
+    promoted = apply_promotion(
+        "new/invoice-check",
+        min_useful=10,
+        min_callers=10,
+    )
+    assert promoted is not None
+    assert promoted.name == "publisher/invoice-check"
+    assert promoted.index_tier == "registered"
+    alias = CATALOG.get("new/invoice-check")
+    assert alias is not None
+    assert alias.promoted_to == "publisher/invoice-check"
+    claimed = CATALOG.get("publisher/invoice-check")
+    assert claimed is not None
+    assert claimed.oracle_ok is False
