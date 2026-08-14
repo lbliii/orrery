@@ -144,11 +144,38 @@ class TestBrandChrome:
         async with TestClient(example_app) as client:
             gaze = await client.get("/gaze")
             assert 'href="/gaze" role="menuitem" aria-current="page"' in gaze.text
+            assert 'class="nav-dropdown" open' not in gaze.text
+            assert 'nav-dropdown-trigger is-active' in gaze.text
             resolve = await client.get("/resolve")
             assert 'href="/resolve" role="menuitem" aria-current="page"' in resolve.text
+            assert 'class="nav-dropdown" open' not in resolve.text
             console = await client.get("/console")
             assert "Skill console" in console.text
             assert "/console/html-to-pdf" in console.text
+
+    async def test_product_dropdown_closed_connect_cta_ink_skip_link(
+        self, example_app
+    ) -> None:
+        css = (
+            Path(__file__).resolve().parents[1] / "static" / "css" / "components.css"
+        ).read_text()
+        assert ".nav-cta" in css
+        assert "var(--ink)" in css
+
+        async with TestClient(example_app) as client:
+            gaze = await client.get("/gaze")
+            assert gaze.status == 200
+            assert 'href="#main"' in gaze.text
+            assert 'class="skip-link"' in gaze.text
+            assert 'class="btn nav-cta"' in gaze.text
+            assert "@click.outside" in gaze.text
+            assert "@keydown.escape.window" in gaze.text
+            assert 'class="nav-dropdown" open' not in gaze.text
+
+            star = await client.get("/star/orrery/world-time")
+            assert star.status == 200
+            assert 'nav-dropdown-trigger is-active' in star.text
+            assert 'class="nav-dropdown" open' not in star.text
 
 
 @pytest.mark.issue(473)
