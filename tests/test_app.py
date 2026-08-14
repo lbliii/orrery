@@ -113,8 +113,10 @@ class TestOrreryHostFoundation:
             assert listed.status == 200
             tool_names = {t["name"] for t in json.loads(listed.text)["result"]["tools"]}
             assert tool_names == MCP_TOOLS_ALLOWLIST
-            assert len(tool_names) == 8
+            assert len(tool_names) == 10
             assert "call_skill" in tool_names
+            assert "index_ping" in tool_names
+            assert "rate_listing" in tool_names
             assert tool_names.isdisjoint(MCP_TOOLS_DENYLIST)
 
             called = await client.post(

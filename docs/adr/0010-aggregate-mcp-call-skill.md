@@ -69,11 +69,13 @@ values on `call_skill`, not as top-level aggregate tools.
 
 ### 4. Slim allowlist stays thin
 
-Default advertised install is **eight** tools, not a catalog zoo:
+Default advertised install is **ten** tools (eight from this ADR plus
+`index_ping` / `rate_listing` from [ADR 0012](./0012-opt-in-listing.md)):
 
 - `gaze_match`, `gaze_search`, `gaze_describe`, `gaze_list_constellations`
 - `resolve_name`, `coverage_check`, `explain_policy`
 - **`call_skill`**
+- **`index_ping`**, **`rate_listing`** (opt-in newcomer shelf; ADR 0012)
 
 `/mcp/dogfood` and direct mounts are unchanged and stay off `/connect`.
 
@@ -108,8 +110,8 @@ canonical (ADR 0004).
 
 ## Consequences
 
-- Leaves may assume the eight-tool allowlist and must not re-decide proxy vs
-  zoo vs second URL.
+- Leaves may assume the advertised allowlist (ten tools after ADR 0012) and
+  must not re-decide proxy vs zoo vs second URL.
 - ADR 0004 call path stays publisher-direct; this host may **forward** for
   session-bound clients.
 - ADR 0005 “proxy-all-calls” still forbids off-origin execution hosting.

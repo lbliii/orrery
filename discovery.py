@@ -41,6 +41,8 @@ MCP_TOOLS_ALLOWLIST: frozenset[str] = frozenset(
         "coverage_check",
         "explain_policy",
         "call_skill",
+        "index_ping",
+        "rate_listing",
     }
 )
 
@@ -110,6 +112,20 @@ MCP_TOOLS: tuple[dict[str, str], ...] = (
         "description": (
             "Forward one publisher tool call for a resolved Skill DNS name "
             "(same-origin catalog only). Inputs: name, tool, arguments."
+        ),
+    },
+    {
+        "name": "index_ping",
+        "description": (
+            "Submit one HTTPS orrery-listing/0.1 URL. Fetches that URL only "
+            "and lands the row in new/{slug} (index_tier=newcomer)."
+        ),
+    },
+    {
+        "name": "rate_listing",
+        "description": (
+            "After you seal a newcomer call, rate useful | stale | broken | "
+            "wrong-price. Envelope-gated; optional 280-char note."
         ),
     },
 )
@@ -463,6 +479,8 @@ def llms_txt(origin: str) -> str:
         "",
         kida_demo_section(origin).rstrip(),
         "",
+        get_listed_section(origin).rstrip(),
+        "",
         "## Discovery",
         "",
         f"- [llms.txt]({origin}/llms.txt): this file",
@@ -653,6 +671,30 @@ def kida_demo_section(origin: str) -> str:
         )
     lines.extend(["", "```json", json.dumps(kida_demo_payload(), indent=2), "```", ""])
     return "\n".join(lines)
+
+
+def get_listed_section(origin: str) -> str:
+    """Markdown section: opt-in newcomer shelf (ADR 0012)."""
+    doc_href = f"{GITHUB_REPO}/blob/main/docs/operations/opt-in-index.md"
+    return "\n".join(
+        [
+            "## Get listed (newcomer shelf)",
+            "",
+            "Publishers (or another agent pointing at their file) submit one HTTPS "
+            "`orrery-listing/0.1` URL via `index_ping` or `POST /api/listings/ping`. "
+            "Orrery fetches **that URL only**. The live name is `new/{slug}` with "
+            "`index_tier=newcomer` and `oracle_ok=false` until promotion.",
+            "",
+            "After you call the publisher and seal, `rate_listing` "
+            "(`useful | stale | broken | wrong-price`). Optional 280-char note. "
+            "No essay reviews. Off-origin `call_skill` still errors "
+            "(`publisher_direct_required`).",
+            "",
+            f"Human copy: [/connect#get-listed]({origin}/connect#get-listed) · "
+            f"ops: [opt-in-index]({doc_href})",
+            "",
+        ]
+    )
 
 
 def recipes_section() -> str:

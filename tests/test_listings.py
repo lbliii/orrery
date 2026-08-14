@@ -12,6 +12,7 @@ from catalog import CATALOG
 from catalog.agent_card import required_public_card_names
 from catalog.store import replace_catalog
 from listings.fetch import assert_public_https_url, fetch_and_cap
+from listings.ping import ping_listing
 from listings.records import listing_to_record
 from listings.schema import ListingError, assert_proof_of_control, parse_listing
 from listings.store import (
@@ -20,6 +21,7 @@ from listings.store import (
     reset_listing_store,
     upsert_listing,
 )
+from namespaces.validation import is_reserved_slug
 
 FIXTURE = Path(__file__).resolve().parent.parent / "listings" / "fixtures" / "example-invoice.json"
 
@@ -157,3 +159,47 @@ async def test_stars_page_excludes_newcomers(example_app, _restore_catalog) -> N
     assert response.status == 200
     assert "new/invoice-check" not in response.text
     assert "orrery/html-to-pdf" in response.text
+
+
+@pytest.mark.issue(444)
+def test_reserved_namespace_new() -> None:
+    assert is_reserved_slug("new")
+
+
+@pytest.mark.issue(444)
+@pytest.mark.asyncio
+async def test_reserved_new_namespace_returns_400(example_app) -> None:
+    async with TestClient(example_app) as client:
+        response = await client.post("/api/namespaces", json={"id": "new"})
+    assert response.status == 400
+    assert json.loads(response.text)["error"] == "reserved_slug"
+
+
+@pytest.mark.issue(444)
+def test_ping_listing_lands_immediately(_restore_catalog) -> None:
+    record = ping_listing(
+        "https://example.com/.well-known/orrery.json",
+        fetch=lambda _u: _fixture_bytes(),
+    )
+    assert record.name == "new/invoice-check"
+    assert CATALOG.get("new/invoice-check") is not None
+
+
+@pytest.mark.issue(444)
+@pytest.mark.asyncio
+async def test_http_ping_rejects_http(example_app) -> None:
+    async with TestClient(example_app) as client:
+        response = await client.post(
+            "/api/listings/ping",
+            json={"url": "http://example.com/.well-known/orrery.json"},
+        )
+    assert response.status == 400
+    assert json.loads(response.text)["error"] == "https_only"
+
+
+@pytest.mark.issue(444)
+def test_boot_fixture_present_after_app_import(example_app) -> None:
+    record = CATALOG.get("new/invoice-check")
+    assert record is not None
+    assert record.index_tier == "newcomer"
+    assert record.oracle_ok is False

@@ -27,8 +27,9 @@ fallback only if in-place slim breaks external smoke beyond repair.
 - `coverage_check`
 - `explain_policy`
 - **`call_skill`** — sole execution proxy ([ADR 0010](../adr/0010-aggregate-mcp-call-skill.md);
-  design [#390](https://github.com/lbliii/orrery/issues/390)). Eight tools,
-  not a catalog zoo.
+  design [#390](https://github.com/lbliii/orrery/issues/390)).
+- **`index_ping`**, **`rate_listing`** — opt-in newcomer shelf
+  ([ADR 0012](../adr/0012-opt-in-listing.md)). Ten tools, not a catalog zoo.
 
 ### Explicitly not on default install
 
@@ -61,7 +62,8 @@ be repaired.
 ## What leaves may assume
 
 - Default advertised endpoint’s `tools/list` equals this allowlist (set equality
-  or allowlist + denylist assertion) — **eight** names, including `call_skill`.
+  or allowlist + denylist assertion) — **ten** names, including `call_skill`,
+  `index_ping`, and `rate_listing`.
 - `/connect` Cursor JSON points at that discovery endpoint.
 - `discovery.MCP_TOOLS` / server card `tools[]` stay in sync.
 - Megafile edits serialize: `discovery.py`, `dogfood.py`, connect page /

@@ -21,6 +21,7 @@ RESERVED_SLUGS: frozenset[str] = frozenset({
     "wallet",
     "admin",
     "system",
+    "new",
 })
 
 
