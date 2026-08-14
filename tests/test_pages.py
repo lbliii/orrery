@@ -1288,21 +1288,42 @@ class TestWalletTopUpPage:
         assert payload["top_up_url"].endswith("/wallet/top-up")
 
     @pytest.mark.issue(433)
+    @pytest.mark.issue(477)
     async def test_wallet_top_up_embeds_error_map(self, example_app) -> None:
         from pages.wallet._errors import KNOWN
 
         async with TestClient(example_app) as client:
             r = await client.get("/wallet/top-up")
+            assert r.status == 200
+            assert 'id="wallet-error-map"' not in r.text
+            assert "walletTopUp" not in r.text
+            assert "startCheckout" not in r.text
+            assert "this.error = body.error" not in r.text
+            for code, copy in KNOWN.items():
+                landed = await client.get(f"/wallet/top-up?error={code}")
+                assert landed.status == 200
+                assert copy["message"] in landed.text
+                assert copy["next"] in landed.text
+                assert code in landed.text
+                assert 'role="alert"' in landed.text
+                assert 'class="alert"' in landed.text
+
+    @pytest.mark.issue(477)
+    async def test_wallet_top_up_form_is_html_post_not_alpine_fetch(
+        self, example_app
+    ) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/wallet/top-up")
         assert r.status == 200
-        mapped = _embedded_error_map(r.text, "wallet-error-map")
-        assert mapped == KNOWN
-        for code, copy in KNOWN.items():
-            assert code in r.text
-            assert copy["message"] in r.text
-            assert copy["next"] in r.text
-        assert 'role="alert"' in r.text
-        assert 'x-text="errorCode"' in r.text
-        assert "this.error = body.error" not in r.text
+        assert 'hx-post="/wallet/top-up"' in r.text
+        assert 'method="post"' in r.text
+        assert "htmx-indicator" in r.text
+        assert 'class="field"' in r.text
+        assert 'class="stack"' in r.text
+        assert "fetch(" not in r.text
+        assert "walletTopUp" not in r.text
+        assert "startCheckout" not in r.text
+        assert "window.location" not in r.text
 
 
 @pytest.mark.issue(433)

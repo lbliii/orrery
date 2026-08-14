@@ -1,7 +1,7 @@
-"""Human copy for wallet checkout page errors (#433, design #428).
+"""Human copy for wallet checkout page errors (#433, design #428, #477).
 
-Maps known ``body.error`` codes to one sentence plus a next action. JSON
-``error`` keys stay snake_case; this module never substitutes them.
+Maps known form/query ``error`` codes to one sentence plus a next action.
+JSON ``error`` keys stay snake_case; this module never substitutes them.
 """
 
 from __future__ import annotations
