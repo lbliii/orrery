@@ -73,9 +73,12 @@ def discovery_app(example_app, monkeypatch: pytest.MonkeyPatch):
 
 
 @pytest.mark.issue(302)
+@pytest.mark.issue(417)
 def test_mcp_tools_allowlist_matches_frozen_set() -> None:
     names = {t["name"] for t in MCP_TOOLS}
     assert names == MCP_TOOLS_ALLOWLIST
+    assert len(names) == 8
+    assert "call_skill" in names
     assert names.isdisjoint(MCP_TOOLS_DENYLIST)
     for denied in ("convert", "fetch", "run", "answer"):
         assert denied in MCP_TOOLS_DENYLIST
@@ -83,6 +86,7 @@ def test_mcp_tools_allowlist_matches_frozen_set() -> None:
 
 
 @pytest.mark.issue(302)
+@pytest.mark.issue(417)
 @pytest.mark.asyncio
 async def test_discovery_copy_mentions_resolve_then_call(discovery_app) -> None:
     async with TestClient(discovery_app) as client:
@@ -92,10 +96,12 @@ async def test_discovery_copy_mentions_resolve_then_call(discovery_app) -> None:
         assert llms.status == card.status == connect.status == 200
         for body in (llms.text, card.text, connect.text):
             assert "gaze/resolve" in body.lower() or "Gaze" in body
-            assert "publisher" in body.lower() or "call" in body.lower()
+            assert "call_skill" in body.lower() or "publisher" in body.lower()
         assert SLIM_MCP_COPY in llms.text
         assert SLIM_MCP_COPY in json.loads(card.text)["description"]
         assert SLIM_MCP_COPY in connect.text
+        card_tools = {t["name"] for t in json.loads(card.text)["tools"]}
+        assert card_tools == MCP_TOOLS_ALLOWLIST
 
 
 @pytest.mark.asyncio

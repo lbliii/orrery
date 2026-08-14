@@ -49,6 +49,7 @@ from chirp.skill.smoke import render_faithful_answer
 
 from artifacts import safe_attachment_filename
 from catalog import CATALOG
+from catalog.call_skill_proxy import register_publisher_registry
 from catalog.coverage import check_coverage, coverage_index, describe_coverage
 from catalog.sync import refresh_catalog
 from commerce import (
@@ -193,7 +194,8 @@ mount_console(app, registry, scores=scores)
 # Every Star also has a direct MCP endpoint with its canonical tool names.
 # The aggregate host retains legacy aliases where flat MCP names collide.
 for _definition in star_registry:
-    mount_direct_mcp(app, _definition, direct_star_skills[_definition.name])
+    _direct_registry = mount_direct_mcp(app, _definition, direct_star_skills[_definition.name])
+    register_publisher_registry(_definition.direct_mcp_path, _direct_registry)
 
 # ---------------------------------------------------------------------------
 # Product surfaces → filesystem-routed pages (Gaze / Resolve / Stars / …)

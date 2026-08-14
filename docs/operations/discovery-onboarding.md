@@ -14,11 +14,12 @@ returned by ``resolve_name`` (ADR 0004).
 1. **Gaze** — ``gaze_match`` or ``gaze_search`` with your intent (optional when using
    frozen paths below).
 2. **Resolve** — ``resolve_name`` with the SKU from the path table.
-3. **Call** — ``run`` on the publisher MCP with the frozen ``arguments``.
+3. **Call** — ``run`` on the publisher MCP with the frozen ``arguments``, or
+   ``call_skill`` on aggregate ``/mcp`` with ``name``, ``tool``, and ``arguments``.
 4. **Seal** — verify the signed Envelope; check ``expected_disposition``.
 
-In-MCP ``call_skill`` on aggregate ``/mcp`` waits for [#390](https://github.com/lbliii/orrery/issues/390);
-until then use direct publisher MCP or the probe scripts in this doc.
+Use direct publisher MCP when you want the canonical ADR 0004 path; ``call_skill``
+is for single-session clients that mount only ``/mcp``.
 
 ## Frozen paths
 

@@ -26,8 +26,8 @@ TRUST_FACTS = (
 
 #: One-line contract for server card, /connect, and llms.txt (slim discovery MCP).
 SLIM_MCP_COPY = (
-    "This MCP is gaze/resolve (shelf + Skill DNS). "
-    "Call the resolved publisher endpoint for execution."
+    "This MCP is gaze/resolve (shelf + Skill DNS) plus one call_skill proxy. "
+    "Publisher-direct mounts remain canonical for execution."
 )
 
 #: Default advertised install — discovery-only (design: slim-discovery-mcp.md).
@@ -40,6 +40,7 @@ MCP_TOOLS_ALLOWLIST: frozenset[str] = frozenset(
         "resolve_name",
         "coverage_check",
         "explain_policy",
+        "call_skill",
     }
 )
 
@@ -103,6 +104,13 @@ MCP_TOOLS: tuple[dict[str, str], ...] = (
     {
         "name": "explain_policy",
         "description": "Explain a constellation policy for an agent.",
+    },
+    {
+        "name": "call_skill",
+        "description": (
+            "Forward one publisher tool call for a resolved Skill DNS name "
+            "(same-origin catalog only). Inputs: name, tool, arguments."
+        ),
     },
 )
 
