@@ -7,11 +7,13 @@ import json
 from chirp import Page, Request
 
 from discovery import (
+    KIDA_DEMO,
     MCP_TOOLS,
     SLIM_MCP_COPY,
     STARTER_PATHS,
     TEACHING_TRIO,
     configured_public_origin,
+    kida_demo_payload,
     mcp_endpoint,
     resolve_public_origin,
     starter_paths_payload,
@@ -33,5 +35,7 @@ def get(request: Request) -> Page:
         teaching_trio=list(TEACHING_TRIO),
         starter_paths=list(STARTER_PATHS),
         starter_paths_json=json.dumps(starter_paths_payload(), indent=2),
+        kida_demo=list(KIDA_DEMO),
+        kida_demo_json=json.dumps(kida_demo_payload(), indent=2),
         tools=[{"name": t["name"], "description": t["description"]} for t in MCP_TOOLS],
     )

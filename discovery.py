@@ -236,6 +236,56 @@ STARTER_PATHS: tuple[dict[str, Any], ...] = (
     },
 )
 
+#: Kida badge typo → check → render tour (#404). Corpus args match kida_* /corpus.py.
+_KIDA_BADGE_TYPO_TEMPLATE = """{% def badge(count: int, label: str) %}
+<span class="badge">{{ count }} {{ label }}</span>
+{% enddef %}
+
+{{ badge(count="five", lable="Messages") }}
+"""
+
+_KIDA_BADGE_FIXED_TEMPLATE = """{% def badge(count: int, label: str) %}
+<span class="badge">{{ count }} {{ label }}</span>
+{% enddef %}
+
+{{ badge(count=count, label=label) }}
+"""
+
+KIDA_DEMO: tuple[dict[str, Any], ...] = (
+    {
+        "id": "kida-check-badge",
+        "title": "Badge check",
+        "intent": "validate Kida component call sites before render",
+        "name": "orrery/kida-check",
+        "tool": "check",
+        "arguments": {
+            "templates": [
+                {
+                    "path": "templates/dashboard.html",
+                    "content": _KIDA_BADGE_TYPO_TEMPLATE,
+                }
+            ],
+            "validate_calls": True,
+            "strict": False,
+        },
+        "expected_finding_codes": ["K-CMP-001", "K-CMP-002"],
+        "expected_passed": False,
+    },
+    {
+        "id": "kida-render-badge",
+        "title": "Badge render",
+        "intent": "render fixed badge component to HTML with digests",
+        "name": "orrery/kida-render",
+        "tool": "render",
+        "arguments": {
+            "template": _KIDA_BADGE_FIXED_TEMPLATE,
+            "data": {"count": 5, "label": "Messages"},
+            "surface": "html",
+        },
+        "expected_html_contains": "<span class=\"badge\">5 Messages</span>",
+    },
+)
+
 #: Common intents → recommended public SKUs only (no invented catalog names).
 PUBLIC_CATALOG_RECIPES: tuple[tuple[str, str], ...] = (
     ("fresh timestamp for citation", "orrery/world-time"),
@@ -403,6 +453,8 @@ def llms_txt(origin: str) -> str:
         "",
         starter_paths_section(origin).rstrip(),
         "",
+        kida_demo_section(origin).rstrip(),
+        "",
         "## Discovery",
         "",
         f"- [llms.txt]({origin}/llms.txt): this file",
@@ -550,6 +602,48 @@ def starter_paths_section(origin: str) -> str:
             f"`{path['tool']}` | `{path['expected_disposition']}` |"
         )
     lines.extend(["", "```json", json.dumps(starter_paths_payload(), indent=2), "```", ""])
+    return "\n".join(lines)
+
+
+def kida_demo_payload() -> dict[str, Any]:
+    """Machine-readable Kida component demo (static doc; not an MCP tool)."""
+    return {
+        "version": 1,
+        "contract": (
+            "Badge typo → kida-check findings → fix → kida-render HTML + digests. "
+            "After gaze → resolve, call check/render on publisher MCP (ADR 0004/0005)."
+        ),
+        "steps": [dict(step) for step in KIDA_DEMO],
+    }
+
+
+def kida_demo_section(origin: str) -> str:
+    """Markdown section for llms.txt — Kida component demo tour."""
+    doc_href = f"{GITHUB_REPO}/blob/main/docs/operations/kida-demo.md"
+    lines = [
+        "## Kida component demo",
+        "",
+        "Frozen badge story: typo call site → `check` findings (K-CMP-001 / "
+        "K-CMP-002) → fixed template → `render` HTML + digests. Publisher-direct "
+        "MCP only — not aggregate `/mcp` execution.",
+        "",
+        f"Full walkthrough: [kida-demo]({doc_href}) · human copy: "
+        f"[/connect#kida-demo]({origin}/connect#kida-demo)",
+        "",
+        "| Step | Intent | Name | Tool | Expected |",
+        "|------|--------|------|------|----------|",
+    ]
+    for index, step in enumerate(KIDA_DEMO, start=1):
+        expected = (
+            "K-CMP-001, K-CMP-002"
+            if step["id"] == "kida-check-badge"
+            else "html + digests"
+        )
+        lines.append(
+            f"| {index} | {step['intent']} | `{step['name']}` | "
+            f"`{step['tool']}` | {expected} |"
+        )
+    lines.extend(["", "```json", json.dumps(kida_demo_payload(), indent=2), "```", ""])
     return "\n".join(lines)
 
 
