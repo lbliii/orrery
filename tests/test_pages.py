@@ -1170,7 +1170,7 @@ class TestNamespaces:
             assert r.status == 200
             assert "Coming soon" not in r.text
             assert 'disabled\n      aria-disabled="true"' not in r.text
-            assert "/api/namespaces" in r.text
+            assert 'action="/namespaces"' in r.text
             assert "Create namespace" in r.text
             assert 'id="namespace_id"' in r.text
 
@@ -1184,10 +1184,10 @@ class TestNamespaces:
     @pytest.mark.issue(383)
     async def test_namespace_create_success_path_documented(self, example_app) -> None:
         async with TestClient(example_app) as client:
-            r = await client.get("/namespaces")
+            r = await client.get("/namespaces?created=acme")
             assert r.status == 200
-            assert "/gaze?node=" in r.text
-            assert "/resolve?name=" in r.text
+            assert "/gaze?node=acme" in r.text
+            assert "/resolve?name=acme/demo" in r.text
             assert "path prefix" in r.text.lower()
             assert "{id}/*" in r.text
 
@@ -1206,21 +1206,36 @@ class TestNamespaces:
             reset_namespace_store()
 
     @pytest.mark.issue(433)
+    @pytest.mark.issue(476)
     async def test_namespace_page_embeds_error_map(self, example_app) -> None:
         from pages.namespaces._errors import KNOWN
 
         async with TestClient(example_app) as client:
             r = await client.get("/namespaces")
+            assert r.status == 200
+            assert 'id="namespace-error-map"' not in r.text
+            assert "createNamespace" not in r.text
+            assert "this.error = body.error" not in r.text
+            for code, copy in KNOWN.items():
+                landed = await client.get(f"/namespaces?error={code}")
+                assert landed.status == 200
+                assert copy["message"] in landed.text
+                assert copy["next"] in landed.text
+                assert code in landed.text
+                assert 'role="alert"' in landed.text
+                assert 'class="alert"' in landed.text
+
+    @pytest.mark.issue(476)
+    async def test_namespace_form_is_html_post_not_alpine_fetch(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/namespaces")
         assert r.status == 200
-        mapped = _embedded_error_map(r.text, "namespace-error-map")
-        assert mapped == KNOWN
-        for code, copy in KNOWN.items():
-            assert code in r.text
-            assert copy["message"] in r.text
-            assert copy["next"] in r.text
-        assert 'role="alert"' in r.text
-        assert 'x-text="errorCode"' in r.text
-        assert "this.error = body.error" not in r.text
+        assert 'hx-post="/namespaces"' in r.text
+        assert 'method="post"' in r.text
+        assert "htmx-indicator" in r.text
+        assert 'class="field"' in r.text
+        assert "fetch(" not in r.text
+        assert "createNamespace" not in r.text
 
 
 @pytest.mark.issue(372)
