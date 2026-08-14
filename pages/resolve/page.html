@@ -4,7 +4,7 @@
     <p class="kicker">Skill DNS</p>
     <h1>Resolve a star</h1>
   </div>
-  <form class="lookup" data-resolve-form action="/resolve" method="get">
+  <form class="lookup" action="/resolve" method="get">
     <input
       name="q"
       value="{{ q or 'html-to-pdf' }}"
@@ -17,12 +17,15 @@
 </header>
 
 {% if matched %}
-<div class="panel" style="margin-bottom: 1.5rem">
+<div class="panel" data-resolve-matched style="margin-bottom: 1.5rem">
   <p class="kicker" style="margin-bottom: 0.5rem">Resolved · {{ q }}</p>
   <ul class="meta-list">
     <li><span>Name</span><code class="mono">{{ matched.name }}</code></li>
     <li><span>Endpoint</span><code class="mono">{{ matched.endpoint }}</code></li>
-    <li><span>Digest</span><code class="mono">{{ matched.content_digest }}</code></li>
+    <li>
+      <span>Digest</span>
+      <code class="mono" data-digest data-final="{{ matched.content_digest }}">{{ matched.content_digest }}</code>
+    </li>
     <li><span>Open</span><a class="mono" href="{{ matched.href }}">{{ matched.href }}</a></li>
   </ul>
 </div>
@@ -47,13 +50,10 @@
         {% for record in records %}
         <tr
           data-name="{{ record.name }}"
-          data-href="{{ record.href }}"
-          onclick="location.href='{{ record.href }}'"
-          style="cursor: pointer"
           {% if matched_name == record.name %}class="row-resolved"{% end %}
         >
           <td>
-            <div class="mono">{{ record.name }}</div>
+            <a class="table-row-link mono" href="{{ record.href }}">{{ record.name }}</a>
             <div class="muted" style="font-size: 0.88rem">{{ record.description }}</div>
           </td>
           <td class="mono">{{ record.endpoint }}</td>
