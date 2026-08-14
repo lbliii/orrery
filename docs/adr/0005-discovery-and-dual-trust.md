@@ -92,7 +92,9 @@ No workshop ceremony on the hot path.
 - **Yelp free-text reviews** — free-text review marketplace / social feed /
   star essays
 - **Proxy-all-calls** — reverse-proxy or host everyone’s tool execution
-  (reaffirms ADR 0001 / 0004); Orrery-as-FaaS / scale-to-zero compute host
+  (reaffirms ADR 0001 / 0004); Orrery-as-FaaS / scale-to-zero compute host.
+  Same-origin `call_skill` forwarder on `/mcp` is a session-bound exception
+  ([ADR 0010](./0010-aggregate-mcp-call-skill.md)), not a general proxy.
 - Stripe charges per tool call (ADR 0001 / 0003)
 - Requiring DORI (or any process skill host) to use Orrery
 - Constellation authoring editor (viewer + run first)
@@ -109,7 +111,9 @@ No workshop ceremony on the hot path.
   [satisfaction-schema.md](../design/satisfaction-schema.md).
 - Optional scoped RAG stays feature-flagged and candidate-only (#61 / #72).
 - Product resolve records continue to advertise publisher-shaped endpoints
-  (`mcp://orrery.lol/s/…`); dogfood `/mcp` on this host remains demo-only.
+  (`mcp://orrery.lol/s/…`); dogfood `/mcp/dogfood` on this host remains a
+  labeled demo zoo. Advertised `/mcp` stays slim (gaze/resolve plus one
+  `call_skill` forwarder per [ADR 0010](./0010-aggregate-mcp-call-skill.md)).
 
 ## Links
 
@@ -119,3 +123,4 @@ No workshop ceremony on the hot path.
 - Strategy plan: [vending-machine-sky.md](../plan/vending-machine-sky.md)
 - Control plane: [0001-control-plane-wallet.md](./0001-control-plane-wallet.md)
 - Publisher-direct call: [0004-publisher-direct-call.md](./0004-publisher-direct-call.md)
+- Aggregate `call_skill`: [0010-aggregate-mcp-call-skill.md](./0010-aggregate-mcp-call-skill.md)
