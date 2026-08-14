@@ -56,6 +56,7 @@ BUILTIN_STAR_PACKAGES = (
     "stars.structure_audit",
     "stars.kida_check",
     "stars.kida_render",
+    "stars.kida_ready",
 )
 
 

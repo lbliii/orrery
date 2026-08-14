@@ -1192,6 +1192,89 @@ API_SPEC_UPGRADE_POLICY = PolicyGraph(
     release_key_id="orrery-api-spec-upgrade-1",
 )
 
+#: ADR 0007 — sync kida-ready (#403); check → gate → render → composite seal.
+KIDA_READY_POLICY = PolicyGraph(
+    nodes=(
+        PolicyNode(
+            "kida-check",
+            "kida-check",
+            "gate",
+            160,
+            180,
+            0,
+            "orrery/kida-check",
+            "check",
+        ),
+        PolicyNode(
+            "gate",
+            "gate",
+            "gate",
+            380,
+            180,
+            1,
+            status_label="open",
+        ),
+        PolicyNode(
+            "kida-render",
+            "kida-render",
+            "gate",
+            600,
+            180,
+            2,
+            "orrery/kida-render",
+            "render",
+        ),
+        PolicyNode(
+            "artifact-seal",
+            "artifact-seal",
+            "composite",
+            820,
+            320,
+            3,
+            status_label="composite",
+            r=18,
+        ),
+    ),
+    edges=(
+        PolicyEdge(
+            "kr1",
+            "kida-check",
+            "gate",
+            "gate",
+            "M200 180 C260 180, 300 180, 340 180",
+            1,
+        ),
+        PolicyEdge(
+            "kr2",
+            "gate",
+            "kida-render",
+            "gate",
+            "M420 180 C480 180, 520 180, 560 180",
+            2,
+        ),
+        PolicyEdge(
+            "kr3",
+            "kida-render",
+            "artifact-seal",
+            "gate",
+            "M640 200 C700 260, 760 300, 800 310",
+            3,
+        ),
+    ),
+    repair_loop_max=None,
+    footnote=(
+        "Sync only (pause_policy.allowed=false) · dispositions ready|needs-work|inconclusive · "
+        "render skipped when kida-check fails gate."
+    ),
+    composite_chain=(
+        CompositeStep(1, "kida-check", "Envelope ✓", "static findings"),
+        CompositeStep(2, "gate", "open|blocked", "check pass required"),
+        CompositeStep(3, "kida-render", "Envelope ✓", "HTML + digests"),
+    ),
+    release_digest="sha256:kida-ready…",
+    release_key_id="orrery-kida-ready-1",
+)
+
 POLICIES: dict[str, PolicyGraph] = {
     "acme/launch-gate": LAUNCH_GATE_POLICY,
     "orrery/stale-proof": STALE_PROOF_POLICY,
@@ -1204,6 +1287,7 @@ POLICIES: dict[str, PolicyGraph] = {
     "orrery/board-memo": BOARD_MEMO_POLICY,
     "orrery/docs-migrate-to-mdx": DOCS_MIGRATE_TO_MDX_POLICY,
     "orrery/api-spec-upgrade": API_SPEC_UPGRADE_POLICY,
+    "orrery/kida-ready": KIDA_READY_POLICY,
 }
 
 
