@@ -1,0 +1,608 @@
+/* Orrery layouts — page composition + star field guide */
+
+.shell {
+  position: relative;
+  z-index: var(--z-shell);
+  width: min(1120px, calc(100% - 2.5rem));
+  margin-inline: auto;
+}
+
+.hero {
+  position: relative;
+  /* Fill the first viewport without letting tall displays
+     stretch the copy/orb composition apart. */
+  min-height: min(calc(100svh - 5rem), 52rem);
+  display: grid;
+  align-content: end;
+  padding: clamp(2.5rem, 8vh, 5rem) 0 4.5rem;
+  overflow: visible;
+  isolation: isolate;
+}
+
+.hero-sky {
+  /* Legacy local layer; global .cosmos owns the sky now */
+  display: none;
+}
+
+.hero-copy {
+  position: relative;
+  z-index: var(--z-shell);
+  max-width: 38rem;
+  animation: rise 700ms var(--ease) both;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero h1 {
+  font-family: var(--font-display);
+  font-size: clamp(3.2rem, 8vw, 5.6rem);
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  margin: 0 0 1rem;
+  color: var(--signal);
+}
+
+.hero h1 em {
+  font-style: normal;
+  color: var(--brass);
+}
+
+.hero p {
+  margin: 0 0 1.75rem;
+  font-size: 1.2rem;
+  color: var(--fog);
+  max-width: 28rem;
+}
+
+.hero-lede {
+  max-width: 34rem;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: 2.5rem;
+}
+
+.sky-vitals {
+  border-top: var(--stroke) solid var(--line);
+  padding: var(--space-3) 0 2.5rem;
+}
+
+.vitals-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem 2rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.vitals-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 5.5rem;
+}
+
+.vitals-label {
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mist);
+}
+
+.vitals-value {
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 2.5vw, 1.6rem);
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--signal);
+  text-decoration: none;
+}
+
+a.vitals-value:hover {
+  color: var(--brass);
+}
+
+.section {
+  padding: var(--space-5) 0 4.5rem;
+}
+
+.section h2,
+.console-head h1,
+.ns-hero h1,
+.detail-hero h1 {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+  color: var(--signal);
+}
+
+.section h2 {
+  font-size: clamp(1.8rem, 3vw, 2.4rem);
+  margin: 0 0 0.5rem;
+}
+
+.console-head {
+  padding: var(--space-4) 0 1.25rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.console-head h1 {
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  margin: 0;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1.3fr 0.9fr;
+  gap: var(--space-3);
+  padding-bottom: 4rem;
+}
+
+.detail-hero h1 {
+  font-family: var(--font-mono);
+  font-size: clamp(1.6rem, 3vw, 2.1rem);
+  margin: 0.2rem 0 0.75rem;
+}
+
+.ns-hero {
+  padding: 2.5rem 0 var(--space-4);
+}
+
+.ns-hero h1 {
+  font-size: clamp(2.2rem, 5vw, 3.4rem);
+  margin: 0 0 0.75rem;
+  max-width: 14ch;
+}
+
+.ns-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin: var(--space-4) 0 3rem;
+}
+
+.ns-grid article {
+  border-top: 2px solid color-mix(in oklab, var(--signal) 28%, transparent);
+  padding-top: 1rem;
+}
+
+.ns-grid h3 {
+  font-family: var(--font-display);
+  margin: 0 0 0.4rem;
+  color: var(--signal);
+}
+
+.ns-grid p {
+  margin: 0;
+  color: var(--fog);
+  font-size: 0.98rem;
+}
+
+.featured {
+  border-top-color: var(--brass);
+}
+
+/* Star field guide (expanded from the former §6b minified block) */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+.catalog-hero {
+  padding: clamp(2.5rem, 7vw, 5rem) 0 var(--space-4);
+  max-width: 50rem;
+}
+
+.catalog-hero h1 {
+  font: 700 clamp(2.4rem, 5vw, 4.7rem) / 0.98 var(--font-display);
+  letter-spacing: -0.055em;
+  margin: 0 0 1rem;
+}
+
+.catalog-search input {
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 1rem 1.15rem;
+  color: var(--signal);
+  background: color-mix(in oklab, var(--void) 76%, transparent);
+  border: var(--stroke) solid color-mix(in oklab, var(--brass) 45%, transparent);
+  font: 0.95rem var(--font-mono);
+}
+
+.catalog-layout {
+  display: grid;
+  grid-template-columns: 13rem minmax(0, 1fr);
+  gap: clamp(1.5rem, 5vw, 4rem);
+  padding-bottom: 4rem;
+}
+
+.catalog-rail,
+.entity-rail {
+  border-top: var(--stroke) solid var(--line);
+  padding-top: 1rem;
+  font-family: var(--font-display);
+  font-size: 0.92rem;
+}
+
+.catalog-rail a,
+.entity-rail nav a {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.55rem 0;
+  color: var(--fog);
+  text-decoration: none;
+  border-bottom: var(--stroke) solid color-mix(in oklab, var(--signal) 8%, transparent);
+}
+
+.catalog-rail .rail-current,
+.entity-rail nav a[aria-current="page"] {
+  color: var(--brass);
+}
+
+.facet-form {
+  margin-top: var(--space-3);
+}
+
+.facet-form fieldset {
+  border: 0;
+  border-top: var(--stroke) solid var(--line);
+  margin: 0;
+  padding: 0.9rem 0;
+}
+
+.facet-form legend {
+  color: var(--mist);
+  font: 0.72rem var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  padding: 0 0 0.45rem;
+}
+
+.facet-form label {
+  display: flex;
+  gap: 0.55rem;
+  align-items: baseline;
+  padding: 0.25rem 0;
+  color: var(--fog);
+  cursor: pointer;
+}
+
+.facet-form input {
+  accent-color: var(--brass);
+}
+
+.facet-form label:has(input:focus-visible) {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
+}
+
+.rail-note {
+  color: var(--mist);
+  font: 0.92rem / 1.45 var(--font-body);
+  margin-top: 1.25rem;
+}
+
+.star-list {
+  border-top: var(--stroke) solid var(--line);
+}
+
+.result-count {
+  margin: 0;
+  padding: 0.75rem;
+  color: var(--mist);
+  font: var(--text-kicker) var(--font-display);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-bottom: var(--stroke) solid var(--line);
+}
+
+.star-row {
+  display: grid;
+  grid-template-columns: auto minmax(15rem, 1.8fr) minmax(7rem, 0.8fr) auto auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.15rem 0.75rem;
+  border-bottom: var(--stroke) solid var(--line);
+  text-decoration: none;
+  transition:
+    background var(--flash) var(--ease),
+    padding var(--flash) var(--ease);
+}
+
+.star-row:hover {
+  background: color-mix(in oklab, var(--brass) 8%, transparent);
+  padding-left: 1.1rem;
+  color: var(--signal);
+}
+
+.star-mark {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: var(--radius-orb);
+  background: var(--brass);
+  box-shadow: 0 0 16px color-mix(in oklab, var(--brass) 80%, transparent);
+}
+
+.star-main {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.star-main strong {
+  font: 600 1.03rem var(--font-display);
+}
+
+.star-main span {
+  color: var(--fog);
+  font-size: 0.96rem;
+}
+
+.star-main .star-family {
+  color: var(--brass);
+  font: 0.72rem var(--font-display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.star-tools {
+  color: var(--mist);
+}
+
+.row-arrow {
+  color: var(--brass);
+  font-size: 1.2rem;
+}
+
+.catalog-empty {
+  padding: var(--space-4) 0.75rem;
+  color: var(--fog);
+}
+
+.star-page {
+  display: grid;
+  grid-template-columns: 12rem minmax(0, 1fr) 17rem;
+  gap: clamp(1.5rem, 4vw, 4rem);
+  padding: var(--space-4) 0 4.5rem;
+}
+
+.entity-rail {
+  position: sticky;
+  top: 1.2rem;
+  align-self: start;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 2.2rem;
+  color: var(--fog);
+  font-size: 0.9rem;
+}
+
+.entity-name {
+  overflow-wrap: anywhere;
+  color: var(--signal);
+  margin: 0.2rem 0 1.2rem;
+}
+
+.star-reading {
+  min-width: 0;
+}
+
+.star-reading .detail-hero {
+  padding: 0 0 2.25rem;
+}
+
+.star-intro {
+  max-width: 38rem;
+  margin: 0;
+  color: var(--fog);
+  font-size: clamp(1.25rem, 2vw, 1.5rem);
+  line-height: 1.4;
+}
+
+.star-resolve-link {
+  margin: 1rem 0 0;
+  max-width: 42rem;
+  font-size: 0.92rem;
+}
+
+.star-resolve-link a {
+  color: var(--brass);
+  text-decoration: none;
+}
+
+.reading-section {
+  border-top: var(--stroke) solid var(--line);
+  padding: var(--space-3) 0;
+}
+
+.reading-section > p:not(.kicker) {
+  max-width: 42rem;
+  margin: 0;
+}
+
+.star-bullets {
+  margin: var(--space-1) 0 0;
+  padding-left: 1.15rem;
+  max-width: 42rem;
+  color: var(--fog);
+}
+
+.star-bullets li {
+  margin: var(--space-1) 0;
+}
+
+.star-io {
+  display: grid;
+  gap: 1.25rem;
+  margin-top: 0.5rem;
+}
+
+.star-io-label {
+  margin: 0 0 var(--space-1);
+  color: var(--mist);
+  font: 0.72rem var(--font-display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.star-io-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.star-io-table th,
+.star-io-table td {
+  text-align: left;
+  padding: 0.55rem 0;
+  border-bottom: var(--stroke) solid color-mix(in oklab, var(--signal) 10%, transparent);
+  vertical-align: top;
+}
+
+.star-io-table th {
+  color: var(--mist);
+  font: 0.72rem var(--font-display);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.star-required {
+  color: var(--brass);
+  font-size: var(--text-kicker);
+}
+
+.star-example,
+.star-tool-schema {
+  margin: 0.75rem 0 0;
+  padding: 1rem 1.1rem;
+  border: var(--stroke) solid var(--line);
+  background: color-mix(in oklab, var(--night-2) 55%, transparent);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 0.84rem;
+}
+
+.star-tool-schema {
+  margin-top: var(--space-1);
+  margin-bottom: 0.85rem;
+  font-size: 0.78rem;
+}
+
+.tool-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 0;
+  border-bottom: var(--stroke) solid color-mix(in oklab, var(--signal) 10%, transparent);
+}
+
+.tool-line code {
+  color: var(--brass);
+}
+
+.tool-line span {
+  color: var(--fog);
+  font-size: 0.94rem;
+  text-align: right;
+}
+
+.tool-line a {
+  color: var(--brass);
+  text-decoration: none;
+}
+
+.relation-list {
+  display: grid;
+  margin-top: 1rem;
+  border-top: var(--stroke) solid color-mix(in oklab, var(--signal) 10%, transparent);
+}
+
+.relation-list a {
+  display: grid;
+  grid-template-columns: minmax(9rem, 0.7fr) 1.4fr auto;
+  gap: 1rem;
+  padding: 0.9rem 0;
+  border-bottom: var(--stroke) solid color-mix(in oklab, var(--signal) 10%, transparent);
+  text-decoration: none;
+}
+
+.relation-list span {
+  color: var(--fog);
+  font-size: 0.95rem;
+}
+
+.relation-list b {
+  color: var(--brass);
+}
+
+.action-rail {
+  position: sticky;
+  top: 1.2rem;
+  align-self: start;
+}
+
+.action-panel {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.endpoint {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 0.78rem;
+  color: var(--fog);
+}
+
+.text-action {
+  color: var(--brass);
+  font: 0.85rem var(--font-display);
+}
+
+.trust-card {
+  border: var(--stroke) solid var(--line);
+  border-top: 2px solid color-mix(in oklab, var(--brass) 70%, transparent);
+  padding: 1.15rem 1.25rem;
+  margin-top: 1rem;
+  background: color-mix(in oklab, var(--night-2) 55%, transparent);
+}
+
+.trust-card dl {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.2rem;
+  margin: 1rem 0;
+}
+
+.trust-card dt {
+  color: var(--mist);
+  font: 0.72rem var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.trust-card dd {
+  margin: 0 0 0.45rem;
+  overflow-wrap: anywhere;
+  font-size: 0.86rem;
+}

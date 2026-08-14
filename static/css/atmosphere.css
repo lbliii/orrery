@@ -1,0 +1,200 @@
+/* Orrery atmosphere — global non-interactive sky */
+
+.cosmos {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-cosmos);
+  pointer-events: none;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 120% 80% at 50% 120%, #152438 0%, transparent 55%),
+    radial-gradient(ellipse 90% 60% at 70% -10%, color-mix(in oklab, var(--brass) 11%, transparent), transparent 50%),
+    radial-gradient(ellipse 70% 50% at 5% 30%, color-mix(in oklab, #1b3d5c 55%, transparent), transparent 55%),
+    linear-gradient(180deg, #04060c 0%, #070b14 40%, #0a121c 100%);
+}
+
+.cosmos-milky {
+  position: absolute;
+  inset: -20%;
+  background:
+    linear-gradient(
+      118deg,
+      transparent 28%,
+      color-mix(in oklab, var(--brass) 7%, transparent) 42%,
+      color-mix(in oklab, #d4e4f0 10%, transparent) 48%,
+      color-mix(in oklab, var(--brass) 9%, transparent) 54%,
+      transparent 68%
+    ),
+    radial-gradient(ellipse 55% 18% at 48% 42%, color-mix(in oklab, #9eb6c9 16%, transparent), transparent 70%);
+  filter: blur(18px);
+  opacity: 0.85;
+  transform: rotate(-8deg);
+  animation: milky-breathe 14s ease-in-out infinite alternate;
+}
+
+@keyframes milky-breathe {
+  from {
+    opacity: 0.55;
+    transform: rotate(-8deg) scale(1);
+  }
+  to {
+    opacity: 0.9;
+    transform: rotate(-7deg) scale(1.04);
+  }
+}
+
+.cosmos-dust {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 40% 30% at 78% 22%, color-mix(in oklab, var(--brass) 14%, transparent), transparent 70%),
+    radial-gradient(ellipse 35% 28% at 18% 68%, color-mix(in oklab, #3d6a88 22%, transparent), transparent 70%),
+    radial-gradient(ellipse 25% 20% at 60% 75%, color-mix(in oklab, var(--phosphor) 6%, transparent), transparent 75%);
+  filter: blur(40px);
+  animation: dust-drift 48s linear infinite alternate;
+}
+
+@keyframes dust-drift {
+  from {
+    transform: translate3d(-2%, 1%, 0);
+  }
+  to {
+    transform: translate3d(3%, -2%, 0);
+  }
+}
+
+.cosmos-stars {
+  position: absolute;
+  inset: -10%;
+  background-repeat: repeat;
+}
+
+.cosmos-stars-far {
+  opacity: 0.45;
+  background-image:
+    radial-gradient(1px 1px at 10% 20%, #fff8, transparent),
+    radial-gradient(1px 1px at 30% 60%, #fff5, transparent),
+    radial-gradient(1px 1px at 50% 10%, #fff6, transparent),
+    radial-gradient(1px 1px at 70% 40%, #fff4, transparent),
+    radial-gradient(1px 1px at 90% 80%, #fff7, transparent),
+    radial-gradient(1px 1px at 15% 85%, #fff5, transparent),
+    radial-gradient(1px 1px at 55% 55%, #fff4, transparent),
+    radial-gradient(1px 1px at 75% 15%, #fff6, transparent);
+  background-size: 320px 320px;
+  animation: drift-far 120s linear infinite;
+}
+
+.cosmos-stars-mid {
+  opacity: 0.7;
+  background-image:
+    radial-gradient(1.2px 1.2px at 12% 18%, #fffb, transparent),
+    radial-gradient(1px 1px at 28% 42%, #fff8, transparent),
+    radial-gradient(1.4px 1.4px at 63% 22%, #fffd, transparent),
+    radial-gradient(1px 1px at 78% 58%, #fff7, transparent),
+    radial-gradient(1.1px 1.1px at 44% 70%, #fffa, transparent),
+    radial-gradient(1px 1px at 88% 14%, #fffc, transparent),
+    radial-gradient(1.3px 1.3px at 8% 78%, #fff8, transparent),
+    radial-gradient(1px 1px at 52% 88%, #fff9, transparent);
+  background-size: 480px 480px;
+  animation: drift-mid 75s linear infinite, twinkle-mid 6s ease-in-out infinite alternate;
+}
+
+.cosmos-stars-near {
+  opacity: 0.95;
+  background-image:
+    radial-gradient(1.8px 1.8px at 22% 30%, #fff, transparent),
+    radial-gradient(1.4px 1.4px at 68% 18%, var(--brass), transparent),
+    radial-gradient(2px 2px at 82% 62%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 40% 78%, #e8f0ff, transparent),
+    radial-gradient(1.3px 1.3px at 8% 48%, var(--brass), transparent),
+    radial-gradient(1.6px 1.6px at 58% 8%, #fff, transparent);
+  background-size: 700px 700px;
+  filter: drop-shadow(0 0 2px color-mix(in oklab, var(--signal) 40%, transparent));
+  animation: drift-near 40s linear infinite, twinkle-near 4.2s ease-in-out infinite alternate;
+}
+
+@keyframes drift-far {
+  to {
+    transform: translate3d(-60px, 30px, 0);
+  }
+}
+
+@keyframes drift-mid {
+  to {
+    transform: translate3d(-100px, 50px, 0);
+  }
+}
+
+@keyframes drift-near {
+  to {
+    transform: translate3d(-140px, 70px, 0);
+  }
+}
+
+@keyframes twinkle-mid {
+  from {
+    opacity: 0.45;
+  }
+  to {
+    opacity: 0.85;
+  }
+}
+
+@keyframes twinkle-near {
+  from {
+    opacity: 0.7;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.cosmos-meteor {
+  position: absolute;
+  width: 120px;
+  height: 1.5px;
+  top: 18%;
+  left: -10%;
+  background: linear-gradient(90deg, transparent, #fff, color-mix(in oklab, var(--brass) 80%, #fff));
+  border-radius: var(--radius);
+  opacity: 0;
+  filter: drop-shadow(0 0 6px #fff);
+  animation: meteor 11s ease-in-out infinite;
+  animation-delay: 4s;
+}
+
+.cosmos-meteor::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: -1px;
+  width: 4px;
+  height: 4px;
+  border-radius: var(--radius-orb);
+  background: #fff;
+  box-shadow: 0 0 8px #fff, 0 0 14px var(--brass);
+}
+
+@keyframes meteor {
+  0%,
+  88%,
+  100% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) rotate(18deg);
+  }
+  90% {
+    opacity: 1;
+  }
+  96% {
+    opacity: 0;
+    transform: translate3d(110vw, 42vh, 0) rotate(18deg);
+  }
+}
+
+.cosmos-vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 75% 65% at 50% 40%, transparent 35%, color-mix(in oklab, var(--void) 75%, transparent) 100%),
+    linear-gradient(180deg, color-mix(in oklab, var(--void) 35%, transparent), transparent 18%, transparent 70%, color-mix(in oklab, var(--void) 55%, transparent));
+}
