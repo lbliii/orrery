@@ -1634,3 +1634,29 @@ class TestResolveSettle:
             assert "initMatchedDigest" in js.text
             assert "value-settled" in js.text
             assert "--settle" in js.text
+
+
+@pytest.mark.issue(480)
+class TestCatalogAlpineFilters:
+    async def test_stars_catalog_uses_alpine_not_domcontentloaded(
+        self, example_app
+    ) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/stars")
+            assert r.status == 200
+            assert 'x-data="starsCatalog"' in r.text
+            assert "Alpine.safeData" in r.text
+            assert "DOMContentLoaded" not in r.text
+            assert "data-star-search" in r.text
+            assert "data-star-facet" in r.text
+
+    async def test_constellations_catalog_uses_alpine_not_domcontentloaded(
+        self, example_app
+    ) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/constellations")
+            assert r.status == 200
+            assert 'x-data="constellationsCatalog"' in r.text
+            assert "Alpine.safeData" in r.text
+            assert "DOMContentLoaded" not in r.text
+            assert "data-constellation-search" in r.text

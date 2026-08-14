@@ -1,11 +1,16 @@
 {% block content %}
+<div
+  x-data="constellationsCatalog"
+  x-init="syncUi()"
+  @input="syncUi()"
+>
 <section class="catalog-hero">
   <p class="kicker">Frozen planner subgraphs · {{ constellations|length }} Constellations</p>
   <h1>Compose stars into policy you can run anywhere.</h1>
   <p class="lede">A constellation is chalk lines across stars: gates, repair loops, and fan-in to a composite Envelope. Browse the catalog, then open the graph you need.</p>
   <label class="catalog-search">
     <span class="sr-only">Search Constellations</span>
-    <input type="search" data-constellation-search placeholder="Search by name, tool, or purpose" autocomplete="off" />
+    <input type="search" data-constellation-search placeholder="Search by name, tool, or purpose" autocomplete="off" x-model="q" />
   </label>
 </section>
 
@@ -30,22 +35,31 @@
     <p class="catalog-empty" data-constellation-empty hidden>No Constellations match that search.</p>
   </div>
 </section>
+</div>
 <script>
-document.addEventListener("DOMContentLoaded", () => {
-  const input = document.querySelector("[data-constellation-search]");
-  const rows = [...document.querySelectorAll("[data-constellation-row]")];
-  const empty = document.querySelector("[data-constellation-empty]");
-  const count = document.querySelector("[data-result-count]");
-  const applyFilters = () => {
-    const q = input.value.trim().toLowerCase(); let shown = 0;
-    rows.forEach((row) => {
-      const show = row.dataset.search.toLowerCase().includes(q);
-      row.hidden = !show; if (show) shown++;
-    });
-    empty.hidden = shown !== 0;
-    count.textContent = `${shown} ${shown === 1 ? "Constellation" : "Constellations"}`;
-  };
-  input?.addEventListener("input", applyFilters);
+document.addEventListener("alpine:init", () => {
+  const start = () => Alpine.safeData("constellationsCatalog", () => ({
+    q: "",
+    rowVisible(el) {
+      return el.dataset.search.toLowerCase().includes(this.q.trim().toLowerCase());
+    },
+    syncUi() {
+      let shown = 0;
+      this.$root.querySelectorAll("[data-constellation-row]").forEach((row) => {
+        const show = this.rowVisible(row);
+        row.hidden = !show;
+        if (show) shown++;
+      });
+      const empty = this.$root.querySelector("[data-constellation-empty]");
+      if (empty) empty.hidden = shown !== 0;
+      const count = this.$root.querySelector("[data-result-count]");
+      if (count) {
+        count.textContent = `${shown} ${shown === 1 ? "Constellation" : "Constellations"}`;
+      }
+    },
+  }));
+  if (typeof Alpine.safeData === "function") start();
+  else queueMicrotask(start);
 });
 </script>
 {% end %}
