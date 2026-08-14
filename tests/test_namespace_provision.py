@@ -71,3 +71,18 @@ async def test_new_namespace_seeds_demo_record(provision_app) -> None:
     assert record.visibility == "private"
     scoped = records_for_gaze_node(CATALOG.all(), "widgetco")
     assert any(r.name == "widgetco/demo" for r in scoped)
+
+
+@pytest.mark.issue(433)
+async def test_namespace_page_maps_known_error_copy(example_app) -> None:
+    from pages.namespaces._errors import KNOWN
+
+    async with TestClient(example_app) as client:
+        response = await client.get("/namespaces")
+    assert response.status == 200
+    for code, copy in KNOWN.items():
+        assert code in response.text
+        assert copy["message"] in response.text
+        assert copy["next"] in response.text
+    assert "this.error = body.error" not in response.text
+    assert 'x-text="errorCode"' in response.text

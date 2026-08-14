@@ -16,6 +16,14 @@ from test_app import _modern_mcp_headers, _modern_mcp_params
 from catalog import CATALOG, Catalog, ResolveRecord
 
 
+def _embedded_error_map(html: str, element_id: str) -> dict:
+    marker = f'id="{element_id}"'
+    start = html.index(marker)
+    open_end = html.index(">", start) + 1
+    close = html.index("</script>", open_end)
+    return json.loads(html[open_end:close])
+
+
 @pytest.mark.issue(18)
 class TestResolveSchema:
     """Resolve record schema + lookup (Skill DNS)."""
@@ -1175,6 +1183,23 @@ class TestNamespaces:
         finally:
             reset_namespace_store()
 
+    @pytest.mark.issue(433)
+    async def test_namespace_page_embeds_error_map(self, example_app) -> None:
+        from pages.namespaces._errors import KNOWN
+
+        async with TestClient(example_app) as client:
+            r = await client.get("/namespaces")
+        assert r.status == 200
+        mapped = _embedded_error_map(r.text, "namespace-error-map")
+        assert mapped == KNOWN
+        for code, copy in KNOWN.items():
+            assert code in r.text
+            assert copy["message"] in r.text
+            assert copy["next"] in r.text
+        assert 'role="alert"' in r.text
+        assert 'x-text="errorCode"' in r.text
+        assert "this.error = body.error" not in r.text
+
 
 @pytest.mark.issue(372)
 class TestWalletTopUpPage:
@@ -1223,6 +1248,78 @@ class TestWalletTopUpPage:
         assert payload["code"] == "insufficient_balance"
         assert payload["top_up_url"] == TOP_UP_URL
         assert payload["top_up_url"].endswith("/wallet/top-up")
+
+    @pytest.mark.issue(433)
+    async def test_wallet_top_up_embeds_error_map(self, example_app) -> None:
+        from pages.wallet._errors import KNOWN
+
+        async with TestClient(example_app) as client:
+            r = await client.get("/wallet/top-up")
+        assert r.status == 200
+        mapped = _embedded_error_map(r.text, "wallet-error-map")
+        assert mapped == KNOWN
+        for code, copy in KNOWN.items():
+            assert code in r.text
+            assert copy["message"] in r.text
+            assert copy["next"] in r.text
+        assert 'role="alert"' in r.text
+        assert 'x-text="errorCode"' in r.text
+        assert "this.error = body.error" not in r.text
+
+
+@pytest.mark.issue(433)
+class TestPageErrorMaps:
+    def test_wallet_known_codes_have_sentence_and_next(self) -> None:
+        from pages.wallet._errors import KNOWN, describe
+
+        expected = ("owner_id_required", "invalid_pack", "wallet_disabled")
+        assert tuple(KNOWN) == expected
+        for code in expected:
+            copy = describe(code)
+            assert copy.code == code
+            assert copy.message.endswith(".")
+            assert copy.next
+            assert code not in copy.human_line
+            assert " " in copy.next or copy.next.endswith(".")
+
+    def test_namespace_known_codes_have_sentence_and_next(self) -> None:
+        from pages.namespaces._errors import KNOWN, describe
+
+        expected = ("invalid_slug", "reserved_slug", "duplicate_namespace")
+        assert tuple(KNOWN) == expected
+        for code in expected:
+            copy = describe(code)
+            assert copy.code == code
+            assert copy.message.endswith(".")
+            assert copy.next
+            assert code not in copy.human_line
+
+    def test_unknown_machine_code_keeps_generic_line_and_code(self) -> None:
+        from pages.namespaces._errors import GENERIC_MESSAGE, GENERIC_NEXT, describe
+        from pages.wallet._errors import GENERIC_MESSAGE as WALLET_GENERIC
+        from pages.wallet._errors import GENERIC_NEXT as WALLET_NEXT
+        from pages.wallet._errors import describe as wallet_describe
+
+        ns = describe("id_required")
+        assert ns.message == GENERIC_MESSAGE
+        assert ns.next == GENERIC_NEXT
+        assert ns.code == "id_required"
+        wallet = wallet_describe("payment_id_required")
+        assert wallet.message == WALLET_GENERIC
+        assert wallet.next == WALLET_NEXT
+        assert wallet.code == "payment_id_required"
+
+    def test_raw_exception_strings_are_never_displayed(self) -> None:
+        from pages.namespaces._errors import describe as ns_describe
+        from pages.wallet._errors import describe as wallet_describe
+
+        leak = "ValueError: checkout exploded\nTraceback (most recent call last)"
+        for mapped in (wallet_describe(leak), ns_describe(leak), wallet_describe(None)):
+            assert "ValueError" not in mapped.human_line
+            assert "Traceback" not in mapped.human_line
+            assert mapped.code == ""
+            assert mapped.message
+            assert mapped.next
 
 
 @pytest.mark.issue(407)

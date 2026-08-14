@@ -35,7 +35,10 @@
       <span x-text="busy ? 'Creating…' : 'Create namespace'"></span>
     </button>
   </form>
-  <p x-show="error" x-text="error" class="lede" style="color: var(--brass, #c9a227); margin: 0 0 0.75rem; font-size: 0.95rem" role="alert"></p>
+  <p x-show="errorMessage" class="lede" style="color: var(--brass, #c9a227); margin: 0 0 0.75rem; font-size: 0.95rem" role="alert">
+    <span x-text="errorMessage"></span>
+    <code class="mono" x-show="errorCode" x-text="errorCode"></code>
+  </p>
   <div x-show="createdId" style="margin-top: 0.5rem">
     <p class="lede" style="margin: 0 0 0.5rem; font-size: 0.95rem">
       Namespace <code class="mono" x-text="createdId"></code> is live. Agents
@@ -88,19 +91,42 @@ acme/release-gate
   → namespace: private · seats billed monthly</pre>
 </div>
 
+<script type="application/json" id="namespace-error-map">
+{
+  "invalid_slug": {
+    "message": "That id is not a valid namespace slug.",
+    "next": "Use a lowercase DNS label, 2-63 characters, starting with a letter."
+  },
+  "reserved_slug": {
+    "message": "That id is reserved.",
+    "next": "Pick a different slug: orrery, public, and system are taken."
+  },
+  "duplicate_namespace": {
+    "message": "That namespace already exists.",
+    "next": "Pick a different id, or resolve the existing prefix in Gaze."
+  }
+}
+</script>
 <script>
   function namespaceCreate() {
     return {
       slug: "",
       busy: false,
-      error: "",
+      errorMessage: "",
+      errorCode: "",
       createdId: "",
+      applyMappedError(code) {
+        const mapped = mapNamespacePageError(code);
+        this.errorMessage = mapped.human;
+        this.errorCode = mapped.code;
+      },
       async createNamespace() {
-        this.error = "";
+        this.errorMessage = "";
+        this.errorCode = "";
         this.createdId = "";
         const id = (this.slug || "").trim();
         if (!id) {
-          this.error = "Enter a namespace id.";
+          this.applyMappedError("invalid_slug");
           return;
         }
         this.busy = true;
@@ -112,17 +138,27 @@ acme/release-gate
           });
           const body = await response.json();
           if (!response.ok) {
-            this.error = body.error || "Namespace could not be created.";
+            this.applyMappedError(body.error);
             return;
           }
           this.createdId = body.id || id;
         } catch (err) {
-          this.error = "Network error creating namespace.";
+          this.errorMessage = "Network error creating namespace. Check the connection, then retry.";
         } finally {
           this.busy = false;
         }
       },
     };
+  }
+
+  function mapNamespacePageError(code) {
+    const known = JSON.parse(document.getElementById("namespace-error-map").textContent);
+    const generic = "Namespace could not be created. Check the id and try a different slug.";
+    if (typeof code === "string" && known[code]) {
+      return { human: known[code].message + " " + known[code].next, code: code };
+    }
+    const machine = typeof code === "string" && /^[a-z][a-z0-9_]*$/.test(code);
+    return { human: generic, code: machine ? code : "" };
   }
 </script>
 {% end %}
