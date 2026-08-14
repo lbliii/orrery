@@ -328,7 +328,10 @@ class TestReactiveWorldTimeStar:
             )
             assert described.status == 200
             text = json.loads(described.text)["result"]["content"][0]["text"]
-            assert "price_per_call': None" in text or "'price_per_call': null" in text
+            body = json.loads(text)
+            payload = body.get("payload") if isinstance(body, dict) else {}
+            assert isinstance(payload, dict)
+            assert payload.get("price_per_call") is None
             assert "fetch" in text
             assert "live_at_call" not in text
             assert "clone_warning" not in text
