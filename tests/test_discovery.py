@@ -28,6 +28,34 @@ from discovery import (
 )
 from public_keys import public_key_set
 
+_META_PROTOCOL_VERSION = "io.modelcontextprotocol/protocolVersion"
+
+
+def _modern_mcp_params(**extra: object) -> dict[str, object]:
+    params: dict[str, object] = {
+        "_meta": {
+            _META_PROTOCOL_VERSION: "2026-07-28",
+            "io.modelcontextprotocol/clientCapabilities": {},
+        },
+    }
+    params.update(extra)
+    return params
+
+
+def _modern_mcp_headers(method: str, name: str | None = None) -> dict[str, str]:
+    headers = {
+        "content-type": "application/json",
+        "mcp-protocol-version": "2026-07-28",
+        "mcp-method": method,
+    }
+    if name is not None:
+        headers["mcp-name"] = name
+    return headers
+
+
+def _mcp_tool_body(response_text: str) -> dict[str, object]:
+    return json.loads(json.loads(response_text)["result"]["content"][0]["text"])
+
 HOST = {"Host": "orrery.lol"}
 
 
@@ -548,3 +576,50 @@ async def test_topbar_product_dropdown_and_connect(discovery_app) -> None:
         for href in PRODUCT_NAV_HREFS:
             assert f'href="{href}"' in primary, href
         assert "/console" not in primary
+
+
+@pytest.mark.issue(391)
+@pytest.mark.asyncio
+async def test_aggregate_mcp_tools_return_structured_json(discovery_app) -> None:
+    """Every slim ``/mcp`` tool returns ADR 0010 JSON, not ``Envelope`` repr."""
+    import sys
+
+    verify_receipt = sys.modules["dogfood"].verify_receipt
+    cases: tuple[tuple[str, dict[str, object]], ...] = (
+        ("gaze_match", {"intent": "html pdf convert", "node": "public"}),
+        ("gaze_search", {"query": "html-to-pdf", "node": "public"}),
+        ("gaze_describe", {"name": "orrery/html-to-pdf"}),
+        ("gaze_list_constellations", {"node": "public"}),
+        ("resolve_name", {"name": "orrery/html-to-pdf"}),
+        ("coverage_check", {"star": "gh-release-notes", "target": "flask"}),
+        ("explain_policy", {"name": "acme/launch-gate"}),
+    )
+
+    async with TestClient(discovery_app) as client:
+        for tool_name, arguments in cases:
+            response = await client.post(
+                "/mcp",
+                json={
+                    "jsonrpc": "2.0",
+                    "method": "tools/call",
+                    "id": 391,
+                    "params": _modern_mcp_params(name=tool_name, arguments=arguments),
+                },
+                headers=_modern_mcp_headers("tools/call", tool_name),
+            )
+            assert response.status == 200, tool_name
+            body = _mcp_tool_body(response.text)
+            assert body["status"] == "ok", tool_name
+            assert body["tool"] == tool_name, tool_name
+            assert not str(body).startswith("Envelope("), tool_name
+            payload = body["payload"]
+            assert isinstance(payload, dict), tool_name
+            assert (
+                payload.get("status")
+                or payload.get("disposition")
+                or payload.get("name")
+                or "allowed" in payload
+            ), tool_name
+            wire = body["envelope_wire"]
+            assert isinstance(wire, dict), tool_name
+            assert verify_receipt(wire) is True, tool_name

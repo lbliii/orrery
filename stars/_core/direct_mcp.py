@@ -17,6 +17,8 @@ from chirp.tools.handler import handle_mcp_request
 from chirp.tools.registry import ToolDef, ToolRegistry
 from chirp.tools.schema import function_to_schema
 
+from catalog.mcp_tool_content import wrap_structured_mcp_handler
+
 from .definition import StarDefinition
 
 if TYPE_CHECKING:
@@ -94,7 +96,11 @@ def direct_tool_registry(app: App, definition: StarDefinition, skill: Skill) -> 
             ToolDef(
                 name=tool.name,
                 description=_tool_description(tool, contracts.get(tool.name)),
-                handler=tool.handler,
+                handler=wrap_structured_mcp_handler(
+                    tool.handler,
+                    skill=skill.name,
+                    tool=tool.name,
+                ),
                 schema=_schema_for_tool(tool.name, tool.handler, contracts),
                 approval_required=tool.approval_required,
             )
