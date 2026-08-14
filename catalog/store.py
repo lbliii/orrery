@@ -102,7 +102,9 @@ class Catalog:
             score = score_record(record, tokens)
             if score > 0:
                 scored.append((score, record))
-        scored.sort(key=lambda item: (-item[0], item[1].name))
+        scored.sort(
+            key=lambda item: (-item[0], bool(item[1].index_tier), item[1].name)
+        )
         return tuple(hit_from_record(record) for _, record in scored[:cap])
 
     def search(
@@ -152,6 +154,12 @@ class Catalog:
             "agent_card": record.agent_card.as_dict() if record.agent_card else None,
             "status": "ok",
         }
+        if record.index_tier:
+            payload["index_tier"] = record.index_tier
+        if record.index_tier == "newcomer":
+            payload["rate_after_verify"] = (
+                "After you seal, rate_listing (useful | stale | broken | wrong-price)."
+            )
         if record.kind == "constellation":
             from .constellation import policy_for
 
@@ -193,6 +201,16 @@ class Catalog:
                 tools=GAZE_NODE_TOOLS,
             )
         ]
+        if any((r.namespace or "").lower() == "new" for r in self._records):
+            nodes.append(
+                GazeNode(
+                    id="new",
+                    label="Newcomer shelf",
+                    url=mcp_url("/gaze", namespace="new"),
+                    scope="new/*",
+                    tools=GAZE_NODE_TOOLS,
+                )
+            )
         for ns in namespaces:
             nodes.append(
                 GazeNode(
@@ -243,7 +261,14 @@ class Catalog:
         cap = clamp_gaze_limit(limit)
         records = self.records_for_node(key)
         ordered = tuple(
-            sorted(records, key=lambda record: (not is_reactive_record(record), record.name))
+            sorted(
+                records,
+                key=lambda record: (
+                    bool(record.index_tier),
+                    not is_reactive_record(record),
+                    record.name,
+                ),
+            )
         )
         return tuple(hit_from_record(r) for r in ordered[:cap])
 
