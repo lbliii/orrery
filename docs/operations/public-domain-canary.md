@@ -7,8 +7,11 @@ nonblocking so an external reachability incident does not block repository CI.
 
 The canary uses ordinary HTTPS hostname validation. It checks homepage identity,
 required `security.txt` fields, the Orrery trust facts, sitemap origin, and the
-MCP server-card. It deliberately does not pin an IP address or CNAME target:
-Railway can rotate those safely behind the custom hostname.
+MCP server-card (`protocolVersion` must be `2025-06-18`). After the server-card
+it POSTs legacy `initialize` for `2025-11-25` and `2025-06-18`, then
+`tools/list` for gaze tools. A live `/mcp` that echoes `2026-07-28` fails the
+canary. It deliberately does not pin an IP address or CNAME target: Railway can
+rotate those safely behind the custom hostname.
 
 ## Flake policy
 
