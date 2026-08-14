@@ -4,12 +4,19 @@ from __future__ import annotations
 
 import functools
 import inspect
+import re
 from collections.abc import Callable
 from typing import Any
 
 from chirp.skill import Envelope
 
 from catalog.constellation_run import pause_resume_contract
+
+_SNAKE_CASE_CODE = re.compile(r"^[a-z][a-z0-9_]*$")
+#: Chirp ``Skill.tool`` auto-seals author dicts. Discovery misses must stay
+#: unsigned MCP errors (ADR 0011) without turning managed ``run_not_found``
+#: seals into ``status: "error"``.
+_DISCOVERY_MISS_TOOLS = frozenset({"resolve_name", "gaze_describe"})
 
 
 def mcp_error_response(
@@ -63,6 +70,26 @@ def is_structured_mcp_body(value: Any) -> bool:
     return False
 
 
+def _is_unsigned_snake_error(result: dict[str, Any]) -> bool:
+    """True when *result* is an unsigned handler dict with a snake_case ``error`` code."""
+    if "signature" in result:
+        return False
+    error = result.get("error")
+    return isinstance(error, str) and bool(error) and _SNAKE_CASE_CODE.fullmatch(error) is not None
+
+
+def _unsigned_error_message(result: dict[str, Any], code: str) -> str:
+    """Caller-safe MCP error message; never exception text."""
+    for key in ("detail", "message"):
+        value = result.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    name = result.get("name")
+    if code == "not_found" and isinstance(name, str) and name.strip():
+        return f"Skill not found: {name.strip()}"
+    return code.replace("_", " ")
+
+
 def structured_tool_body(
     result: Any,
     *,
@@ -91,6 +118,14 @@ def structured_tool_body(
                 result.get("payload", {}),
                 result,
             )
+        if _is_unsigned_snake_error(result):
+            code = str(result["error"])
+            return mcp_error_response(
+                code,
+                _unsigned_error_message(result, code),
+                skill=skill,
+                tool=tool,
+            )
         if skill and tool:
             return mcp_ok_response(skill, tool, result, None)
         return mcp_ok_response(skill or "", tool or "", result, None)
@@ -105,11 +140,28 @@ def wrap_structured_mcp_handler(
     tool: str,
 ) -> Callable[..., Any]:
     """Wrap a signed skill tool so MCP returns structured JSON instead of ``Envelope`` repr."""
+    author = getattr(handler, "__wrapped__", None)
+
+    def _unsigned_discovery_miss(raw: Any) -> dict[str, Any] | None:
+        if tool not in _DISCOVERY_MISS_TOOLS:
+            return None
+        if not isinstance(raw, dict) or not _is_unsigned_snake_error(raw):
+            return None
+        return structured_tool_body(raw, skill=skill, tool=tool)
 
     if inspect.iscoroutinefunction(handler):
 
         @functools.wraps(handler)
         async def async_wrapped(*args: Any, **kwargs: Any) -> dict[str, Any]:
+            if author is not None and tool in _DISCOVERY_MISS_TOOLS:
+                raw = (
+                    await author(*args, **kwargs)
+                    if inspect.iscoroutinefunction(author)
+                    else author(*args, **kwargs)
+                )
+                miss = _unsigned_discovery_miss(raw)
+                if miss is not None:
+                    return miss
             result = await handler(*args, **kwargs)
             return structured_tool_body(result, skill=skill, tool=tool)
 
@@ -117,6 +169,10 @@ def wrap_structured_mcp_handler(
 
     @functools.wraps(handler)
     def sync_wrapped(*args: Any, **kwargs: Any) -> dict[str, Any]:
+        if author is not None and tool in _DISCOVERY_MISS_TOOLS:
+            miss = _unsigned_discovery_miss(author(*args, **kwargs))
+            if miss is not None:
+                return miss
         result = handler(*args, **kwargs)
         return structured_tool_body(result, skill=skill, tool=tool)
 
