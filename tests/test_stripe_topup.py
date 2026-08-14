@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 from typing import Any
 
@@ -25,6 +26,8 @@ OWNER = "wallet-user-371"
 WEBHOOK_SECRET = "whsec_test_371"
 PACK_CENTS = 500
 EVENT_ID = "evt_test_checkout_completed_371"
+CHECKOUT_URL = "https://checkout.stripe.test/cs_test_371"
+_CSRF_RE = re.compile(r'name="_csrf_token" value="([^"]+)"')
 
 
 @dataclass
@@ -37,7 +40,7 @@ class FakeCheckoutClient:
         self.last_request = request
         return {
             "id": "cs_test_371",
-            "url": "https://checkout.stripe.test/cs_test_371",
+            "url": CHECKOUT_URL,
             "amount_total": amount_cents,
             "metadata": {"owner_id": request.owner_id, "pack": request.pack},
         }
@@ -197,16 +200,153 @@ async def test_webhook_route_rejects_bad_signature(
     assert json.loads(response.text)["status"] == "invalid"
 
 
+def _session_cookie(response) -> str:
+    raw = response.header("Set-Cookie")
+    assert raw, "expected chirp session cookie"
+    return raw.split(";", 1)[0]
+
+
+def _csrf_token(html: str) -> str:
+    match = _CSRF_RE.search(html)
+    assert match, "expected csrf_field on the wallet checkout form"
+    return match.group(1)
+
+
+async def _form_session(client: TestClient) -> tuple[str, str]:
+    page = await client.get("/wallet/top-up")
+    assert page.status == 200
+    return _session_cookie(page), _csrf_token(page.text)
+
+
 @pytest.mark.issue(433)
+@pytest.mark.issue(477)
 async def test_top_up_page_maps_known_checkout_errors(example_app) -> None:
     from pages.wallet._errors import KNOWN
 
     async with TestClient(example_app) as client:
         response = await client.get("/wallet/top-up")
+        assert response.status == 200
+        assert 'id="wallet-error-map"' not in response.text
+        assert "walletTopUp" not in response.text
+        assert "startCheckout" not in response.text
+        assert "this.error = body.error" not in response.text
+        for code, copy in KNOWN.items():
+            landed = await client.get(f"/wallet/top-up?error={code}")
+            assert landed.status == 200
+            assert copy["message"] in landed.text
+            assert copy["next"] in landed.text
+            assert code in landed.text
+            assert 'class="alert"' in landed.text
+            assert 'role="alert"' in landed.text
+
+
+@pytest.mark.issue(477)
+async def test_top_up_form_post_redirects_to_stripe_without_js(
+    wallet_enabled: None,
+    fake_checkout: FakeCheckoutClient,
+    example_app,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test_477")
+    async with TestClient(example_app) as client:
+        cookie, token = await _form_session(client)
+        response = await client.post(
+            "/wallet/top-up",
+            data={"owner_id": OWNER, "pack": "starter", "_csrf_token": token},
+            headers={"Cookie": cookie},
+        )
+    assert response.status == 303
+    assert response.header("Location") == CHECKOUT_URL
+    assert fake_checkout.last_request is not None
+    assert fake_checkout.last_request.owner_id == OWNER
+    assert fake_checkout.last_request.pack == "starter"
+
+
+@pytest.mark.issue(477)
+async def test_top_up_form_htmx_sets_hx_redirect(
+    wallet_enabled: None,
+    fake_checkout: FakeCheckoutClient,
+    example_app,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test_477")
+    async with TestClient(example_app) as client:
+        cookie, token = await _form_session(client)
+        response = await client.post(
+            "/wallet/top-up",
+            data={"owner_id": OWNER, "pack": "starter", "_csrf_token": token},
+            headers={"Cookie": cookie, "HX-Request": "true"},
+        )
     assert response.status == 200
-    for code, copy in KNOWN.items():
-        assert code in response.text
-        assert copy["message"] in response.text
-        assert copy["next"] in response.text
-    assert "this.error = body.error" not in response.text
-    assert 'x-text="errorCode"' in response.text
+    assert response.header("HX-Redirect") == CHECKOUT_URL
+    assert fake_checkout.last_request is not None
+    assert fake_checkout.last_request.owner_id == OWNER
+
+
+@pytest.mark.issue(477)
+async def test_top_up_form_post_maps_owner_id_required(example_app) -> None:
+    from pages.wallet._errors import KNOWN
+
+    copy = KNOWN["owner_id_required"]
+    async with TestClient(example_app) as client:
+        cookie, token = await _form_session(client)
+        response = await client.post(
+            "/wallet/top-up",
+            data={"owner_id": "", "pack": "starter", "_csrf_token": token},
+            headers={"Cookie": cookie},
+        )
+        assert response.status == 303
+        location = response.header("Location")
+        assert location
+        assert "error=owner_id_required" in location
+        landed = await client.get(location, headers={"Cookie": cookie})
+    assert landed.status == 200
+    assert copy["message"] in landed.text
+    assert copy["next"] in landed.text
+    assert "owner_id_required" in landed.text
+
+
+@pytest.mark.issue(477)
+async def test_top_up_form_htmx_alert_and_busy_on_invalid_pack(
+    example_app,
+) -> None:
+    from pages.wallet._errors import KNOWN
+
+    copy = KNOWN["invalid_pack"]
+    async with TestClient(example_app) as client:
+        cookie, token = await _form_session(client)
+        error = await client.post(
+            "/wallet/top-up",
+            data={"owner_id": OWNER, "pack": "nope", "_csrf_token": token},
+            headers={"Cookie": cookie, "HX-Request": "true"},
+        )
+    assert error.status == 422
+    assert copy["message"] in error.text
+    assert copy["next"] in error.text
+    assert "invalid_pack" in error.text
+    assert 'class="alert"' in error.text
+    assert "htmx-indicator" in error.text
+    assert "Start Stripe Checkout" in error.text
+    assert "<html" not in error.text.lower()
+
+
+@pytest.mark.issue(477)
+async def test_top_up_form_post_wallet_disabled_without_js(example_app) -> None:
+    from pages.wallet._errors import KNOWN
+
+    copy = KNOWN["wallet_disabled"]
+    async with TestClient(example_app) as client:
+        cookie, token = await _form_session(client)
+        response = await client.post(
+            "/wallet/top-up",
+            data={"owner_id": OWNER, "pack": "starter", "_csrf_token": token},
+            headers={"Cookie": cookie},
+        )
+        assert response.status == 303
+        location = response.header("Location")
+        assert location
+        assert "error=wallet_disabled" in location
+        landed = await client.get(location, headers={"Cookie": cookie})
+    assert landed.status == 200
+    assert copy["message"] in landed.text
+    assert copy["next"] in landed.text

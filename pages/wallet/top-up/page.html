@@ -13,70 +13,106 @@
 </p>
 
 <section class="panel" style="margin-bottom: 1.5rem">
-  <p class="kicker" style="margin-bottom: 0.75rem">Your balance</p>
-  {% if owner_id %}
-  <p class="lede" style="margin: 0 0 0.5rem; font-size: 0.95rem">
-    Owner <code class="mono">{{ owner_id }}</code>
-    {% if balance_display %}
-    · spendable <strong>{{ balance_display }}</strong>
-    {% elif not wallet_live %}
-    · ledger disabled in this environment
+  <div class="stack">
+    <p class="kicker">Your balance</p>
+    {% if owner_id %}
+    <p class="lede">
+      Owner <code class="mono">{{ owner_id }}</code>
+      {% if balance_display %}
+      · spendable <strong>{{ balance_display }}</strong>
+      {% elif not wallet_live %}
+      · ledger disabled in this environment
+      {% else %}
+      · balance unavailable
+      {% endif %}
+    </p>
     {% else %}
-    · balance unavailable
-    {% endif %}
-  </p>
-  {% else %}
-  <p class="lede" style="margin: 0 0 0.75rem; font-size: 0.95rem">
-    Enter your wallet owner id (the same value agents send on verify holds).
-    Balance appears after you identify yourself — nothing is inferred from the
-    URL alone.
-  </p>
-  {% end %}
-  <form method="get" action="/wallet/top-up" style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center">
-    <label class="mono" for="owner_id">owner_id</label>
-    <input
-      id="owner_id"
-      name="owner_id"
-      type="text"
-      value="{{ owner_id }}"
-      placeholder="your-wallet-owner"
-      class="mono"
-      style="flex: 1; min-width: 12rem; padding: 0.35rem 0.5rem"
-    />
-    <button class="btn btn-ghost" type="submit">Show balance</button>
-  </form>
+    <p class="lede">
+      Enter your wallet owner id (the same value agents send on verify holds).
+      Balance appears after you identify yourself — nothing is inferred from the
+      URL alone.
+    </p>
+    {% end %}
+    <form class="stack" method="get" action="/wallet/top-up">
+      <label class="mono" for="balance_owner_id">owner_id</label>
+      <input
+        id="balance_owner_id"
+        name="owner_id"
+        type="text"
+        value="{{ owner_id }}"
+        placeholder="your-wallet-owner"
+        class="field"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <button class="btn btn-ghost" type="submit">Show balance</button>
+    </form>
+  </div>
 </section>
 
-<section class="panel" style="margin-bottom: 1.5rem" x-data="walletTopUp()">
-  <p class="kicker" style="margin-bottom: 0.75rem">Checkout packs</p>
-  <p class="lede" style="margin: 0 0 0.75rem; font-size: 0.95rem">
-    Pick a pack, then start Checkout. Amount credited always comes from the
-    verified Stripe webhook — never from browser query params.
-  </p>
-  <ul class="meta-list" style="margin-bottom: 1rem">
-    {% for pack in packs %}
-    <li>
-      <label style="display: flex; gap: 0.5rem; align-items: center; cursor: pointer">
-        <input type="radio" name="pack" value="{{ pack.key }}" x-model="pack" />
-        <span><strong>{{ pack.label }}</strong></span>
-        <span class="mono">{{ pack.key }}</span>
-      </label>
-    </li>
+{% block checkout_panel %}
+<section class="panel" id="checkout" style="margin-bottom: 1.5rem">
+  <div class="stack">
+    <p class="kicker">Checkout packs</p>
+    <p class="lede">
+      Pick a pack, then start Checkout. Amount credited always comes from the
+      verified Stripe webhook — never from browser query params.
+    </p>
+    <form
+      class="stack"
+      method="post"
+      action="/wallet/top-up"
+      hx-post="/wallet/top-up"
+      hx-target="#checkout"
+      hx-swap="outerHTML"
+      hx-disabled-elt="find button"
+    >
+      {{ csrf_field() }}
+      <label class="mono" for="checkout_owner_id">owner_id</label>
+      <input
+        id="checkout_owner_id"
+        name="owner_id"
+        type="text"
+        value="{{ owner_id }}"
+        placeholder="your-wallet-owner"
+        class="field"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <ul class="meta-list">
+        {% for pack in packs %}
+        <li>
+          <label style="display: flex; gap: 0.5rem; align-items: center; cursor: pointer">
+            <input
+              type="radio"
+              name="pack"
+              value="{{ pack.key }}"
+              {% if pack.key == selected %}checked{% end %}
+            />
+            <span><strong>{{ pack.label }}</strong></span>
+            <span class="mono">{{ pack.key }}</span>
+          </label>
+        </li>
+        {% end %}
+      </ul>
+      <button class="btn btn-brass" type="submit">
+        Start Stripe Checkout<span class="htmx-indicator">…</span>
+      </button>
+    </form>
+    {% if error %}
+    <p class="alert" role="alert">
+      {{ error.human_line }}
+      {% if error.code %}<code class="mono">{{ error.code }}</code>{% end %}
+    </p>
     {% end %}
-  </ul>
-  <p x-show="errorMessage" class="lede" style="color: var(--brass, #c9a227); margin: 0 0 0.75rem; font-size: 0.95rem" role="alert">
-    <span x-text="errorMessage"></span>
-    <code class="mono" x-show="errorCode" x-text="errorCode"></code>
-  </p>
-  <button class="btn btn-brass" type="button" @click="startCheckout()" :disabled="busy">
-    <span x-text="busy ? 'Starting Checkout…' : 'Start Stripe Checkout'"></span>
-  </button>
-  <p class="lede" style="margin: 0.75rem 0 0; font-size: 0.85rem">
-    Posts to <code class="mono">{{ checkout_api }}</code> with
-    <code class="mono">owner_id</code> + <code class="mono">pack</code> only —
-    no per-call PaymentIntents.
-  </p>
+    <p class="lede">
+      Agents still POST to <code class="mono">{{ checkout_api }}</code> with
+      <code class="mono">owner_id</code> + <code class="mono">pack</code> only —
+      no per-call PaymentIntents.
+    </p>
+  </div>
 </section>
+{% end %}
 
 <section class="panel" style="margin-bottom: 1.5rem">
   <p class="kicker" style="margin-bottom: 0.75rem">When balance is low</p>
@@ -88,78 +124,4 @@
     Resolve the record, then top up before retrying the call.
   </p>
 </section>
-
-<script type="application/json" id="wallet-error-map">
-{
-  "owner_id_required": {
-    "message": "Checkout needs a wallet owner id.",
-    "next": "Enter owner_id above, then start Checkout again."
-  },
-  "invalid_pack": {
-    "message": "That pack is not on the list.",
-    "next": "Choose starter, standard, or premium, then start Checkout again."
-  },
-  "wallet_disabled": {
-    "message": "Prepaid wallet is off in this environment.",
-    "next": "Enable the ledger on this host, or skip top-up until wallet is live."
-  }
-}
-</script>
-<script>
-  function walletTopUp() {
-    return {
-      pack: "starter",
-      busy: false,
-      errorMessage: "",
-      errorCode: "",
-      applyMappedError(code) {
-        const mapped = mapWalletPageError(code);
-        this.errorMessage = mapped.human;
-        this.errorCode = mapped.code;
-      },
-      async startCheckout() {
-        this.errorMessage = "";
-        this.errorCode = "";
-        const ownerInput = document.getElementById("owner_id");
-        const ownerId = (ownerInput && ownerInput.value ? ownerInput.value : "{{ owner_id }}").trim();
-        if (!ownerId) {
-          this.applyMappedError("owner_id_required");
-          return;
-        }
-        this.busy = true;
-        try {
-          const response = await fetch("{{ checkout_api }}", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ owner_id: ownerId, pack: this.pack }),
-          });
-          const body = await response.json();
-          if (!response.ok) {
-            this.applyMappedError(body.error);
-            return;
-          }
-          if (body.url) {
-            window.location.href = body.url;
-            return;
-          }
-          this.errorMessage = "Checkout session missing redirect URL. Retry Start Stripe Checkout.";
-        } catch (err) {
-          this.errorMessage = "Network error starting Checkout. Check the connection, then retry.";
-        } finally {
-          this.busy = false;
-        }
-      },
-    };
-  }
-
-  function mapWalletPageError(code) {
-    const known = JSON.parse(document.getElementById("wallet-error-map").textContent);
-    const generic = "Checkout could not start. Check owner_id and pack, then retry.";
-    if (typeof code === "string" && known[code]) {
-      return { human: known[code].message + " " + known[code].next, code: code };
-    }
-    const machine = typeof code === "string" && /^[a-z][a-z0-9_]*$/.test(code);
-    return { human: generic, code: machine ? code : "" };
-  }
-</script>
 {% end %}
