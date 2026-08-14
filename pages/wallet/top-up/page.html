@@ -64,7 +64,10 @@
     </li>
     {% end %}
   </ul>
-  <p x-show="error" x-text="error" class="lede" style="color: var(--brass, #c9a227); margin: 0 0 0.75rem; font-size: 0.95rem" role="alert"></p>
+  <p x-show="errorMessage" class="lede" style="color: var(--brass, #c9a227); margin: 0 0 0.75rem; font-size: 0.95rem" role="alert">
+    <span x-text="errorMessage"></span>
+    <code class="mono" x-show="errorCode" x-text="errorCode"></code>
+  </p>
   <button class="btn btn-brass" type="button" @click="startCheckout()" :disabled="busy">
     <span x-text="busy ? 'Starting Checkout…' : 'Start Stripe Checkout'"></span>
   </button>
@@ -86,18 +89,41 @@
   </p>
 </section>
 
+<script type="application/json" id="wallet-error-map">
+{
+  "owner_id_required": {
+    "message": "Checkout needs a wallet owner id.",
+    "next": "Enter owner_id above, then start Checkout again."
+  },
+  "invalid_pack": {
+    "message": "That pack is not on the list.",
+    "next": "Choose starter, standard, or premium, then start Checkout again."
+  },
+  "wallet_disabled": {
+    "message": "Prepaid wallet is off in this environment.",
+    "next": "Enable the ledger on this host, or skip top-up until wallet is live."
+  }
+}
+</script>
 <script>
   function walletTopUp() {
     return {
       pack: "starter",
       busy: false,
-      error: "",
+      errorMessage: "",
+      errorCode: "",
+      applyMappedError(code) {
+        const mapped = mapWalletPageError(code);
+        this.errorMessage = mapped.human;
+        this.errorCode = mapped.code;
+      },
       async startCheckout() {
-        this.error = "";
+        this.errorMessage = "";
+        this.errorCode = "";
         const ownerInput = document.getElementById("owner_id");
         const ownerId = (ownerInput && ownerInput.value ? ownerInput.value : "{{ owner_id }}").trim();
         if (!ownerId) {
-          this.error = "Enter owner_id before starting Checkout.";
+          this.applyMappedError("owner_id_required");
           return;
         }
         this.busy = true;
@@ -109,21 +135,31 @@
           });
           const body = await response.json();
           if (!response.ok) {
-            this.error = body.error || "Checkout could not start.";
+            this.applyMappedError(body.error);
             return;
           }
           if (body.url) {
             window.location.href = body.url;
             return;
           }
-          this.error = "Checkout session missing redirect URL.";
+          this.errorMessage = "Checkout session missing redirect URL. Retry Start Stripe Checkout.";
         } catch (err) {
-          this.error = "Network error starting Checkout.";
+          this.errorMessage = "Network error starting Checkout. Check the connection, then retry.";
         } finally {
           this.busy = false;
         }
       },
     };
+  }
+
+  function mapWalletPageError(code) {
+    const known = JSON.parse(document.getElementById("wallet-error-map").textContent);
+    const generic = "Checkout could not start. Check owner_id and pack, then retry.";
+    if (typeof code === "string" && known[code]) {
+      return { human: known[code].message + " " + known[code].next, code: code };
+    }
+    const machine = typeof code === "string" && /^[a-z][a-z0-9_]*$/.test(code);
+    return { human: generic, code: machine ? code : "" };
   }
 </script>
 {% end %}
