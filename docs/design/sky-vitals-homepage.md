@@ -89,10 +89,24 @@ In-process `SkyVitalsStore` subscribed to `tool_events` plus successful
 envelope verify. No Redis / disk. Rolling windows by event timestamp.
 Catalog counts from the live builtin registry at read time.
 
-### Phase 2 (out of this freeze)
+### Phase 2 (persist + top resolved)
 
-Persisted 7d rollups and top resolved stars — leaf [#410](https://github.com/lbliii/orrery/issues/410).
-Do not implement in [#408](https://github.com/lbliii/orrery/issues/408).
+Leaf [#410](https://github.com/lbliii/orrery/issues/410) adds optional
+persistence and a 7-day resolve rollup without changing phase-1 keys.
+
+| Label | Source key | Phase |
+| --- | --- | --- |
+| Top resolved (7d) | `activity.top_resolved_7d[]` | 2 |
+
+When present, `activity.top_resolved_7d` is an array of at most five objects
+`{"name": "<resolved star name>", "resolves": <count>}` sorted by count
+descending, then name ascending. Counts come from `resolve_name` tool
+arguments within a rolling 7-day window. Omit the key when empty.
+
+**Store:** When `REDIS_URL` is set (same env as managed runs), counters and
+resolve-name events persist under the `orrery:sky-vitals:` key prefix and
+survive process restarts. When unset, behavior matches phase 1 (in-process
+only). No SQLite. See [sky vitals ops](../operations/sky-vitals.md).
 
 ## What leaves may assume
 
