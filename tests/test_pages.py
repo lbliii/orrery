@@ -837,10 +837,10 @@ class TestGazeConsole:
             attr_start = r.text.index('x-data="') + len('x-data="')
             attr_end = r.text.index('"', attr_start)
             attr = r.text[attr_start:attr_end]
-            assert "runMatch" in attr
-            assert "scrollIntoView" in attr
-            assert "renderHit" in attr
-            assert "kindPill" in attr
+            assert "syncUi" in attr
+            assert "filterKind" in attr
+            assert "renderHit" not in attr
+            assert "innerHTML" not in attr
 
     async def test_api_gaze_match(self, example_app) -> None:
         async with TestClient(example_app) as client:
@@ -1538,3 +1538,42 @@ class TestChirpInjectCsp:
             assert "'unsafe-inline'" in csp
             assert "fonts.googleapis.com" in csp
             assert "fonts.gstatic.com" in csp
+
+
+@pytest.mark.issue(475)
+class TestGazeHtmxFragment:
+    async def test_gaze_page_has_htmx_form_not_render_hit(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/gaze")
+            assert r.status == 200
+            assert 'hx-get="/gaze"' in r.text
+            assert 'hx-target="#gaze-hits"' in r.text
+            assert 'id="gaze-hits"' in r.text
+            assert "var(--settle)" in r.text
+            assert "renderHit" not in r.text
+            assert "innerHTML" not in r.text
+            assert "/api/gaze/match" not in r.text
+
+    async def test_gaze_intent_is_full_page(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/gaze?intent=html+pdf")
+            assert r.status == 200
+            assert "<!DOCTYPE html>" in r.text
+            assert 'class="console-head"' in r.text
+            assert 'id="gaze-hits"' in r.text
+            assert "orrery/html-to-pdf" in r.text
+
+    async def test_gaze_hx_request_returns_hits_block_only(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get(
+                "/gaze?intent=html+pdf",
+                headers={"HX-Request": "true"},
+            )
+            assert r.status == 200
+            assert "<!DOCTYPE html>" not in r.text
+            assert "<html" not in r.text
+            assert 'class="console-head"' not in r.text
+            assert 'id="gaze-hits"' in r.text
+            assert "gaze-hits" in r.text
+            assert "orrery/html-to-pdf" in r.text
+            assert "var(--settle)" in r.text

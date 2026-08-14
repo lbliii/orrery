@@ -2,12 +2,10 @@
 
 Server-renders nodes + hits from the shared catalog; Alpine keeps the node
 switcher and client-side facet filters. ``?intent=`` / ``?node=`` refresh
-results via ``match``. Optional ``GET /api/gaze/match`` powers live updates
-from the Gaze button. Backs GitHub epic #3 / issues #22-#24 and shelf epic
-#58 (#64-#66).
-
-Agent is the semantic router: Gaze returns a bounded shortlist with facets
-and supply-side oracle pills — never a forced winner or tool payload.
+results via ``match``. The Gaze button requests ``GET /gaze`` as an htmx
+fragment (``hits`` block). ``GET /api/gaze/match`` stays for agents.
+Backs GitHub epic #3 / issues #22-#24, shelf epic #58 (#64-#66), and
+leaf #475.
 """
 
 from __future__ import annotations
@@ -60,7 +58,7 @@ def get(request: Request) -> Page:
 
     return Page(
         "gaze/page.html",
-        "content",
+        "hits",
         page_block_name="content",
         page_title="Gaze — Orrery",
         footer_note="Gaze nodes",
