@@ -3,14 +3,12 @@
 Named motion only. Leaves do not invent shimmer, Lottie, or view transitions.
 Freeze: [#472](https://github.com/lbliii/orrery/issues/472). Tokens live in
 [`static/css/tokens.css`](../../static/css/tokens.css). Beat CSS:
-[`static/css/motion.css`](../../static/css/motion.css).
+[`static/css/motion.css`](../../static/css/motion.css). Wiring:
+[`static/motion.js`](../../static/motion.js).
 
 Haptics = tactile visual. Optional `navigator.vibrate(12)` **only** on Seal and
 Copy succeeded; never hover/nav; skip when `prefers-reduced-motion`. Reduced
 motion jumps to the end state; color and border still change.
-
-Feed/copy/seal JS is out of this leaf (`#482` / `#481`). CSS hooks below are
-the contract those leaves wire.
 
 ## Duration tokens
 
@@ -31,18 +29,18 @@ Do not write raw `80` / `180` / `280` / `360ms` in later CSS.
 | **Press** | `:active` `--tick` on `.btn` `.gaze-node` `.field` | Tactile; no hover vibrate |
 | **Focus** | brass `:focus-visible` only | `.btn` / `.field` ring |
 | **Busy** | label “…”, disabled | No spinner kit |
-| **Arrive** | gaze hits, feed row, `.alert` at `--settle` | Fade in; reduced-motion skips |
-| **Settle** | `/resolve` **server-matched** digest (`value-settled`) | Delete `initResolve` hijack (#481) |
+| **Arrive** | gaze hits, `.activity-item.is-arriving`, `.alert` at `--settle` | One-shot on new feed rows; do not re-animate the list |
+| **Settle** | `/resolve` **server-matched** digest (`value-settled`) | `initMatchedDigest` |
 | **Reveal** | constellation (keep) | `[data-constellation].is-revealed` |
-| **Seal** | wire `[data-receipt]` on star detail | `#481` — CSS states already exist |
-| **Copied** | `[data-copy-mcp]` + `--flash` | `#482` |
+| **Seal** | `[data-receipt]` on star detail | `initStarReceipt` + vibrate(12) |
+| **Copied** | `[data-copy-mcp].is-copied` + `--flash` | JS reads `--flash`; vibrate(12) on success |
 | **Live** | `.live-dot` (keep) | Phosphor pulse |
 
-Kill `.resolve-demo` load `rise` when settle JS lands. This leaf does not
-remove it.
+No load-theater `rise` on `.resolve-demo` or `.hero-copy`. Atmosphere may loop;
+plates do not.
 
 ## Reduced motion
 
 `prefers-reduced-motion: reduce` stops continuous sky/orb/live-dot animation
-and jumps receipt/alert/press to the end state. Brass focus rings and
-`--danger` / `--phosphor` color changes remain.
+and jumps Press / Arrive / Settle / Seal to the end state. Brass focus rings
+and `--danger` / `--phosphor` color and border changes remain.

@@ -40,10 +40,18 @@
     requestAnimationFrame(frame);
   }
 
-  function settleMs() {
-    const raw = getComputedStyle(root).getPropertyValue("--settle").trim();
+  function tokenMs(name, fallback) {
+    const raw = getComputedStyle(root).getPropertyValue(name).trim();
     const ms = parseFloat(raw);
-    return Number.isFinite(ms) ? ms : 280;
+    return Number.isFinite(ms) ? ms : fallback;
+  }
+
+  function settleMs() {
+    return tokenMs("--settle", 280);
+  }
+
+  function flashMs() {
+    return tokenMs("--flash", 180);
   }
 
   /** Resolve: settle the server-matched digest after a real GET. */
@@ -97,7 +105,7 @@
     }, 360);
   }
 
-  /** Copy MCP URL from star manifest (issue #25). */
+  /** Copy MCP URL from star manifest (issue #25). Copied beat uses --flash. */
   function initCopyMcp() {
     document.querySelectorAll("[data-copy-mcp]").forEach((btn) => {
       btn.addEventListener("click", async () => {
@@ -107,9 +115,14 @@
           await navigator.clipboard.writeText(url);
           const prev = btn.textContent;
           btn.textContent = "Copied";
+          btn.classList.add("is-copied");
+          if (!prefersReduce() && typeof navigator.vibrate === "function") {
+            navigator.vibrate(12);
+          }
           window.setTimeout(() => {
             btn.textContent = prev;
-          }, 1200);
+            btn.classList.remove("is-copied");
+          }, flashMs());
         } catch {
           btn.textContent = "Copy failed";
         }
@@ -117,10 +130,48 @@
     });
   }
 
+  /** Arrive: new feed rows get a one-shot class; do not re-animate the list. */
+  function initFeedArrive() {
+    const activity = document.querySelector(".activity");
+    if (!activity) return;
+
+    const oneShot = (el) => {
+      if (!(el instanceof Element) || !el.classList.contains("activity-item")) {
+        return;
+      }
+      if (prefersReduce()) {
+        el.classList.remove("is-arriving");
+        return;
+      }
+      el.classList.add("is-arriving");
+      el.addEventListener(
+        "animationend",
+        () => el.classList.remove("is-arriving"),
+        { once: true },
+      );
+    };
+
+    activity.querySelectorAll(".activity-item").forEach((el) => {
+      el.classList.remove("is-arriving");
+    });
+
+    const mo = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        for (const n of m.addedNodes) {
+          if (n.nodeType !== 1) continue;
+          if (n.classList?.contains("activity-item")) oneShot(n);
+          n.querySelectorAll?.(".activity-item").forEach(oneShot);
+        }
+      }
+    });
+    mo.observe(activity, { childList: true, subtree: true });
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
     initMatchedDigest();
     initConstellation();
     initStarReceipt();
     initCopyMcp();
+    initFeedArrive();
   });
 })();

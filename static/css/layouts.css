@@ -28,7 +28,6 @@
   position: relative;
   z-index: var(--z-shell);
   max-width: 38rem;
-  animation: rise 700ms var(--ease) both;
 }
 
 @keyframes rise {

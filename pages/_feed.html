@@ -2,7 +2,7 @@
    each MCP tools/call appears on the landing activity strip. #}
 {% block activity_row %}
 {% if (event ?? none) %}
-<div class="activity-item">
+<div class="activity-item is-arriving">
   <div class="activity-row-head">
     <span class="feed-phase feed-phase--{{ phase }}">{{ phase }}</span>
     <span class="feed-line">{{ display_line }}</span>

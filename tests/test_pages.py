@@ -1692,3 +1692,74 @@ class TestStarDetailSeal:
             motion = await client.get("/static/motion.js")
             assert motion.status == 200
             assert "function initStarReceipt" in motion.text
+
+
+@pytest.mark.issue(482)
+class TestMotionLoop:
+    def test_feed_row_has_one_shot_arrive_class(self) -> None:
+        root = Path(__file__).resolve().parents[1]
+        feed = (root / "pages" / "_feed.html").read_text()
+        motion = (root / "static" / "css" / "motion.css").read_text()
+        assert 'class="activity-item is-arriving"' in feed
+        assert ".activity-item.is-arriving" in motion
+        assert "var(--settle)" in motion
+        assert "function initFeedArrive" in (
+            root / "static" / "motion.js"
+        ).read_text()
+
+    def test_copy_reads_flash_not_raw_ms(self) -> None:
+        js = (
+            Path(__file__).resolve().parents[1] / "static" / "motion.js"
+        ).read_text()
+        assert "function initCopyMcp" in js
+        assert "function initMatchedDigest" in js
+        assert "function initConstellation" in js
+        assert "function initStarReceipt" in js
+        assert "--flash" in js
+        assert "flashMs" in js
+        assert "is-copied" in js
+        assert "1200" not in js
+        assert "vibrate(12)" in js
+
+    def test_load_theater_rise_is_gone(self) -> None:
+        root = Path(__file__).resolve().parents[1]
+        widgets = (root / "static" / "css" / "widgets.css").read_text()
+        layouts = (root / "static" / "css" / "layouts.css").read_text()
+        motion = (root / "static" / "css" / "motion.css").read_text()
+        assert "animation: rise" not in widgets
+        assert "animation: rise" not in layouts
+        assert "animation: rise" not in motion
+        assert ".resolve-demo" in widgets
+        assert ".hero-copy" in layouts
+
+    def test_reduced_motion_covers_press_arrive_settle_seal(self) -> None:
+        css = (
+            Path(__file__).resolve().parents[1]
+            / "static"
+            / "css"
+            / "motion.css"
+        ).read_text()
+        assert "prefers-reduced-motion" in css
+        reduce_at = css.index("@media (prefers-reduced-motion: reduce)")
+        block = css[reduce_at:]
+        assert ".btn:active" in block
+        assert ".activity-item.is-arriving" in block
+        assert "[data-digest].value-settled" in block
+        assert "[data-receipt]" in block
+        assert "transition: none" in block
+
+    async def test_home_feed_and_copy_hooks_still_render(
+        self, example_app
+    ) -> None:
+        async with TestClient(example_app) as client:
+            home = await client.get("/")
+            assert home.status == 200
+            assert 'class="resolve-demo"' in home.text
+            assert 'class="activity"' in home.text
+            star = await client.get("/star/orrery/world-time")
+            assert star.status == 200
+            assert "data-copy-mcp" in star.text
+            motion = await client.get("/static/css/motion.css")
+            assert motion.status == 200
+            assert "prefers-reduced-motion" in motion.text
+            assert "animation: rise" not in motion.text
