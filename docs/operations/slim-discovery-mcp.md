@@ -11,6 +11,7 @@ execution proxy** — not a flat star call zoo ([#302](https://github.com/lbliii
 - ``coverage_check``
 - ``explain_policy``
 - ``call_skill`` — same-origin publisher forwarder (ADR 0010)
+- ``index_ping``, ``rate_listing`` — opt-in newcomer shelf (ADR 0012)
 
 Star **call** tools (``convert``, ``fetch``, ``run``, ``answer``, …) are absent
 from the default install catalog. After ``resolve_name``, call the publisher MCP

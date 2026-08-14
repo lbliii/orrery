@@ -105,8 +105,10 @@ def discovery_app(example_app, monkeypatch: pytest.MonkeyPatch):
 def test_mcp_tools_allowlist_matches_frozen_set() -> None:
     names = {t["name"] for t in MCP_TOOLS}
     assert names == MCP_TOOLS_ALLOWLIST
-    assert len(names) == 8
+    assert len(names) == 10
     assert "call_skill" in names
+    assert "index_ping" in names
+    assert "rate_listing" in names
     assert names.isdisjoint(MCP_TOOLS_DENYLIST)
     for denied in ("convert", "fetch", "run", "answer"):
         assert denied in MCP_TOOLS_DENYLIST
@@ -149,6 +151,9 @@ async def test_llms_txt_is_public(discovery_app) -> None:
         assert "Do not install or clone for live truth" in response.text
         assert SLIM_MCP_COPY in response.text
         assert "orrery/stale-proof" in response.text
+        assert "Get listed (newcomer shelf)" in response.text
+        assert "index_ping" in response.text
+        assert "rate_listing" in response.text
 
 
 @pytest.mark.asyncio

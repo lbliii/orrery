@@ -69,6 +69,7 @@ Acceptance flavor for product work:
 ### 7. Explicit Not now
 
 - Untrusted third-party marketplace + isolate sandbox
+  (opt-in **listing** + crowdsourced pills is a carve-out — [ADR 0012](./0012-opt-in-listing.md); still no isolate, proxy-all, payouts, or essays)
 - Scale-to-zero FaaS / Orrery-as-compute-host / **proxy-all-calls**
 - BYO-key-per-invocation marketplace
 - Separate Document/Content CMS object

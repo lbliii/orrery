@@ -37,6 +37,7 @@ from catalog.constellation_run import explain_policy, run_constellation, status_
 from catalog.coverage import check_coverage, describe_coverage
 from catalog.mcp_tool_content import wrap_structured_mcp_handler
 from discovery import MCP_TOOLS_ALLOWLIST
+from listings.mcp import build_listing_skill
 from public_keys import key_set_url
 from stars.decision_bind.service import bind as bind_decision
 from stars.html_to_pdf.skill import build_skill as build_html_to_pdf_star
@@ -61,6 +62,7 @@ _gaze_skill: Skill | None = None
 _resolve_skill: Skill | None = None
 _launch_gate_skill: Skill | None = None
 _discovery_launch_gate_skill: Skill | None = None
+_listing_skill: Skill | None = None
 
 def _load_or_generate_key(env_name: str) -> Ed25519PrivateKey:
     raw = os.environ.get(env_name, "").strip()
@@ -115,6 +117,14 @@ def get_discovery_launch_gate_skill() -> Skill:
     if _discovery_launch_gate_skill is None:
         _discovery_launch_gate_skill = build_launch_gate_skill(discovery_only=True)
     return _discovery_launch_gate_skill
+
+
+def get_listing_skill() -> Skill:
+    """Return opt-in listing skill (``index_ping`` / ``rate_listing`` on ``/mcp``)."""
+    global _listing_skill
+    if _listing_skill is None:
+        _listing_skill = build_listing_skill(verify_receipt=verify_receipt)
+    return _listing_skill
 
 
 def build_gaze_skill(*, private_key: Any | None = None) -> Skill:
@@ -555,6 +565,7 @@ def build_discovery_skills() -> tuple[Skill, ...]:
         get_gaze_skill(),
         get_resolve_skill(),
         get_discovery_launch_gate_skill(),
+        get_listing_skill(),
     )
 
 

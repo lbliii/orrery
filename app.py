@@ -89,6 +89,9 @@ from dogfood import (
     run_dogfood_publish_gate,
     verify_receipt,
 )
+from listings.ping import ping_listing
+from listings.schema import ListingError
+from listings.store import load_allowlist_fixtures
 from namespaces import (
     CALLER_HEADER,
     ProvisionError,
@@ -169,6 +172,7 @@ for middleware in secure_stack(
             "/api/wallet/stripe/checkout",
             "/api/wallet/stripe/webhook",
             "/api/namespaces",
+            "/api/listings/ping",
             *_DIRECT_STAR_MCP_PATHS,
         })
     ),
@@ -889,11 +893,41 @@ async def api_create_namespace(request: Request) -> JSONResponse:
     return JSONResponse.from_value(result, status=201)
 
 
+@app.route("/api/listings/ping", methods=["POST"], referenced=True)
+async def api_listings_ping(request: Request) -> JSONResponse:
+    """Fetch one submitted listing URL and land it in ``new/`` (ADR 0012)."""
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse.from_value({"error": "invalid_json"}, status=400)
+    if not isinstance(body, dict):
+        return JSONResponse.from_value({"error": "expected_object"}, status=400)
+    url = body.get("url")
+    if not isinstance(url, str):
+        return JSONResponse.from_value({"error": "url_required"}, status=400)
+    try:
+        record = ping_listing(url)
+    except ListingError as exc:
+        return JSONResponse.from_value({"error": exc.code}, status=400)
+    return JSONResponse.from_value(
+        {
+            "name": record.name,
+            "claimed_name": record.claimed_name,
+            "index_tier": record.index_tier,
+            "endpoint": record.endpoint,
+            "oracle_ok": record.oracle_ok,
+            "content_digest": record.content_digest,
+        },
+        status=201,
+    )
+
+
 # Publish-oracle dogfood: seed Skill DNS, then check → freeze → smoke with
 # per-skill score slices. Skip with ORRERY_SKIP_PUBLISH=1 (async pytest).
 # L1 (#117): every public star package must ship a non-empty CORPUS unless skip.
 _publish_receipt = None
 _corpus_ok = corpus_ok_by_star(star_registry)
+load_allowlist_fixtures()
 if os.environ.get("ORRERY_SKIP_PUBLISH", "").strip() not in ("1", "true", "True"):
     validate_public_star_corpora(star_registry)
     try:
