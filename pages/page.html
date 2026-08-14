@@ -73,7 +73,10 @@
   {# sse-eager-connect: intentional #}
   <div class="activity" hx-ext="sse" sse-connect="/feed" hx-disinherit="hx-target hx-swap">
     <div sse-swap="message" hx-target="this" hx-swap="afterbegin"></div>
-    <p class="empty">Waiting for an MCP <code>tools/call</code>&hellip;</p>
+    <p class="empty feed-quiet">
+      Quiet sky — no recent invocations. Point an agent at
+      <code class="mono">/mcp</code> and live activity appears here.
+    </p>
   </div>
 </section>
 {% end %}
