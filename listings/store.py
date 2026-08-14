@@ -214,6 +214,66 @@ def list_urls(*, store: ListingStore | None = None) -> tuple[str, ...]:
     return target.list_urls()
 
 
+def quiet_names(*, store: ListingStore | None = None) -> frozenset[str]:
+    """Skill DNS names hidden from the public empty-intent shortlist."""
+    target = store if store is not None else listing_store_from_env()
+    names: set[str] = set()
+    for row in target.load_all():
+        if not row.quiet:
+            continue
+        names.add(row.live_name)
+        if row.claimed_name:
+            names.add(row.claimed_name)
+        if row.promoted_to:
+            names.add(row.promoted_to)
+    return frozenset(names)
+
+
+def set_quiet(
+    listing_url: str,
+    quiet: bool = True,
+    *,
+    store: ListingStore | None = None,
+) -> ListingRow | None:
+    """Set ``quiet`` on an existing row. Does not invent hosts."""
+    return _rewrite_row(listing_url, store=store, quiet=quiet)
+
+
+def record_fetch_error(
+    listing_url: str,
+    last_error: str,
+    *,
+    store: ListingStore | None = None,
+) -> ListingRow | None:
+    """Record a failed refetch without changing listing JSON or digest."""
+    return _rewrite_row(listing_url, store=store, last_error=last_error)
+
+
+def _rewrite_row(
+    listing_url: str,
+    *,
+    store: ListingStore | None = None,
+    quiet: bool | None = None,
+    last_error: str | None = None,
+) -> ListingRow | None:
+    target = store if store is not None else listing_store_from_env()
+    existing = target.get(listing_url)
+    if existing is None:
+        return None
+    return target.upsert(
+        listing_url=existing.listing_url,
+        listing_json=existing.listing_json,
+        content_digest=existing.content_digest,
+        live_name=existing.live_name,
+        claimed_name=existing.claimed_name,
+        endpoint=existing.endpoint,
+        index_tier=existing.index_tier,
+        promoted_to=existing.promoted_to,
+        quiet=existing.quiet if quiet is None else quiet,
+        last_error=existing.last_error if last_error is None else last_error,
+    )
+
+
 def listing_records() -> tuple[ResolveRecord, ...]:
     """Current newcomer (and promoted) listing rows."""
     return tuple(_LISTINGS.values())
