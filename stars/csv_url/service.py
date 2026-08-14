@@ -7,11 +7,12 @@ import hashlib
 import io
 import re
 import urllib.error
-import urllib.request
 from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
-from typing import Any, Protocol
+from typing import Protocol
 from urllib.parse import urlsplit
+
+from stars._core.http_egress import https_get
 
 from .contract import DATASET_URLS, DEFAULT_DATASET, MAX_BYTES, MAX_ROWS
 
@@ -26,22 +27,15 @@ class Fetch(Protocol):
     ) -> tuple[str, int, Mapping[str, str], bytes]: ...
 
 
-class _NoRedirect(urllib.request.HTTPRedirectHandler):
-    def redirect_request(self, *args: Any, **kwargs: Any) -> None:
-        return None
-
-
 def _network_fetch(
     url: str, *, timeout: float, max_bytes: int
 ) -> tuple[str, int, Mapping[str, str], bytes]:
-    request = urllib.request.Request(url, headers={"User-Agent": "orrery-csv-url/0.1"})
-    with urllib.request.build_opener(_NoRedirect()).open(request, timeout=timeout) as response:
-        return (
-            response.geturl(),
-            int(response.status),
-            dict(response.headers.items()),
-            response.read(max_bytes + 1),
-        )
+    return https_get(
+        url,
+        timeout=timeout,
+        max_bytes=max_bytes,
+        headers={"User-Agent": "orrery-csv-url/0.1"},
+    )
 
 
 def get(
