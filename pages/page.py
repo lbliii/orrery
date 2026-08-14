@@ -6,6 +6,9 @@ The below-fold activity strip subscribes to ``/feed`` (SSE) so every MCP
 
 from __future__ import annotations
 
+import sys
+from typing import Any
+
 from chirp import Page
 
 from stars.builtins import builtin_registry
@@ -26,14 +29,35 @@ def public_capability_counts() -> tuple[int, int]:
     )
 
 
+def _sky_vitals_snapshot() -> dict[str, Any]:
+    """Read the live host store without re-importing ``app.py``."""
+    for module_name in ("orrery_app_under_test", "app", "__main__"):
+        host = sys.modules.get(module_name)
+        if host is not None and hasattr(host, "sky_vitals"):
+            return host.sky_vitals.snapshot()
+    msg = "SkyVitalsStore is not wired on the running host module"
+    raise RuntimeError(msg)
+
+
 def get() -> Page:
-    star_count, constellation_count = public_capability_counts()
+    snapshot = _sky_vitals_snapshot()
+    catalog = snapshot["catalog"]
+    activity = snapshot["activity"]
+    demand = snapshot["demand"]
+    tenancy = snapshot["tenancy"]
     return Page(
         "page.html",
         "content",
         page_block_name="content",
         page_title="Orrery — skills you point at",
         footer_note="Orrery · live host",
-        star_count=star_count,
-        constellation_count=constellation_count,
+        star_count=catalog["stars_live"],
+        constellation_count=catalog["constellations_live"],
+        vitals_stars_live=catalog["stars_live"],
+        vitals_constellations_live=catalog["constellations_live"],
+        vitals_invocations_24h=activity["invocations_24h"],
+        vitals_resolves_24h=activity["resolves_24h"],
+        vitals_seals_24h=activity["seals_24h"],
+        vitals_useful_7d=demand["useful_7d"],
+        vitals_namespaces_live=tenancy["namespaces_live"],
     )
