@@ -1,0 +1,8 @@
+{
+  "listings": [
+    {
+      "kind": "fixture",
+      "path": "fixtures/example-invoice.json"
+    }
+  ]
+}

@@ -48,6 +48,10 @@ class ResolveRecord:
     capability_families: tuple[str, ...] = field(default_factory=tuple)
     freshness: str | None = None
     constellation_memberships: tuple[str, ...] = field(default_factory=tuple)
+    index_tier: str | None = None
+    claimed_name: str | None = None
+    listing_url: str | None = None
+    promoted_to: str | None = None
 
     @property
     def short_name(self) -> str:
@@ -118,4 +122,8 @@ class ResolveRecord:
             "capability_families": list(self.capability_families),
             "freshness": self.freshness,
             "constellation_memberships": list(self.constellation_memberships),
+            "index_tier": self.index_tier,
+            "claimed_name": self.claimed_name,
+            "listing_url": self.listing_url,
+            "promoted_to": self.promoted_to,
         }

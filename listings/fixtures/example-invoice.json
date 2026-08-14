@@ -1,0 +1,15 @@
+{
+  "spec": "orrery-listing/0.1",
+  "name": "publisher/invoice-check",
+  "summary": "Check an invoice PDF for totals, tax, and line-item consistency.",
+  "use_when": [
+    "an agent has an invoice PDF and needs a structured check",
+    "totals or tax lines look off and need a second pass",
+    "you want a publisher-hosted invoice skill, not a first-party star"
+  ],
+  "endpoint": "https://mcp.example.com/invoice/mcp",
+  "transport": "streamable-http",
+  "tools": ["check", "health"],
+  "price_per_call": null,
+  "contact": "https://example.com/invoice"
+}
