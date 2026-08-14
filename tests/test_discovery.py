@@ -649,3 +649,30 @@ async def test_resolve_name_includes_corpus_example_arguments(discovery_app) -> 
         assert isinstance(examples, dict)
         assert examples.get("fetch") == {}
         assert examples.get("answer") == {}
+
+
+@pytest.mark.issue(430)
+@pytest.mark.asyncio
+async def test_resolve_and_describe_misses_are_mcp_errors(discovery_app) -> None:
+    """Unsigned discovery misses promote to ADR 0010 ``status: error`` (#430)."""
+    cases: tuple[tuple[str, dict[str, object]], ...] = (
+        ("resolve_name", {"name": "orrery/no-such-skill"}),
+        ("gaze_describe", {"name": "orrery/no-such-skill"}),
+    )
+    async with TestClient(discovery_app) as client:
+        for tool_name, arguments in cases:
+            response = await client.post(
+                "/mcp",
+                json={
+                    "jsonrpc": "2.0",
+                    "method": "tools/call",
+                    "id": 430,
+                    "params": _modern_mcp_params(name=tool_name, arguments=arguments),
+                },
+                headers=_modern_mcp_headers("tools/call", tool_name),
+            )
+            assert response.status == 200, tool_name
+            body = _mcp_tool_body(response.text)
+            assert body["status"] == "error", tool_name
+            assert body["error"]["code"] == "not_found", tool_name
+            assert "envelope_wire" not in body, tool_name
