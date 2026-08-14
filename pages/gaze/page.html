@@ -15,57 +15,21 @@
         if (this.filterOracleOk && el.dataset.oracleOk !== 'true') return false;
         return true;
       },
-      applyFilters() {
-        document.querySelectorAll('[data-gaze-hits] li[data-kind]').forEach((el) => {
-          el.style.display = this.hitVisible(el) ? '' : 'none';
+      syncUi() {
+        document.querySelectorAll('[data-gaze-hits]').forEach((list) => {
+          const showNode = list.dataset.gazeHits === this.node;
+          list.style.display = showNode ? '' : 'none';
+          if (!showNode) return;
+          list.querySelectorAll('li[data-kind]').forEach((el) => {
+            el.style.display = this.hitVisible(el) ? '' : 'none';
+          });
         });
-      },
-      renderHit(hit) {
-        const kindPill = hit.kind === 'constellation' ? 'pill-pay' : hit.kind === 'tool' ? 'pill-priv' : 'pill-ok';
-        const tollPill = hit.price
-          ? '<span class=&quot;pill pill-pay&quot;>' + hit.price + '</span>'
-          : '<span class=&quot;pill pill-free&quot;>free</span>';
-        const oracle = (hit.trust && hit.trust.oracle) ? hit.trust.oracle : {};
-        const oracleClass = oracle.pill_class || (hit.oracle_ok ? 'pill-ok' : 'pill-priv');
-        const oracleText = oracle.pill_text || (hit.oracle_ok ? 'check · freeze · smoke' : 'unscored');
-        const consoleHref = hit.console_href || '/console';
-        const href = hit.href || '#';
-        const name = hit.name || '';
-        const blurb = hit.blurb || '';
-        const kind = hit.kind || '';
-        const ns = hit.namespace || '';
-        const reactive = hit.reactive ? 'true' : 'false';
-        const oracleOk = hit.oracle_ok ? 'true' : 'false';
-        const reactivePill = hit.reactive
-          ? '<span class=&quot;pill pill-priv&quot;>reactive</span>'
-          : '';
-        return '<li data-kind=&quot;' + kind + '&quot; data-reactive=&quot;' + reactive
-          + '&quot; data-oracle-ok=&quot;' + oracleOk + '&quot; data-namespace=&quot;' + ns + '&quot;>'
-          + '<a href=&quot;' + href + '&quot;>'
-          + '<span class=&quot;pill ' + kindPill + '&quot;>' + kind + '</span>'
-          + tollPill
-          + reactivePill
-          + '<span class=&quot;pill ' + oracleClass + '&quot;>' + oracleText + '</span>'
-          + '<strong class=&quot;mono&quot;>' + name + '</strong>'
-          + '<span class=&quot;muted&quot;>' + blurb + '</span>'
-          + '</a>'
-          + (kind === 'star' || kind === 'tool'
-            ? ' <a class=&quot;mono&quot; href=&quot;' + consoleHref + '&quot; style=&quot;font-size:0.82rem&quot;>console</a>'
-            : '')
-          + '</li>';
-      },
-      async runMatch() {
-        const url = '/api/gaze/match?intent=' + encodeURIComponent(this.q) + '&node=' + encodeURIComponent(this.node);
-        const data = await (await fetch(url)).json();
-        const list = document.querySelector('[data-gaze-hits=&quot;' + this.node + '&quot;]');
-        if (!list || !data.hits) return;
-        list.innerHTML = data.hits.map((hit) => this.renderHit(hit)).join('');
-        this.applyFilters();
-        this.$refs.results.scrollIntoView({behavior: 'smooth'});
       }
     };
   })()"
-  @change="applyFilters()"
+  x-init="syncUi()"
+  @change="syncUi()"
+  @htmx:after-swap="syncUi()"
 >
   <header class="console-head">
     <div>
@@ -87,7 +51,7 @@
       role="tab"
       :aria-selected="node === '{{ n.id }}'"
       :data-active="node === '{{ n.id }}'"
-      @click="node = '{{ n.id }}'"
+      @click="node = '{{ n.id }}'; syncUi()"
       {% if n.active %}data-active="true" aria-selected="true"{% end %}
     >
       <span class="gaze-node-label">{{ n.label }}</span>
@@ -122,7 +86,11 @@
           style="margin-top: 0.5rem"
           action="/gaze"
           method="get"
-          @submit.prevent="runMatch()"
+          hx-get="/gaze"
+          hx-target="#gaze-hits"
+          hx-swap="outerHTML"
+          hx-push-url="true"
+          hx-disabled-elt="find button"
         >
           <input type="hidden" name="node" :value="node" value="{{ active_node }}" />
           <input
@@ -188,46 +156,23 @@ tools/call resolve_name
             oracle_ok
           </label>
         </div>
-        {% for n in node_panels %}
-        <ul
-          class="gaze-hits"
-          data-gaze-hits="{{ n.id }}"
-          x-show="node === '{{ n.id }}'"
-          {% if not n.active %}style="display:none"{% end %}
+        {% block hits %}
+        <div
+          id="gaze-hits"
+          style="animation: fade-in var(--settle) var(--ease)"
         >
-          {% for hit in n.hits %}
-          <li
-            data-kind="{{ hit.kind }}"
-            data-reactive="{% if hit.reactive %}true{% else %}false{% end %}"
-            data-oracle-ok="{% if hit.oracle_ok %}true{% else %}false{% end %}"
-            data-namespace="{{ hit.namespace or '' }}"
+          {% for n in node_panels %}
+          <ul
+            class="gaze-hits"
+            data-gaze-hits="{{ n.id }}"
+            {% if not n.active %}style="display:none"{% end %}
           >
-            <a href="{{ hit.href }}">
-              <span class="pill {% if hit.kind == 'constellation' %}pill-pay{% elif hit.kind == 'tool' %}pill-priv{% else %}pill-ok{% end %}">{{ hit.kind }}</span>
-              {% if hit.price %}
-              <span class="pill pill-pay">{{ hit.price }}</span>
-              {% else %}
-              <span class="pill pill-free">free</span>
-              {% end %}
-              {% if hit.reactive %}
-              <span class="pill pill-priv">reactive</span>
-              {% end %}
-              {% if hit.oracle %}
-              <span class="pill {{ hit.oracle.pill_class }}">{{ hit.oracle.pill_text }}</span>
-              {% elif hit.oracle_ok %}
-              <span class="pill pill-ok">check · freeze · smoke</span>
-              {% else %}
-              <span class="pill pill-priv">unscored</span>
-              {% end %}
-              <strong class="mono">{{ hit.name }}</strong>
-              <span class="muted">{{ hit.blurb }}</span>
-            </a>
-            {% if hit.kind == 'star' or hit.kind == 'tool' %}
-            <a class="mono" href="{{ hit.console_href }}" style="font-size: 0.82rem">console</a>
+            {% for hit in n.hits %}
+            {% include "gaze/hit.html" %}
             {% end %}
-          </li>
+          </ul>
           {% end %}
-        </ul>
+        </div>
         {% end %}
       </div>
 

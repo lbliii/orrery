@@ -1,0 +1,31 @@
+{# Live include (Chirp template_dir is pages/). Extract twin: templates/components/hit.html #}
+<li
+  data-kind="{{ hit.kind }}"
+  data-reactive="{% if hit.reactive %}true{% else %}false{% end %}"
+  data-oracle-ok="{% if hit.oracle_ok %}true{% else %}false{% end %}"
+  data-namespace="{{ hit.namespace or '' }}"
+>
+  <a href="{{ hit.href }}">
+    <span class="pill {% if hit.kind == 'constellation' %}pill-pay{% elif hit.kind == 'tool' %}pill-priv{% else %}pill-ok{% end %}">{{ hit.kind }}</span>
+    {% if hit.price %}
+    <span class="pill pill-pay">{{ hit.price }}</span>
+    {% else %}
+    <span class="pill pill-free">free</span>
+    {% end %}
+    {% if hit.reactive %}
+    <span class="pill pill-priv">reactive</span>
+    {% end %}
+    {% if hit.oracle %}
+    <span class="pill {{ hit.oracle.pill_class }}">{{ hit.oracle.pill_text }}</span>
+    {% elif hit.oracle_ok %}
+    <span class="pill pill-ok">check · freeze · smoke</span>
+    {% else %}
+    <span class="pill pill-priv">unscored</span>
+    {% end %}
+    <strong class="mono">{{ hit.name }}</strong>
+    <span class="muted">{{ hit.blurb }}</span>
+  </a>
+  {% if hit.kind == 'star' or hit.kind == 'tool' %}
+  <a class="mono" href="{{ hit.console_href }}" style="font-size:0.82rem">console</a>
+  {% end %}
+</li>

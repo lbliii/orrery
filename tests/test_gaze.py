@@ -179,3 +179,20 @@ def test_quiet_name_absent_from_public_gaze_present_on_resolve(example_app) -> N
         assert CATALOG.resolve("new/invoice-check") is not None
     finally:
         configure_listing_store(None)
+
+
+@pytest.mark.issue(475)
+async def test_gaze_hx_request_is_hits_fragment_not_full_page(example_app) -> None:
+    async with TestClient(example_app) as client:
+        full = await client.get("/gaze?intent=html+pdf")
+        frag = await client.get(
+            "/gaze?intent=html+pdf",
+            headers={"HX-Request": "true"},
+        )
+        assert full.status == 200
+        assert frag.status == 200
+        assert "<!DOCTYPE html>" in full.text
+        assert "<!DOCTYPE html>" not in frag.text
+        assert 'id="gaze-hits"' in frag.text
+        assert "orrery/html-to-pdf" in frag.text
+        assert 'class="console-head"' not in frag.text
