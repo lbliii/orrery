@@ -91,7 +91,7 @@ from dogfood import (
 )
 from listings.ping import ping_listing
 from listings.schema import ListingError
-from listings.store import load_allowlist_fixtures
+from listings.store import boot_durable_listings, load_allowlist_fixtures
 from namespaces import (
     CALLER_HEADER,
     ProvisionError,
@@ -927,6 +927,7 @@ async def api_listings_ping(request: Request) -> JSONResponse:
 # L1 (#117): every public star package must ship a non-empty CORPUS unless skip.
 _publish_receipt = None
 _corpus_ok = corpus_ok_by_star(star_registry)
+boot_durable_listings()
 load_allowlist_fixtures()
 if os.environ.get("ORRERY_SKIP_PUBLISH", "").strip() not in ("1", "true", "True"):
     validate_public_star_corpora(star_registry)

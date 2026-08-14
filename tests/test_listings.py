@@ -13,11 +13,20 @@ from catalog.agent_card import required_public_card_names
 from catalog.store import replace_catalog
 from listings.fetch import assert_public_https_url, fetch_and_cap
 from listings.ping import ping_listing
+from listings.postgres import PostgresListingStore
 from listings.promote import apply_promotion, promotion_ready
 from listings.records import listing_to_record
 from listings.schema import ListingError, assert_proof_of_control, parse_listing
 from listings.store import (
     ALLOWLIST_PATH,
+    InMemoryListingStore,
+    ListingRow,
+    ListingStoreConfigError,
+    boot_durable_listings,
+    configure_listing_store,
+    list_urls,
+    listing_records,
+    listing_store_from_env,
     load_allowlist_fixtures,
     reset_listing_store,
     upsert_listing,
@@ -37,6 +46,7 @@ def _restore_catalog():
     before = CATALOG.all()
     yield
     reset_listing_store()
+    configure_listing_store(None)
     replace_catalog(before)
 
 
@@ -182,6 +192,7 @@ def test_ping_listing_lands_immediately(_restore_catalog) -> None:
     record = ping_listing(
         "https://example.com/.well-known/orrery.json",
         fetch=lambda _u: _fixture_bytes(),
+        store=InMemoryListingStore(),
     )
     assert record.name == "new/invoice-check"
     assert CATALOG.get("new/invoice-check") is not None
@@ -264,3 +275,79 @@ def test_apply_promotion_moves_claimed_name(example_app, _restore_catalog, monke
     claimed = CATALOG.get("publisher/invoice-check")
     assert claimed is not None
     assert claimed.oracle_ok is False
+
+
+def _listing_bytes(*, name: str) -> bytes:
+    data = json.loads(_fixture_bytes())
+    data["name"] = name
+    return json.dumps(data).encode()
+
+
+@pytest.mark.issue(458)
+def test_ping_survives_simulated_restart(_restore_catalog) -> None:
+    ping_url = "https://example.com/.well-known/orrery.json"
+    backing: dict[str, ListingRow] = {}
+    first = InMemoryListingStore(backing)
+    ping_listing(
+        ping_url,
+        fetch=lambda _u: _listing_bytes(name="publisher/restart-probe"),
+        store=first,
+    )
+    assert CATALOG.get("new/restart-probe") is not None
+
+    kept = tuple(r for r in CATALOG.all() if r.name != "new/restart-probe")
+    replace_catalog(kept)
+    reset_listing_store()
+    assert CATALOG.get("new/restart-probe") is None
+
+    reloaded = InMemoryListingStore(backing)
+    boot_durable_listings(store=reloaded)
+    fixtures = load_allowlist_fixtures(path=ALLOWLIST_PATH)
+    assert fixtures
+    assert any(row.name == "new/invoice-check" for row in listing_records())
+    revived = CATALOG.get("new/restart-probe")
+    assert revived is not None
+    assert revived.listing_url == ping_url
+    assert list_urls(store=reloaded) == (ping_url,)
+
+
+@pytest.mark.issue(458)
+def test_list_urls_returns_only_known_listing_urls(_restore_catalog) -> None:
+    store = InMemoryListingStore()
+    load_allowlist_fixtures(path=ALLOWLIST_PATH)
+    assert list_urls(store=store) == ()
+    ping_url = "https://example.com/.well-known/orrery.json"
+    ping_listing(ping_url, fetch=lambda _u: _fixture_bytes(), store=store)
+    assert list_urls(store=store) == (ping_url,)
+    assert all(not url.startswith("fixture://") for url in list_urls(store=store))
+
+
+@pytest.mark.issue(458)
+def test_postgres_store_requires_database_url(monkeypatch) -> None:
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    with pytest.raises(ListingStoreConfigError, match="DATABASE_URL"):
+        PostgresListingStore()
+
+
+@pytest.mark.issue(458)
+def test_host_factory_selects_postgres_when_database_url_set(
+    monkeypatch, _restore_catalog
+) -> None:
+    configure_listing_store(None)
+    monkeypatch.setenv("DATABASE_URL", "postgresql://example/orrery")
+    store = listing_store_from_env()
+    assert isinstance(store, PostgresListingStore)
+
+
+@pytest.mark.issue(458)
+def test_deployed_ping_without_database_url_is_store_unavailable(
+    monkeypatch, _restore_catalog
+) -> None:
+    configure_listing_store(None)
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    with pytest.raises(ListingError) as exc:
+        ping_listing(
+            "https://example.com/.well-known/orrery.json",
+            fetch=lambda _u: _fixture_bytes(),
+        )
+    assert exc.value.code == "store_unavailable"
