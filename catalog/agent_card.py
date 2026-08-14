@@ -46,6 +46,7 @@ class AgentCardIO:
 #: Sealed composite outcomes agents should expect from constellation runs.
 DEFAULT_DISPOSITIONS: tuple[str, ...] = ("ready", "not-ready", "stale", "blocked")
 CONTENT_READINESS_DISPOSITIONS: tuple[str, ...] = ("ready", "needs-work", "inconclusive")
+KIDA_READY_DISPOSITIONS: tuple[str, ...] = ("ready", "needs-work", "inconclusive")
 AUTHORIZED_CONTENT_PATCH_DISPOSITIONS: tuple[str, ...] = (
     "authorized",
     "denied",
@@ -1376,6 +1377,81 @@ _STAR_CARDS: dict[str, AgentCard] = {
         ),
         tree_role="review",
         worker_cost="low",
+    ),
+    "orrery/kida-ready": _card(
+        summary=(
+            "Sync Kida check → gate → render composite with sealed "
+            "ready | needs-work | inconclusive disposition."
+        ),
+        use_when=(
+            "You need one SKU for static Kida validation plus HTML render",
+            "You want a frozen check→render subgraph seal for the badge demo",
+            "Check failures should block render without inventing new dispositions",
+        ),
+        not_for=(
+            "Static check only (use kida-check)",
+            "Render without prior validation (use kida-render)",
+            "Durable pause / continuation (sync only)",
+        ),
+        example_intents=(
+            "kida ready composite",
+            "check then render Kida badge",
+            "badge typo needs-work without render",
+            "ready with render digests in stages",
+        ),
+        tools=("run",),
+        coverage_slug="kida-ready",
+        inputs=(
+            _io("templates", "array", required=True, note="[{path, content}] .html/.kida"),
+            _io("data", "object", required=True, note="JSON context for render"),
+            _io("validate_calls", "boolean", note="default true"),
+            _io("strict", "boolean", note="default false"),
+            _io("surface", "string", note="html only in v1"),
+        ),
+        outputs=(_io("disposition", "string"), _io("stages", "object"), *_ENVELOPE),
+        run_contract={
+            "entry_tool": "run",
+            "required_inputs": ["templates", "data"],
+            "optional_inputs": ["validate_calls", "strict", "surface"],
+            "composite_output": "signed-envelope-chain",
+            "input_bundle": {
+                "templates": {
+                    "type": "array",
+                    "required": True,
+                    "note": "caller template bundle [{path, content}]",
+                },
+                "data": {
+                    "type": "object",
+                    "required": True,
+                    "note": "JSON context passed to kida-render",
+                },
+                "validate_calls": {
+                    "type": "boolean",
+                    "required": False,
+                    "note": "forwarded to kida-check",
+                },
+                "strict": {
+                    "type": "boolean",
+                    "required": False,
+                    "note": "forwarded to kida-check",
+                },
+                "surface": {
+                    "type": "string",
+                    "required": False,
+                    "note": "html only in v1",
+                },
+            },
+        },
+        graph_summary="kida-check → gate → kida-render → artifact-seal",
+        dispositions=KIDA_READY_DISPOSITIONS,
+        member_stars=member_stars_from_policy("orrery/kida-ready"),
+        subtree_contract=subtree_contract_from_policy(
+            "orrery/kida-ready",
+            dispositions=KIDA_READY_DISPOSITIONS,
+            pause_allowed=False,
+        ),
+        tree_role="review",
+        worker_cost="mid",
     ),
     "orrery/kida-render": _card(
         summary="Sync Kida HTML render from caller template bytes and JSON data.",
