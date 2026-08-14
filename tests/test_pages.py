@@ -1289,3 +1289,23 @@ class TestHomeSkyVitalsStrip:
             assert 'class="feed"' in r.text
             assert 'sse-connect="/feed"' in r.text
             assert "feed-quiet" in r.text
+
+
+@pytest.mark.issue(431)
+class TestHomeFourStepLoop:
+    async def test_homepage_names_gaze_resolve_call_seal(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/")
+            assert r.status == 200
+            start = r.text.index('class="steps"')
+            end = r.text.index("</ol>", start)
+            steps = r.text[start:end]
+            gaze = steps.index("<strong>Gaze</strong>")
+            resolve = steps.index("<strong>Resolve</strong>")
+            call = steps.index("<strong>Call</strong>")
+            seal = steps.index("<strong>Seal</strong>")
+            assert gaze < resolve < call < seal
+            assert "<strong>Verify</strong>" not in steps
+            assert "Pay only for truth" not in r.text
+            assert "verifyable" not in r.text
+            assert "verifiable" in r.text
