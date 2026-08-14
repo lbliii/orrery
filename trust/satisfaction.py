@@ -6,6 +6,7 @@ failed-call token (``call_attempt_id``). Name alone is insufficient.
 
 from __future__ import annotations
 
+import os
 from collections import Counter
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -98,6 +99,12 @@ class SatisfactionStore(Protocol):
     def records_for(self, star_name: str) -> tuple[SatisfactionRecord, ...]: ...
 
 
+class SatisfactionStoreUnavailable(RuntimeError):
+    """Raised when a durable store is required but DATABASE_URL is unset."""
+
+    code = "store_unavailable"
+
+
 class InMemorySatisfactionStore:
     """Process-local stub store for #68 / #69."""
 
@@ -153,12 +160,27 @@ class InMemorySatisfactionStore:
         )
 
 
-_default_store = InMemorySatisfactionStore()
+_default_store: SatisfactionStore | None = None
 
 
-def get_satisfaction_store() -> InMemorySatisfactionStore:
-    """Return the process-wide in-memory satisfaction store."""
-    return _default_store
+def get_satisfaction_store() -> SatisfactionStore:
+    """Return the process-wide store (Postgres when DATABASE_URL is set).
+
+    Tests inject ``InMemorySatisfactionStore`` via ``_default_store``. Without a
+    URL the factory fails closed — it does not silently persist in memory.
+    """
+    global _default_store
+    if _default_store is not None:
+        return _default_store
+    database_url = os.environ.get("DATABASE_URL", "").strip()
+    if not database_url:
+        raise SatisfactionStoreUnavailable("DATABASE_URL is required for durable satisfaction")
+    from trust.satisfaction_postgres import PostgresSatisfactionStore
+
+    store = PostgresSatisfactionStore(database_url=database_url)
+    store.initialize()
+    _default_store = store
+    return store
 
 
 @dataclass(frozen=True, slots=True)
@@ -305,7 +327,10 @@ def submit_rate(
         if receipt_nonce != env_id:
             return {"status": "rejected", "error": "envelope_id_mismatch"}
 
-    target = store or get_satisfaction_store()
+    try:
+        target = store or get_satisfaction_store()
+    except SatisfactionStoreUnavailable:
+        return {"status": "rejected", "error": "store_unavailable"}
     record = SatisfactionRecord(
         star_name=name,
         content_digest=digest,
@@ -346,7 +371,7 @@ def build_satisfaction_skill(
         key_id=os.environ.get("ORRERY_SATISFACTION_KEY_ID", "satisfaction-1"),
         public_key=public,
     )
-    active_store = store or get_satisfaction_store()
+    active_store = store
     verifier = verify_receipt
 
     @skill.tool(
