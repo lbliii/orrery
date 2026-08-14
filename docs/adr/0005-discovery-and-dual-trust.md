@@ -109,7 +109,8 @@ No workshop ceremony on the hot path.
   / design [#67](https://github.com/lbliii/orrery/issues/67) without inventing a
   review product — store shape frozen in
   [satisfaction-schema.md](../design/satisfaction-schema.md).
-- Optional scoped RAG stays feature-flagged and candidate-only (#61 / #72).
+- Optional scoped RAG stays feature-flagged and candidate-only (#61 / #72);
+  freeze: [namespaced-retrieval.md](../design/namespaced-retrieval.md).
 - Product resolve records continue to advertise publisher-shaped endpoints
   (`mcp://orrery.lol/s/…`); dogfood `/mcp/dogfood` on this host remains a
   labeled demo zoo. Advertised `/mcp` stays slim (gaze/resolve plus one
