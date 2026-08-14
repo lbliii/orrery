@@ -89,7 +89,12 @@
       return;
     }
     requestAnimationFrame(() => receipt.classList.add("is-sealing"));
-    window.setTimeout(() => receipt.classList.add("is-sealed"), 360);
+    window.setTimeout(() => {
+      receipt.classList.add("is-sealed");
+      if (typeof navigator.vibrate === "function") {
+        navigator.vibrate(12);
+      }
+    }, 360);
   }
 
   /** Copy MCP URL from star manifest (issue #25). */
