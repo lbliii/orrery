@@ -1660,3 +1660,35 @@ class TestCatalogAlpineFilters:
             assert "Alpine.safeData" in r.text
             assert "DOMContentLoaded" not in r.text
             assert "data-constellation-search" in r.text
+
+
+@pytest.mark.issue(481)
+class TestStarDetailSeal:
+    def test_star_detail_template_composes_without_extends(self) -> None:
+        source = (
+            Path(__file__).resolve().parents[1] / "pages" / "star_detail.html"
+        ).read_text()
+        assert 'extends "_layout.html"' not in source
+        assert "{% block content %}" in source
+        assert "data-receipt" in source
+        assert "verify-ok" in source
+
+    def test_motion_keeps_star_receipt_init(self) -> None:
+        js = (Path(__file__).resolve().parents[1] / "static" / "motion.js").read_text()
+        assert "function initStarReceipt" in js
+        assert "[data-receipt]" in js
+        assert "vibrate(12)" in js
+
+    async def test_star_page_renders_live_receipt_seal(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/star/orrery/world-time")
+            assert r.status == 200
+            assert "<!DOCTYPE html>" in r.text
+            assert 'class="topbar"' in r.text
+            assert "data-receipt" in r.text
+            assert "Verified · not forged" in r.text
+            assert "orrery/world-time" in r.text
+            assert "Ed25519" in r.text
+            motion = await client.get("/static/motion.js")
+            assert motion.status == 200
+            assert "function initStarReceipt" in motion.text

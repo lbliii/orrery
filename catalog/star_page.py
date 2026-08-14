@@ -13,7 +13,8 @@ from dataclasses import dataclass
 from typing import Any
 from urllib.parse import quote
 
-from chirp import NotFound, Page, Request
+from chirp import NotFound, Page, PageComposition, Request
+from chirp.pages.types import LayoutChain, LayoutInfo
 
 from catalog import CATALOG
 from catalog.agent_card import AgentCard, AgentCardIO, card_for
@@ -39,6 +40,15 @@ _INTRO = {
         "before it acts."
     ),
 }
+
+#: Custom ``/star/{ns}/{name}`` is not filesystem-mounted; compose the
+#: same root shell ``Page(..., page_block_name="content")`` uses on
+#: mounted routes.
+_STAR_LAYOUT = LayoutChain(
+    layouts=(
+        LayoutInfo(template_name="_layout.html", target="body", depth=0),
+    )
+)
 
 #: Prefer these tool names when choosing a page example call.
 _EXAMPLE_TOOL_PREFERENCE = (
@@ -91,7 +101,7 @@ def satisfaction_for_star(name: str, content_digest: str) -> SatisfactionPillVie
     return satisfaction_pill_for(star_name=name, content_digest=content_digest)
 
 
-def page_for_star(name: str, *, request: Request | None = None) -> Page:
+def page_for_star(name: str, *, request: Request | None = None) -> PageComposition:
     rec = CATALOG.resolve(name)
     if rec is None:
         raise NotFound(f"No resolve record for {name!r}")
@@ -113,7 +123,7 @@ def page_for_star(name: str, *, request: Request | None = None) -> Page:
     card = rec.agent_card or card_for(rec.name)
     page_card = build_star_page_card(rec.name, card, tools=rec.tools)
     intro = _intro_for(rec.short_name, card, rec.description)
-    return Page(
+    page = Page(
         "star_detail.html",
         "content",
         page_block_name="content",
@@ -126,10 +136,26 @@ def page_for_star(name: str, *, request: Request | None = None) -> Page:
         card=page_card,
         constellations=constellations,
         related=related,
+        receipt_json=_pretty(
+            {
+                "skill": rec.name,
+                "version": rec.version or "current",
+                "tool": page_card.example_tool,
+                "key_id": rec.key_id,
+                "alg": rec.alg,
+            }
+        ),
         page_title=f"{rec.name} — Orrery",
         footer_note="Star field guide",
         footer_meta="understand → call → verify",
         **layout,
+    )
+    return PageComposition(
+        template=page.template_name,
+        fragment_block=page.block_name,
+        page_block=page.effective_page_block_name,
+        context=page.context,
+        layout_chain=_STAR_LAYOUT,
     )
 
 
