@@ -1577,3 +1577,39 @@ class TestGazeHtmxFragment:
             assert "gaze-hits" in r.text
             assert "orrery/html-to-pdf" in r.text
             assert "var(--settle)" in r.text
+
+
+@pytest.mark.issue(478)
+class TestResolveSettle:
+    async def test_resolve_is_plain_get_with_row_links(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/resolve")
+            assert r.status == 200
+            assert 'action="/resolve"' in r.text
+            assert 'method="get"' in r.text
+            assert "onclick=" not in r.text
+            assert 'class="table-row-link' in r.text
+            assert 'href="/star/orrery/html-to-pdf"' in r.text
+            js = await client.get("/static/motion.js")
+            assert js.status == 200
+            assert "function initResolve" not in js.text
+            assert "settleDigest" in js.text
+            assert "initConstellation" in js.text
+            assert "initCopyMcp" in js.text
+
+    async def test_lookup_settles_server_matched_digest(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/resolve?q=world-time")
+            assert r.status == 200
+            assert "data-resolve-matched" in r.text
+            assert "row-resolved" in r.text
+            assert "Resolved · world-time" in r.text
+            assert "data-digest" in r.text
+            assert "data-final=" in r.text
+            rec = CATALOG.resolve("world-time")
+            assert rec is not None
+            assert rec.content_digest in r.text
+            js = await client.get("/static/motion.js")
+            assert "initMatchedDigest" in js.text
+            assert "value-settled" in js.text
+            assert "--settle" in js.text

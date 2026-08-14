@@ -40,44 +40,16 @@
     requestAnimationFrame(frame);
   }
 
-  /** Resolve: page is ready immediately; Lookup does the Value Change beat. */
-  function initResolve() {
-    const table = document.querySelector("[data-resolve-table]");
-    if (!table) return;
+  function settleMs() {
+    const raw = getComputedStyle(root).getPropertyValue("--settle").trim();
+    const ms = parseFloat(raw);
+    return Number.isFinite(ms) ? ms : 280;
+  }
 
-    const rows = [...table.querySelectorAll("tbody tr")];
-    rows.forEach((row) => {
-      row.classList.add("row-live");
-      const digest = row.querySelector("[data-digest]");
-      const price = row.querySelector("[data-price]");
-      if (digest?.dataset.final) digest.textContent = digest.dataset.final;
-      if (price?.dataset.final) price.textContent = price.dataset.final;
-    });
-
-    const form = document.querySelector("[data-resolve-form]");
-    const input = form?.querySelector("input[name='q']");
-    form?.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const q = (input?.value || "").trim().toLowerCase();
-      const match =
-        rows.find((r) => (r.dataset.name || "").includes(q.replace(/^orrery\//, ""))) ||
-        rows.find((r) => (r.dataset.name || "").includes(q)) ||
-        rows[0];
-
-      rows.forEach((r) => r.classList.remove("row-resolved"));
-      match.classList.add("row-resolved");
-
-      const digest = match.querySelector("[data-digest]");
-      if (digest?.dataset.final) settleDigest(digest, digest.dataset.final, 280);
-
-      const href = match.dataset.href || "star.html";
-      window.setTimeout(
-        () => {
-          window.location.href = href;
-        },
-        prefersReduce() ? 40 : 320,
-      );
-    });
+  /** Resolve: settle the server-matched digest after a real GET. */
+  function initMatchedDigest() {
+    const digest = document.querySelector("[data-resolve-matched] [data-digest]");
+    if (digest?.dataset.final) settleDigest(digest, digest.dataset.final, settleMs());
   }
 
   /** Constellation: quick staggered reveal only when the chart enters view. */
@@ -141,7 +113,7 @@
   }
 
   document.addEventListener("DOMContentLoaded", () => {
-    initResolve();
+    initMatchedDigest();
     initConstellation();
     initStarReceipt();
     initCopyMcp();
