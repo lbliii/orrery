@@ -1253,3 +1253,39 @@ class TestHomeFeedPolish:
         rendered = host.feed_format_args({"intent": "x" * 200})
         assert len(rendered) <= 120
         assert rendered.endswith("…")
+
+
+@pytest.mark.issue(409)
+class TestHomeSkyVitalsStrip:
+    async def test_home_renders_vitals_strip_with_live_snapshot(self, example_app) -> None:
+        import sys
+
+        host = sys.modules["orrery_app_under_test"]
+        snapshot = host.sky_vitals.snapshot()
+
+        async with TestClient(example_app) as client:
+            r = await client.get("/")
+            assert r.status == 200
+            assert 'class="sky-vitals"' in r.text
+            assert 'data-sky-vitals' in r.text
+            assert 'data-metric="stars_live"' in r.text
+            assert 'data-metric="invocations_24h"' in r.text
+            assert str(snapshot["catalog"]["stars_live"]) in r.text
+            assert str(snapshot["activity"]["invocations_24h"]) in r.text
+            assert "Invocations (24h)" in r.text
+            assert "Resolves" in r.text
+            assert "Seals" in r.text
+            lowered = r.text.lower()
+            assert "users" not in lowered
+            assert "visitors" not in lowered
+
+    async def test_home_preserves_hero_and_feed_sections(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/")
+            assert r.status == 200
+            assert 'class="hero"' in r.text
+            assert "Skills you" in r.text
+            assert "How agents win" in r.text
+            assert 'class="feed"' in r.text
+            assert 'sse-connect="/feed"' in r.text
+            assert "feed-quiet" in r.text

@@ -31,6 +31,43 @@
   </div>
 </section>
 
+<section class="sky-vitals" aria-label="Sky vitals" data-sky-vitals>
+  <ul class="vitals-strip">
+    <li class="vitals-item">
+      <span class="vitals-label">Stars</span>
+      <a class="vitals-value" href="/stars" data-metric="stars_live">{{ vitals_stars_live }}</a>
+    </li>
+    <li class="vitals-item">
+      <span class="vitals-label">Constellations</span>
+      <a class="vitals-value" href="/constellations" data-metric="constellations_live">{{ vitals_constellations_live }}</a>
+    </li>
+    <li class="vitals-item">
+      <span class="vitals-label">Invocations (24h)</span>
+      <span class="vitals-value" data-metric="invocations_24h">{{ vitals_invocations_24h }}</span>
+    </li>
+    <li class="vitals-item">
+      <span class="vitals-label">Resolves</span>
+      <span class="vitals-value" data-metric="resolves_24h">{{ vitals_resolves_24h }}</span>
+    </li>
+    <li class="vitals-item">
+      <span class="vitals-label">Seals</span>
+      <span class="vitals-value" data-metric="seals_24h">{{ vitals_seals_24h }}</span>
+    </li>
+    {% if vitals_useful_7d %}
+    <li class="vitals-item">
+      <span class="vitals-label">Useful (7d)</span>
+      <span class="vitals-value" data-metric="useful_7d">{{ vitals_useful_7d }}</span>
+    </li>
+    {% end %}
+    {% if vitals_namespaces_live %}
+    <li class="vitals-item">
+      <span class="vitals-label">Namespaces</span>
+      <a class="vitals-value" href="/namespaces" data-metric="namespaces_live">{{ vitals_namespaces_live }}</a>
+    </li>
+    {% end %}
+  </ul>
+</section>
+
 <section class="section">
   <p class="kicker">How agents win</p>
   <h2>Fewer steps than a GitHub hub.</h2>
