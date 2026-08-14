@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from pathlib import Path
 
 import pytest
 from chirp.testing import TestClient
@@ -1492,3 +1493,33 @@ class TestGetListedHomepagePointer:
             text = r.text
             assert "/connect#get-listed" in text
             assert "index_ping" in text
+
+
+@pytest.mark.issue(474)
+class TestChirpInjectCsp:
+    def test_layout_source_has_no_cdn_script_tags(self) -> None:
+        layout = (Path(__file__).resolve().parents[1] / "pages" / "_layout.html").read_text()
+        assert "cdn.jsdelivr.net/npm/htmx" not in layout
+        assert "cdn.jsdelivr.net/npm/alpinejs" not in layout
+        assert "unpkg.com/htmx-ext-sse" not in layout
+
+    async def test_pages_use_chirp_inject_and_local_sse(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/")
+            assert r.status == 200
+            assert 'data-chirp="htmx"' in r.text
+            assert 'data-chirp="alpine"' in r.text
+            assert "/static/htmx-ext-sse.js" in r.text
+            assert "unpkg.com/htmx-ext-sse" not in r.text
+            assert "cdn.jsdelivr.net/npm/alpinejs@" not in r.text
+
+    async def test_csp_header_is_nonced_without_unsafe_eval(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/")
+            csp = dict(r.headers).get("content-security-policy", "")
+            assert "nonce-" in csp
+            assert "unsafe-eval" not in csp
+            assert "style-src" in csp
+            assert "'unsafe-inline'" in csp
+            assert "fonts.googleapis.com" in csp
+            assert "fonts.gstatic.com" in csp
