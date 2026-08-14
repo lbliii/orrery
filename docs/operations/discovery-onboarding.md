@@ -32,6 +32,12 @@ Machine-readable copy: ``discovery.STARTER_PATHS`` and
 [``tests/gaze-starter-paths.v1.json``](../../tests/gaze-starter-paths.v1.json).
 Human copy: ``/connect#starter-paths`` and ``/llms.txt`` (Onboarding starter paths).
 
+## Kida component demo
+
+Badge typo → ``kida-check`` findings → fix → ``kida-render`` HTML + digests.
+Full walkthrough: [kida-demo.md](kida-demo.md). Human copy:
+``/connect#kida-demo``.
+
 ## Preflight
 
 Before calling allowlist-gated stars, use ``coverage_check`` on aggregate ``/mcp``:

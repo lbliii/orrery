@@ -436,6 +436,72 @@ async def test_connect_and_llms_advertise_starter_paths(discovery_app) -> None:
     assert "Onboarding starter paths" in llms_txt("https://orrery.lol")
 
 
+@pytest.mark.issue(404)
+def test_kida_demo_fixture_matches_discovery_module() -> None:
+    from discovery import kida_demo_payload
+
+    payload = json.loads(
+        (Path(__file__).resolve().parent / "gaze-kida-demo.v1.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert payload == kida_demo_payload()
+    assert len(payload["steps"]) == 2
+
+
+@pytest.mark.issue(404)
+def test_kida_demo_arguments_match_publish_corpus() -> None:
+    from discovery import KIDA_DEMO
+    from stars.kida_check.corpus import CORPUS as CHECK_CORPUS
+    from stars.kida_render.corpus import CORPUS as RENDER_CORPUS
+
+    check_step = next(step for step in KIDA_DEMO if step["id"] == "kida-check-badge")
+    render_step = next(step for step in KIDA_DEMO if step["id"] == "kida-render-badge")
+    check_corpus = next(item for item in CHECK_CORPUS if item.id == "kida-check-badge-typo")
+    render_corpus = next(item for item in RENDER_CORPUS if item.id == "kida-render-badge")
+
+    assert check_step["arguments"] == check_corpus.arguments
+    assert render_step["arguments"] == render_corpus.arguments
+    assert check_step["name"] == "orrery/kida-check"
+    assert render_step["name"] == "orrery/kida-render"
+    assert check_step["tool"] == check_corpus.tool
+    assert render_step["tool"] == render_corpus.tool
+
+
+@pytest.mark.issue(404)
+@pytest.mark.asyncio
+async def test_kida_demo_names_resolve(discovery_app) -> None:
+    from discovery import KIDA_DEMO
+
+    async with TestClient(discovery_app) as client:
+        for step in KIDA_DEMO:
+            name = str(step["name"])
+            response = await client.get(f"/api/resolve?name={name}", headers=HOST)
+            assert response.status == 200, name
+            record = json.loads(response.text)
+            assert record["name"] == name
+            assert record.get("endpoint"), name
+            assert step["tool"] in record.get("tools", ()), name
+
+
+@pytest.mark.issue(404)
+@pytest.mark.asyncio
+async def test_connect_and_llms_advertise_kida_demo(discovery_app) -> None:
+    from discovery import KIDA_DEMO, llms_txt
+
+    async with TestClient(discovery_app) as client:
+        connect = await client.get("/connect", headers=HOST)
+        llms = await client.get("/llms.txt", headers=HOST)
+        assert connect.status == llms.status == 200
+        assert 'id="kida-demo"' in connect.text
+        assert "Kida component demo" in llms.text
+        for step in KIDA_DEMO:
+            assert step["name"] in connect.text
+            assert step["name"] in llms.text
+            assert step["tool"] in connect.text
+    assert "Kida component demo" in llms_txt("https://orrery.lol")
+
+
 @pytest.mark.asyncio
 async def test_footer_links_to_connect(discovery_app) -> None:
     async with TestClient(discovery_app) as client:

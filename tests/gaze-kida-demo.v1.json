@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "contract": "Badge typo → kida-check findings → fix → kida-render HTML + digests. After gaze → resolve, call check/render on publisher MCP (ADR 0004/0005).",
+  "steps": [
+    {
+      "id": "kida-check-badge",
+      "title": "Badge check",
+      "intent": "validate Kida component call sites before render",
+      "name": "orrery/kida-check",
+      "tool": "check",
+      "arguments": {
+        "templates": [
+          {
+            "path": "templates/dashboard.html",
+            "content": "{% def badge(count: int, label: str) %}\n<span class=\"badge\">{{ count }} {{ label }}</span>\n{% enddef %}\n\n{{ badge(count=\"five\", lable=\"Messages\") }}\n"
+          }
+        ],
+        "validate_calls": true,
+        "strict": false
+      },
+      "expected_finding_codes": [
+        "K-CMP-001",
+        "K-CMP-002"
+      ],
+      "expected_passed": false
+    },
+    {
+      "id": "kida-render-badge",
+      "title": "Badge render",
+      "intent": "render fixed badge component to HTML with digests",
+      "name": "orrery/kida-render",
+      "tool": "render",
+      "arguments": {
+        "template": "{% def badge(count: int, label: str) %}\n<span class=\"badge\">{{ count }} {{ label }}</span>\n{% enddef %}\n\n{{ badge(count=count, label=label) }}\n",
+        "data": {
+          "count": 5,
+          "label": "Messages"
+        },
+        "surface": "html"
+      },
+      "expected_html_contains": "<span class=\"badge\">5 Messages</span>"
+    }
+  ]
+}

@@ -36,6 +36,32 @@
   <pre class="mono" style="margin: 0.75rem 0 0; white-space: pre-wrap">{{ starter_paths_json }}</pre>
 </section>
 
+<section class="panel" style="margin-bottom: 1.5rem" id="kida-demo">
+  <p class="kicker" style="margin-bottom: 0.5rem">Kida component demo · check → render</p>
+  <p class="lede" style="margin: 0 0 0.75rem; font-size: 0.95rem">
+    Frozen badge story from the Kida README: a typo call site (
+    <code class="mono">lable</code>, wrong <code class="mono">count</code> type)
+    → <code class="mono">check</code> on publisher
+    <code class="mono">POST /stars/kida-check/mcp</code> (findings
+    <code class="mono">K-CMP-001</code> / <code class="mono">K-CMP-002</code>)
+    → fix template → <code class="mono">render</code> on
+    <code class="mono">POST /stars/kida-render/mcp</code> for HTML +
+    digests. After <code class="mono">gaze_match</code> and
+    <code class="mono">resolve_name</code>; not aggregate
+    <code class="mono">/mcp</code> execution (ADR 0004).
+  </p>
+  <ol class="meta-list">
+    {% for s in kida_demo %}
+    <li>
+      <span class="mono">{{ s.name }}</span>
+      <span>{{ s.title }} — {{ s.intent }} · tool
+        <code class="mono">{{ s.tool }}</code></span>
+    </li>
+    {% end %}
+  </ol>
+  <pre class="mono" style="margin: 0.75rem 0 0; white-space: pre-wrap">{{ kida_demo_json }}</pre>
+</section>
+
 <section class="panel" style="margin-bottom: 1.5rem">
   <p class="kicker" style="margin-bottom: 0.75rem">Teaching trio · cohort A</p>
   <p class="lede" style="margin: 0 0 0.75rem; font-size: 0.95rem">
