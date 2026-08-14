@@ -1220,3 +1220,33 @@ class TestWalletTopUpPage:
         assert payload["code"] == "insufficient_balance"
         assert payload["top_up_url"] == TOP_UP_URL
         assert payload["top_up_url"].endswith("/wallet/top-up")
+
+
+@pytest.mark.issue(407)
+class TestHomeFeedPolish:
+    async def test_home_feed_quiet_empty_state(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/")
+            assert r.status == 200
+            assert "feed-quiet" in r.text
+            assert "Quiet sky" in r.text
+            assert "Waiting for an MCP" not in r.text
+            assert 'sse-connect="/feed"' in r.text
+
+    def test_feed_format_args_omits_denylisted_html(self, example_app) -> None:
+        import sys
+
+        host = sys.modules["orrery_app_under_test"]
+        rendered = host.feed_format_args(
+            {"html": "<p>Orion</p>", "name": "orrery/html-to-pdf"}
+        )
+        assert "Orion" not in rendered
+        assert 'name="orrery/html-to-pdf"' in rendered
+
+    def test_feed_format_args_truncates_long_values(self, example_app) -> None:
+        import sys
+
+        host = sys.modules["orrery_app_under_test"]
+        rendered = host.feed_format_args({"intent": "x" * 200})
+        assert len(rendered) <= 120
+        assert rendered.endswith("…")

@@ -1102,6 +1102,65 @@ a:hover {
   animation: fade-in 0.35s var(--ease);
 }
 
+.activity-row-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.45rem 0.65rem;
+}
+
+.feed-phase {
+  display: inline-block;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  font-family: var(--font-display);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid var(--line);
+  color: var(--fog);
+}
+
+.feed-phase--discover {
+  border-color: color-mix(in oklab, var(--brass) 35%, var(--line));
+  color: color-mix(in oklab, var(--brass) 85%, white);
+}
+
+.feed-phase--resolve {
+  border-color: color-mix(in oklab, var(--brass) 55%, var(--line));
+  color: var(--brass);
+}
+
+.feed-phase--call {
+  border-color: color-mix(in oklab, var(--ink) 25%, var(--line));
+  color: var(--ink);
+}
+
+.feed-phase--seal {
+  border-color: color-mix(in oklab, var(--brass) 45%, var(--line));
+  color: color-mix(in oklab, var(--brass) 70%, var(--fog));
+}
+
+.feed-line {
+  color: var(--ink);
+  font-size: 0.82rem;
+}
+
+.feed-star-link {
+  color: var(--brass);
+  font-size: 0.75rem;
+  text-decoration: none;
+}
+
+.feed-star-link:hover {
+  text-decoration: underline;
+}
+
+.activity:has(.activity-item) .feed-quiet {
+  display: none;
+}
+
 .tool-name {
   color: var(--brass);
   font-weight: 500;

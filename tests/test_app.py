@@ -380,8 +380,12 @@ class TestOrreryHostFoundation:
             assert result.events
             event = result.events[0]
             assert (event.event or "message") == "message"
-            assert "convert" in event.data
-            assert "Orion" in event.data
+            html = event.data
+            assert "feed-phase" in html
+            assert "feed-phase--call" in html
+            assert "Calling html-to-pdf" in html
+            assert "Orion" not in html
+            assert 'class="tool-name' not in html
 
     def test_dogfood_skills_pass_publish_oracle(
         self, example_app, monkeypatch: pytest.MonkeyPatch

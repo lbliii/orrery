@@ -3,11 +3,17 @@
 {% block activity_row %}
 {% if (event ?? none) %}
 <div class="activity-item">
-  <div>
-    <span class="tool-name mono">{{ event.tool_name }}</span>
+  <div class="activity-row-head">
+    <span class="feed-phase feed-phase--{{ phase }}">{{ phase }}</span>
+    <span class="feed-line">{{ display_line }}</span>
+    {% if star_href and star_name %}
+    <a class="feed-star-link mono" href="{{ star_href }}">{{ star_name }}</a>
+    {% endif %}
     <span class="call-time mono">{{ event.timestamp | format_call_time }}</span>
   </div>
-  <div class="call-args mono">{{ event.arguments | format_args }}</div>
+  {% if formatted_args %}
+  <div class="call-args mono">{{ formatted_args }}</div>
+  {% endif %}
 </div>
 {% end %}
 {% end %}

@@ -340,15 +340,138 @@ def robots_document(request: Request) -> Response:
     )
 
 
+# Feed row polish — phase map frozen in docs/design/sky-vitals-homepage.md (#406).
+_FEED_DISCOVER_TOOLS = frozenset(
+    {
+        "gaze_match",
+        "gaze_search",
+        "gaze_describe",
+        "gaze_list_constellations",
+        "coverage_check",
+    }
+)
+_FEED_RESOLVE_TOOLS = frozenset({"resolve_name"})
+_FEED_SEAL_TOOLS = frozenset({"explain_policy"})
+_FEED_ARGS_DENYLIST = frozenset({"html", "body", "content", "note"})
+_FEED_ARGS_MAX_LEN = 120
+_FEED_CALL_TOOL_STARS: dict[str, str] = {
+    "convert": "orrery/html-to-pdf",
+    "fetch": "orrery/world-time",
+    "get": "orrery/world-time",
+    "source_watch_answer": "orrery/source-watch",
+}
+
+
+def feed_phase(tool_name: str) -> str:
+    """Map an MCP tool name to a discover / resolve / call / seal phase."""
+    if tool_name in _FEED_DISCOVER_TOOLS:
+        return "discover"
+    if tool_name in _FEED_RESOLVE_TOOLS:
+        return "resolve"
+    if tool_name in _FEED_SEAL_TOOLS:
+        return "seal"
+    return "call"
+
+
+def _feed_star_from_name(name: str | None) -> tuple[str | None, str | None]:
+    if not name:
+        return None, None
+    record = CATALOG.resolve(name)
+    if record is None:
+        return name, None
+    return record.name, record.href
+
+
+def feed_star_link(tool_name: str, args: dict) -> tuple[str | None, str | None]:
+    """Return a resolved star name and detail href when the feed can infer one."""
+    name = args.get("name")
+    if isinstance(name, str) and name.strip():
+        return _feed_star_from_name(name.strip())
+    if tool_name in _FEED_CALL_TOOL_STARS:
+        return _feed_star_from_name(_FEED_CALL_TOOL_STARS[tool_name])
+    return None, None
+
+
+def feed_display_line(tool_name: str, args: dict, star_name: str | None) -> str:
+    """Human-readable feed copy — never the raw tool name alone."""
+    if tool_name == "gaze_match":
+        intent = args.get("intent")
+        if isinstance(intent, str) and intent.strip():
+            return f'Matching intent "{intent.strip()}"'
+        return "Matching intent"
+    if tool_name == "gaze_search":
+        query = args.get("query")
+        if isinstance(query, str) and query.strip():
+            return f'Searching "{query.strip()}"'
+        return "Searching catalog"
+    if tool_name == "gaze_describe":
+        return "Describing catalog entry"
+    if tool_name == "gaze_list_constellations":
+        return "Listing constellations"
+    if tool_name == "coverage_check":
+        return "Checking coverage"
+    if tool_name == "resolve_name":
+        target = star_name or args.get("name")
+        if isinstance(target, str) and target.strip():
+            return f"Resolved {target.strip()}"
+        return "Resolved skill name"
+    if tool_name == "explain_policy":
+        target = star_name or args.get("name")
+        if isinstance(target, str) and target.strip():
+            return f"Policy for {target.strip()}"
+        return "Explaining policy"
+    if tool_name == "run":
+        target = star_name or args.get("name")
+        if isinstance(target, str) and target.strip():
+            return f"Running {target.strip()}"
+        return "Running constellation"
+    if tool_name == "status":
+        return "Checking run status"
+    if star_name:
+        short = star_name.split("/", 1)[-1]
+        return f"Calling {short}"
+    return f"Calling {tool_name.replace('_', ' ')}"
+
+
+def feed_format_args(args: dict | None) -> str:
+    """Format feed args with denylist and truncation (sky vitals #406)."""
+    if not args:
+        return ""
+    parts: list[str] = []
+    for key, value in args.items():
+        if key in _FEED_ARGS_DENYLIST:
+            continue
+        if isinstance(value, str):
+            parts.append(f'{key}="{value}"')
+        else:
+            parts.append(f"{key}={value}")
+    if not parts:
+        return ""
+    rendered = ", ".join(parts)
+    if len(rendered) <= _FEED_ARGS_MAX_LEN:
+        return rendered
+    return rendered[: _FEED_ARGS_MAX_LEN - 1].rstrip() + "…"
+
+
+def feed_row_context(event) -> dict:
+    """Build template context for one live invocation SSE row."""
+    args = event.arguments if isinstance(event.arguments, dict) else {}
+    star_name, star_href = feed_star_link(event.tool_name, args)
+    return {
+        "event": event,
+        "phase": feed_phase(event.tool_name),
+        "display_line": feed_display_line(event.tool_name, args, star_name),
+        "star_name": star_name,
+        "star_href": star_href,
+        "formatted_args": feed_format_args(args),
+    }
+
+
 @app.template_filter("format_args")
 def format_args(args: dict) -> str:
     """Format tool-call arguments for the live activity feed."""
-    if not args:
-        return "—"
-    parts = []
-    for key, value in args.items():
-        parts.append(f'{key}="{value}"' if isinstance(value, str) else f"{key}={value}")
-    return ", ".join(parts)
+    rendered = feed_format_args(args)
+    return rendered or "—"
 
 
 @app.template_filter("format_call_time")
@@ -365,7 +488,7 @@ def feed():
 
     async def generate():
         async for event in app.tool_events.subscribe():
-            yield Fragment("_feed.html", "activity_row", event=event)
+            yield Fragment("_feed.html", "activity_row", **feed_row_context(event))
 
     return EventStream(generate())
 
