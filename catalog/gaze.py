@@ -125,12 +125,17 @@ def records_for_gaze_node(
 ) -> tuple[ResolveRecord, ...]:
     """Filter catalog records to the active gaze node scope (#70).
 
-    - ``public``: only ``visibility == "public"`` records.
+    - ``public``: only ``visibility == "public"`` records; drop ``quiet_names()``.
     - namespace id (e.g. ``acme``): records whose ``namespace`` equals the id.
     """
     key = normalize_gaze_node(node)
     if key == PUBLIC_GAZE_NODE:
-        return tuple(r for r in records if r.visibility == "public")
+        from listings.store import quiet_names
+
+        hidden = quiet_names()
+        return tuple(
+            r for r in records if r.visibility == "public" and r.name not in hidden
+        )
     return tuple(r for r in records if (r.namespace or "").lower() == key)
 
 

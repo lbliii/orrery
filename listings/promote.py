@@ -3,10 +3,14 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from typing import TYPE_CHECKING
 
 from catalog.models import ResolveRecord
 from catalog.store import CATALOG, replace_catalog
 from trust.satisfaction import SatisfactionRecord, get_satisfaction_store
+
+if TYPE_CHECKING:
+    from .store import ListingStore
 
 DEFAULT_MIN_USEFUL = 100
 DEFAULT_MIN_CALLERS = 10
@@ -45,6 +49,59 @@ def promotion_ready(
     if useful < min_useful or len(useful_callers) < min_callers:
         return False
     return not (sealed and (brokenish / sealed) > max_broken_ratio)
+
+
+def should_quiet(
+    ratings: Iterable[SatisfactionRecord],
+    *,
+    star_name: str,
+    content_digest: str,
+    max_broken_ratio: float = DEFAULT_MAX_BROKEN_RATIO,
+) -> bool:
+    """True when sealed broken+wrong-price share on the live digest exceeds the ceiling."""
+    sealed = 0
+    brokenish = 0
+    digest = content_digest.lower()
+    for row in ratings:
+        if row.star_name != star_name:
+            continue
+        if row.content_digest.lower() != digest:
+            continue
+        if not row.envelope_id:
+            continue
+        sealed += 1
+        if row.verdict in {"broken", "wrong-price"}:
+            brokenish += 1
+    return bool(sealed) and (brokenish / sealed) > max_broken_ratio
+
+
+def apply_quiet(
+    listing_url: str,
+    *,
+    max_broken_ratio: float = DEFAULT_MAX_BROKEN_RATIO,
+    store: ListingStore | None = None,
+) -> bool:
+    """Set ``quiet=true`` when the live digest trips the demotion rule."""
+    from .store import listing_store_from_env, set_quiet
+
+    target = store if store is not None else listing_store_from_env()
+    row = target.get(listing_url)
+    if row is None:
+        return False
+    sat = get_satisfaction_store()
+    names = [row.live_name]
+    if row.claimed_name and row.claimed_name not in names:
+        names.append(row.claimed_name)
+    for name in names:
+        if should_quiet(
+            sat.records_for(name),
+            star_name=name,
+            content_digest=row.content_digest,
+            max_broken_ratio=max_broken_ratio,
+        ):
+            set_quiet(listing_url, True, store=target)
+            return True
+    return False
 
 
 def apply_promotion(

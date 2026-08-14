@@ -10,6 +10,7 @@ from chirp.testing import TestClient
 from catalog import CATALOG
 from catalog.gaze import hit_from_record, records_for_gaze_node
 from catalog.models import ResolveRecord
+from listings.store import InMemoryListingStore, configure_listing_store, quiet_names
 from trust.satisfaction import InMemorySatisfactionStore, SatisfactionRecord, get_satisfaction_store
 
 STAR = "orrery/world-time"
@@ -150,3 +151,31 @@ async def test_api_gaze_search_public_node_excludes_acme(example_app) -> None:
         body = json.loads(response.text)
         assert body["node"] == "public"
         assert all(not h["name"].startswith("acme/") for h in body["hits"])
+
+
+@pytest.mark.issue(460)
+def test_quiet_name_absent_from_public_gaze_present_on_resolve(example_app) -> None:
+    record = CATALOG.get("new/invoice-check")
+    assert record is not None
+    store = InMemoryListingStore()
+    store.upsert(
+        listing_url="https://example.com/.well-known/orrery.json",
+        listing_json={"name": "publisher/invoice-check"},
+        content_digest=record.content_digest,
+        live_name="new/invoice-check",
+        claimed_name="publisher/invoice-check",
+        endpoint=record.endpoint,
+        index_tier="newcomer",
+        quiet=True,
+    )
+    configure_listing_store(store)
+    try:
+        assert "new/invoice-check" in quiet_names()
+        public = records_for_gaze_node(CATALOG.all(), "public")
+        assert all(r.name != "new/invoice-check" for r in public)
+        assert "new/invoice-check" not in [h.name for h in CATALOG.hits_for_node("public")]
+        assert "new/invoice-check" not in [h.name for h in CATALOG.match("", node="public")]
+        assert CATALOG.get("new/invoice-check") is not None
+        assert CATALOG.resolve("new/invoice-check") is not None
+    finally:
+        configure_listing_store(None)
