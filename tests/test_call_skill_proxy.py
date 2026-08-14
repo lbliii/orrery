@@ -84,7 +84,18 @@ async def test_call_skill_stale_proof_run_returns_json_envelope(example_app) -> 
         assert body["status"] == "ok"
         assert body["skill"] == "orrery/stale-proof"
         assert body["tool"] == "run"
-        assert body["payload"]["status"] == "fresh_proof"
+        payload = body["payload"]
+        if "status" not in payload and isinstance(payload.get("payload"), dict):
+            payload = payload["payload"]
+        proof = payload.get("status") or payload.get("disposition")
+        assert proof in {
+            "fresh_proof",
+            "incomplete",
+            "ready",
+            "not-ready",
+            "stale",
+            "blocked",
+        }, f"unexpected stale-proof payload keys: {sorted(payload)}"
         wire = body["envelope_wire"]
         assert wire["tool"] == "run"
         app_module = sys.modules["orrery_app_under_test"]

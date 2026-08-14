@@ -138,6 +138,9 @@ async def forward_call_skill(
         return _ok_response(name, tool, wire.get("payload", {}), wire)
 
     if isinstance(result, dict):
+        # Some publisher mounts return Envelope.to_wire() as a plain dict.
+        if "signature" in result and "payload" in result:
+            return _ok_response(name, tool, result.get("payload", {}), result)
         return _ok_response(name, tool, result, None)
 
     return _ok_response(name, tool, {"result": result}, None)
