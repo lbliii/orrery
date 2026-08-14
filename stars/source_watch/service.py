@@ -13,8 +13,9 @@ import os
 import urllib.error
 import urllib.request
 from datetime import UTC, datetime
-from typing import Any
 from urllib.parse import urlsplit
+
+from stars._core.http_egress import open_https
 
 from .contract import ANSWER_MAX_CHARS, DEFAULT_SOURCE
 
@@ -27,21 +28,6 @@ MAX_BYTES = 1 * 1024 * 1024
 
 # V1 history is intentionally process-local and non-durable.
 _history: dict[str, list[dict[str, object]]] = {}
-
-
-class _NoRedirect(urllib.request.HTTPRedirectHandler):
-    """Reject redirects, which might otherwise escape the host allowlist."""
-
-    def redirect_request(
-        self,
-        req: urllib.request.Request,
-        fp: Any,
-        code: int,
-        msg: str,
-        headers: Any,
-        newurl: str,
-    ) -> None:
-        return None
 
 
 def _error(error: str, *, source: str, detail: str = "") -> dict[str, object]:
@@ -100,9 +86,8 @@ def _fetch(source: str) -> dict[str, object]:
             "Accept": "text/plain,text/html;q=0.9,*/*;q=0.1",
         },
     )
-    opener = urllib.request.build_opener(_NoRedirect())
     try:
-        with opener.open(request, timeout=TIMEOUT_SECONDS) as response:
+        with open_https(request, timeout=TIMEOUT_SECONDS) as response:
             final = urlsplit(response.geturl())
             if final.scheme != "https" or final.hostname not in ALLOWED_HOSTS:
                 return _error("redirect_not_allowed", source=source)

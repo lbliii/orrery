@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import urllib.error
-import urllib.request
 from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
-from typing import Any, Protocol
+from typing import Protocol
 from urllib.parse import urlsplit
+
+from stars._core.http_egress import https_head
 
 from .contract import DEFAULT_TARGET, TARGETS
 
@@ -19,20 +20,12 @@ class Transport(Protocol):
     def __call__(self, url: str, *, timeout: float) -> tuple[str, int, Mapping[str, str]]: ...
 
 
-class _NoRedirect(urllib.request.HTTPRedirectHandler):
-    def redirect_request(self, *args: Any, **kwargs: Any) -> None:
-        return None
-
-
 def _network_head(url: str, *, timeout: float) -> tuple[str, int, Mapping[str, str]]:
-    request = urllib.request.Request(
+    return https_head(
         url,
-        method="HEAD",
+        timeout=timeout,
         headers={"User-Agent": "orrery-http-head/0.1 (+https://github.com/lbliii/orrery)"},
     )
-    opener = urllib.request.build_opener(_NoRedirect())
-    with opener.open(request, timeout=timeout) as response:
-        return response.geturl(), int(response.status), dict(response.headers.items())
 
 
 def head(
