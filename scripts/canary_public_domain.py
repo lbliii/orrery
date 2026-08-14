@@ -25,6 +25,11 @@ REQUIRED_TRUST_FACTS = (
     "bounded declared tools",
 )
 
+# Duplicated from discovery.MCP_PROTOCOL_VERSION so this script stays stdlib-only.
+MCP_CONNECT_DEFAULT = "2025-06-18"
+FORBIDDEN_PROTOCOL_VERSION = "2026-07-28"
+LEGACY_CLIENT_FIXTURES = ("2025-11-25", "2025-06-18")
+
 
 def normalize_origin(origin: str) -> str:
     """Accept one HTTPS origin only; all requests use its normal hostname."""
@@ -41,11 +46,15 @@ def fetch(
     *,
     opener: Callable[..., Any] = urllib.request.urlopen,
     body: bytes | None = None,
+    headers: dict[str, str] | None = None,
 ) -> bytes:
+    request_headers = dict(headers or {})
+    if body is not None:
+        request_headers.setdefault("Content-Type", "application/json")
     request = urllib.request.Request(
         url,
         data=body,
-        headers={"Content-Type": "application/json"} if body is not None else {},
+        headers=request_headers,
     )
     with opener(request, timeout=15) as response:
         status = getattr(response, "status", response.getcode())
@@ -98,6 +107,24 @@ def require_sitemap(body: bytes, origin: str) -> None:
         raise ValueError("sitemap is missing or does not name the custom origin")
 
 
+def initialize_rpc(client_version: str, request_id: int = 1) -> dict[str, Any]:
+    """JSON-RPC initialize body matching the host connect tests (test_app.py)."""
+    return {
+        "jsonrpc": "2.0",
+        "method": "initialize",
+        "id": request_id,
+        "params": {
+            "protocolVersion": client_version,
+            "capabilities": {},
+            "clientInfo": {"name": "orrery-public-domain-canary", "version": "1"},
+        },
+    }
+
+
+def tools_list_rpc(request_id: int = 2) -> dict[str, Any]:
+    return {"jsonrpc": "2.0", "method": "tools/list", "id": request_id}
+
+
 def require_server_card(body: bytes, origin: str) -> None:
     card = json.loads(body)
     transport = card.get("transport") if isinstance(card, dict) else None
@@ -108,6 +135,59 @@ def require_server_card(body: bytes, origin: str) -> None:
         raise ValueError("MCP server-card identity is missing or incorrect")
     if transport.get("endpoint") != f"{origin}/mcp":
         raise ValueError("MCP server-card endpoint does not match custom origin")
+    if card.get("protocolVersion") != MCP_CONNECT_DEFAULT:
+        raise ValueError(
+            f"MCP server-card protocolVersion is not {MCP_CONNECT_DEFAULT}"
+        )
+
+
+def require_initialize_protocol(body: bytes, *, advertised: str) -> None:
+    payload = json.loads(body)
+    result = payload.get("result") if isinstance(payload, dict) else None
+    if not isinstance(result, dict):
+        raise ValueError("initialize response has invalid shape")
+    version = result.get("protocolVersion")
+    if version == FORBIDDEN_PROTOCOL_VERSION:
+        raise ValueError(
+            f"initialize echoed forbidden protocolVersion {FORBIDDEN_PROTOCOL_VERSION}"
+        )
+    if version != advertised:
+        raise ValueError(
+            f"initialize protocolVersion {version!r} does not match {advertised!r}"
+        )
+
+
+def require_gaze_tools(body: bytes) -> None:
+    payload = json.loads(body)
+    result = payload.get("result") if isinstance(payload, dict) else None
+    tools = result.get("tools") if isinstance(result, dict) else None
+    if not isinstance(tools, list):
+        raise ValueError("tools/list has invalid shape")
+    names = {tool.get("name") for tool in tools if isinstance(tool, dict)}
+    if "gaze_match" not in names:
+        raise ValueError("tools/list missing gaze_match")
+
+
+def probe_legacy_mcp(
+    origin: str, *, opener: Callable[..., Any] = urllib.request.urlopen
+) -> None:
+    """POST legacy initialize (and tools/list) so /mcp cannot echo 2026-07-28."""
+    mcp_url = f"{origin}/mcp"
+    for index, client_version in enumerate(LEGACY_CLIENT_FIXTURES, start=1):
+        initialized = fetch(
+            mcp_url,
+            opener=opener,
+            body=json.dumps(initialize_rpc(client_version, request_id=index)).encode(),
+            headers={"mcp-protocol-version": client_version},
+        )
+        require_initialize_protocol(initialized, advertised=client_version)
+        listed = fetch(
+            mcp_url,
+            opener=opener,
+            body=json.dumps(tools_list_rpc(request_id=index + 100)).encode(),
+            headers={"mcp-protocol-version": client_version},
+        )
+        require_gaze_tools(listed)
 
 
 def run(
@@ -120,6 +200,7 @@ def run(
     require_trust_document(fetch(base + "/.well-known/orrery/trust.json", opener=opener), base)
     require_sitemap(fetch(base + "/sitemap.xml", opener=opener), base)
     require_server_card(fetch(base + "/.well-known/mcp/server-card.json", opener=opener), base)
+    probe_legacy_mcp(base, opener=opener)
 
 
 def maybe_run_catalog_probe(origin: str) -> None:
