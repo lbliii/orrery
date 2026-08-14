@@ -55,6 +55,7 @@ BUILTIN_STAR_PACKAGES = (
     "stars.link_check_bounded",
     "stars.structure_audit",
     "stars.kida_check",
+    "stars.kida_render",
 )
 
 

@@ -659,4 +659,4 @@ class TestCatalogMcpProbe:
             check=False,
         )
         assert result.returncode == 0, result.stderr
-        assert "total: 46" in result.stdout
+        assert "total: 47" in result.stdout
