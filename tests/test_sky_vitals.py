@@ -10,6 +10,7 @@ import pytest
 from chirp.testing import TestClient
 
 from pages.page import public_capability_counts
+from sky.storage import RedisStorage
 from sky.vitals import SkyVitalsStore
 
 _META_PROTOCOL_VERSION = "io.modelcontextprotocol/protocolVersion"
@@ -165,3 +166,102 @@ async def test_get_sky_vitals_returns_schema_and_no_store(example_app) -> None:
     assert body["catalog"]["constellations_live"] == constellation_count
     assert body["demand"]["useful_7d"] == 0
     assert body["tenancy"]["namespaces_live"] == 0
+
+
+class _FakeRedis:
+    def __init__(self) -> None:
+        self._data: dict[str, str] = {}
+
+    def get(self, key: str) -> str | bytes | None:
+        return self._data.get(key)
+
+    def set(self, key: str, value: str) -> None:
+        self._data[key] = value
+
+
+def _redis_store(clock: Any, fake: _FakeRedis) -> SkyVitalsStore:
+    return SkyVitalsStore(clock=clock, storage=RedisStorage(fake))
+
+
+@pytest.mark.issue(410)
+def test_persist_counters_restored_after_store_reload() -> None:
+    now = 1_700_000_000.0
+    fake = _FakeRedis()
+    clock = lambda: now  # noqa: E731
+
+    store = _redis_store(clock, fake)
+    store.record_invocation("gaze_match", timestamp=now - 600)
+    store.record_invocation(
+        "resolve_name",
+        arguments={"name": "orrery/html-to-pdf"},
+        timestamp=now - 300,
+    )
+    store.record_seal(timestamp=now - 120)
+
+    reloaded = _redis_store(clock, fake)
+    activity = reloaded.snapshot()["activity"]
+    assert activity["invocations_24h"] == 2
+    assert activity["resolves_24h"] == 1
+    assert activity["seals_24h"] == 1
+
+
+@pytest.mark.issue(410)
+def test_top_resolved_7d_rollup_from_resolve_name_args() -> None:
+    now = 1_700_000_000.0
+    store = SkyVitalsStore(clock=lambda: now)
+
+    store.record_invocation(
+        "resolve_name",
+        arguments={"name": "orrery/html-to-pdf"},
+        timestamp=now - 3 * 86_400,
+    )
+    store.record_invocation(
+        "resolve_name",
+        arguments={"name": "orrery/html-to-pdf"},
+        timestamp=now - 86_400,
+    )
+    store.record_invocation(
+        "resolve_name",
+        arguments={"name": "orrery/csv-url-allowlist"},
+        timestamp=now - 86_400,
+    )
+    store.record_invocation(
+        "resolve_name",
+        arguments={"name": "orrery/stale-star"},
+        timestamp=now - 8 * 86_400,
+    )
+
+    top = store.snapshot()["activity"]["top_resolved_7d"]
+    assert top == [
+        {"name": "orrery/html-to-pdf", "resolves": 2},
+        {"name": "orrery/csv-url-allowlist", "resolves": 1},
+    ]
+
+
+@pytest.mark.issue(410)
+def test_top_resolved_7d_caps_at_five_names() -> None:
+    now = 1_700_000_000.0
+    store = SkyVitalsStore(clock=lambda: now)
+
+    for index in range(6):
+        store.record_invocation(
+            "resolve_name",
+            arguments={"name": f"orrery/star-{index}"},
+            timestamp=now - index * 60,
+        )
+
+    top = store.snapshot()["activity"]["top_resolved_7d"]
+    assert len(top) == 5
+    assert all(entry["resolves"] == 1 for entry in top)
+
+
+@pytest.mark.issue(410)
+def test_persist_degraded_mode_without_redis_is_in_process_only() -> None:
+    now = 1_700_000_000.0
+    clock = lambda: now  # noqa: E731
+
+    first = SkyVitalsStore(clock=clock)
+    first.record_invocation("gaze_match", timestamp=now - 600)
+
+    second = SkyVitalsStore(clock=clock)
+    assert second.snapshot()["activity"]["invocations_24h"] == 0
