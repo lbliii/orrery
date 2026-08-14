@@ -623,3 +623,29 @@ async def test_aggregate_mcp_tools_return_structured_json(discovery_app) -> None
             wire = body["envelope_wire"]
             assert isinstance(wire, dict), tool_name
             assert verify_receipt(wire) is True, tool_name
+
+
+@pytest.mark.issue(392)
+@pytest.mark.asyncio
+async def test_resolve_name_includes_corpus_example_arguments(discovery_app) -> None:
+    async with TestClient(discovery_app) as client:
+        response = await client.post(
+            "/mcp",
+            json={
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "id": 392,
+                "params": _modern_mcp_params(
+                    name="resolve_name",
+                    arguments={"name": "orrery/world-time"},
+                ),
+            },
+            headers=_modern_mcp_headers("tools/call", "resolve_name"),
+        )
+        assert response.status == 200
+        body = _mcp_tool_body(response.text)
+        payload = body["payload"]
+        examples = payload.get("example_arguments")
+        assert isinstance(examples, dict)
+        assert examples.get("fetch") == {}
+        assert examples.get("answer") == {}

@@ -268,10 +268,13 @@ def build_resolve_skill(*, private_key: Any | None = None) -> Skill:
         description="Resolve a skill name to a Skill DNS record (endpoint, digest, key, price)",
     )
     def resolve_name(name: str) -> dict[str, object]:
+        from catalog.example_arguments import example_arguments_for_tools
+
         record = CATALOG.resolve(name)
         if record is None:
             return {"error": "not_found", "name": name, "status": "not_found"}
         payload = record.as_dict()
+        payload["example_arguments"] = example_arguments_for_tools(name, record.tools)
         # The aggregate MCP tool has no request object; deployments should set
         # ORRERY_PUBLIC_ORIGIN. The public host is the safe discovery fallback.
         payload["public_key_url"] = key_set_url(
