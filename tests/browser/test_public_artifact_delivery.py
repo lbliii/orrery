@@ -134,9 +134,29 @@ def test_public_pdf_delivery_in_a_disposable_headless_browser(tmp_path: Path) ->
                 )
                 assert called["status"] == 200
                 text = called["body"]["result"]["content"][0]["text"]
-                artifact_match, sha256_match = _ARTIFACT_URL.search(text), _SHA256.search(text)
-                assert artifact_match is not None and sha256_match is not None, text
-                artifact_url, expected_sha256 = artifact_match.group(1), sha256_match.group(1)
+                try:
+                    structured = json.loads(text)
+                except json.JSONDecodeError:
+                    structured = None
+                payload = (
+                    structured.get("payload")
+                    if isinstance(structured, dict)
+                    else None
+                )
+                if isinstance(payload, dict) and payload.get("artifact_url"):
+                    artifact_url = str(payload["artifact_url"])
+                    expected_sha256 = str(payload.get("sha256") or "")
+                else:
+                    artifact_match, sha256_match = (
+                        _ARTIFACT_URL.search(text),
+                        _SHA256.search(text),
+                    )
+                    assert artifact_match is not None and sha256_match is not None, text
+                    artifact_url, expected_sha256 = (
+                        artifact_match.group(1),
+                        sha256_match.group(1),
+                    )
+                assert artifact_url and expected_sha256.startswith("sha256:"), text
 
                 served = page.evaluate(
                     """async url => { const response = await fetch(url); return {

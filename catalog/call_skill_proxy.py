@@ -9,6 +9,7 @@ from chirp.skill import Envelope
 
 from catalog import CATALOG
 from catalog.dns import mcp_host
+from catalog.mcp_tool_content import is_structured_mcp_body, mcp_error_response, mcp_ok_response
 
 _REGISTRY_BY_PATH: dict[str, Any] = {}
 
@@ -43,41 +44,6 @@ def _publisher_registry(app: Any, path: str) -> Any | None:
     return _REGISTRY_BY_PATH.get(path)
 
 
-def _error_response(
-    code: str,
-    message: str,
-    *,
-    skill: str = "",
-    tool: str = "",
-) -> dict[str, Any]:
-    body: dict[str, Any] = {
-        "status": "error",
-        "error": {"code": code, "message": message},
-    }
-    if skill:
-        body["skill"] = skill
-    if tool:
-        body["tool"] = tool
-    return body
-
-
-def _ok_response(
-    skill: str,
-    tool: str,
-    payload: Any,
-    envelope_wire: dict[str, Any] | None,
-) -> dict[str, Any]:
-    body: dict[str, Any] = {
-        "status": "ok",
-        "skill": skill,
-        "tool": tool,
-        "payload": payload,
-    }
-    if envelope_wire is not None:
-        body["envelope_wire"] = envelope_wire
-    return body
-
-
 async def forward_call_skill(
     app: Any,
     *,
@@ -89,10 +55,10 @@ async def forward_call_skill(
     args = dict(arguments or {})
     record = CATALOG.resolve(name)
     if record is None:
-        return _error_response("not_found", f"Unknown skill name: {name}")
+        return mcp_error_response("not_found", f"Unknown skill name: {name}")
 
     if not is_same_origin_catalog_endpoint(record.endpoint):
-        return _error_response(
+        return mcp_error_response(
             "publisher_direct_required",
             "Call the publisher MCP endpoint directly; this host only forwards "
             "same-origin catalog skills.",
@@ -102,7 +68,7 @@ async def forward_call_skill(
 
     path = mcp_endpoint_path(record.endpoint)
     if path is None:
-        return _error_response(
+        return mcp_error_response(
             "publisher_direct_required",
             f"Unsupported endpoint: {record.endpoint!r}",
             skill=name,
@@ -111,7 +77,7 @@ async def forward_call_skill(
 
     publisher = _publisher_registry(app, path)
     if publisher is None:
-        return _error_response(
+        return mcp_error_response(
             "publisher_direct_required",
             f"No publisher MCP mounted at {path!r}",
             skill=name,
@@ -119,7 +85,7 @@ async def forward_call_skill(
         )
 
     if publisher.get(tool) is None:
-        return _error_response(
+        return mcp_error_response(
             "unknown_tool",
             f"Tool {tool!r} is not on publisher MCP for {name!r}",
             skill=name,
@@ -129,18 +95,23 @@ async def forward_call_skill(
     try:
         result = await publisher.call_tool(tool, args)
     except TypeError as exc:
-        return _error_response("invalid_arguments", str(exc), skill=name, tool=tool)
+        return mcp_error_response("invalid_arguments", str(exc), skill=name, tool=tool)
     except Exception as exc:
-        return _error_response("call_failed", str(exc), skill=name, tool=tool)
+        return mcp_error_response("call_failed", str(exc), skill=name, tool=tool)
 
     if isinstance(result, Envelope):
         wire = result.to_wire()
-        return _ok_response(name, tool, wire.get("payload", {}), wire)
+        return mcp_ok_response(name, tool, wire.get("payload", {}), wire)
 
     if isinstance(result, dict):
+        if is_structured_mcp_body(result):
+            body = dict(result)
+            body["skill"] = name
+            body["tool"] = tool
+            return body
         # Some publisher mounts return Envelope.to_wire() as a plain dict.
         if "signature" in result and "payload" in result:
-            return _ok_response(name, tool, result.get("payload", {}), result)
-        return _ok_response(name, tool, result, None)
+            return mcp_ok_response(name, tool, result.get("payload", {}), result)
+        return mcp_ok_response(name, tool, result, None)
 
-    return _ok_response(name, tool, {"result": result}, None)
+    return mcp_ok_response(name, tool, {"result": result}, None)

@@ -132,7 +132,9 @@ class TestOrreryHostFoundation:
             )
             assert called.status == 200
             text = json.loads(called.text)["result"]["content"][0]["text"]
-            assert "orrery/html-to-pdf" in text
+            body = json.loads(text)
+            assert body["status"] == "ok"
+            assert "orrery/html-to-pdf" in json.dumps(body["payload"])
 
     async def test_dogfood_mcp_lists_and_invokes_call_tools(self, example_app) -> None:
         async with TestClient(example_app) as client:
@@ -602,8 +604,11 @@ class TestDirectStarMcpEndpoints:
             )
             assert response.status == 200
             text = json.loads(response.text)["result"]["content"][0]["text"]
-            assert "source-watch" in text
-            assert "live_at_call" in text
+            body = json.loads(text)
+            assert body["status"] == "ok"
+            payload_text = json.dumps(body["payload"])
+            assert "source-watch" in payload_text or body.get("skill") == "source-watch"
+            assert "live_at_call" in payload_text
 
 
 @pytest.mark.issue(319)

@@ -35,6 +35,7 @@ from catalog import CATALOG, GAZE_DEFAULT_LIMIT, GAZE_MAX_LIMIT
 from catalog.call_skill_proxy import forward_call_skill
 from catalog.constellation_run import explain_policy, run_constellation, status_for_run
 from catalog.coverage import check_coverage, describe_coverage
+from catalog.mcp_tool_content import wrap_structured_mcp_handler
 from discovery import MCP_TOOLS_ALLOWLIST
 from public_keys import key_set_url
 from stars.decision_bind.service import bind as bind_decision
@@ -56,6 +57,10 @@ SMOKE_HTML = "<!doctype html><html><body><h1>Orrery</h1></body></html>"
 _html_to_pdf_skill: Skill | None = None
 _world_time_skill: Skill | None = None
 _source_watch_skill: Skill | None = None
+_gaze_skill: Skill | None = None
+_resolve_skill: Skill | None = None
+_launch_gate_skill: Skill | None = None
+_discovery_launch_gate_skill: Skill | None = None
 
 def _load_or_generate_key(env_name: str) -> Ed25519PrivateKey:
     raw = os.environ.get(env_name, "").strip()
@@ -67,6 +72,49 @@ def _load_or_generate_key(env_name: str) -> Ed25519PrivateKey:
 def fetch_live_utc() -> dict[str, object]:
     """Compatibility import for the World Time Star's package service."""
     return _fetch_live_utc()
+
+
+def use_skill_structured_mcp(app: Any, skill: Skill) -> Skill:
+    """Mount ``skill`` tools returning ADR 0010 JSON on MCP ``tools/call``."""
+    for pending in skill._pending:
+        pending.handler = wrap_structured_mcp_handler(
+            pending.handler,
+            skill=skill.name,
+            tool=pending.name,
+        )
+    return use_skill(app, skill)
+
+
+def get_gaze_skill() -> Skill:
+    """Return the shared gaze skill (same instance on ``/mcp`` and registry)."""
+    global _gaze_skill
+    if _gaze_skill is None:
+        _gaze_skill = build_gaze_skill()
+    return _gaze_skill
+
+
+def get_resolve_skill() -> Skill:
+    """Return the shared resolve skill (same instance on ``/mcp`` and registry)."""
+    global _resolve_skill
+    if _resolve_skill is None:
+        _resolve_skill = build_resolve_skill()
+    return _resolve_skill
+
+
+def get_launch_gate_skill() -> Skill:
+    """Return the full launch-gate skill (``/mcp/dogfood`` run/status)."""
+    global _launch_gate_skill
+    if _launch_gate_skill is None:
+        _launch_gate_skill = build_launch_gate_skill()
+    return _launch_gate_skill
+
+
+def get_discovery_launch_gate_skill() -> Skill:
+    """Return slim launch-gate (``explain_policy`` on aggregate ``/mcp``)."""
+    global _discovery_launch_gate_skill
+    if _discovery_launch_gate_skill is None:
+        _discovery_launch_gate_skill = build_launch_gate_skill(discovery_only=True)
+    return _discovery_launch_gate_skill
 
 
 def build_gaze_skill(*, private_key: Any | None = None) -> Skill:
@@ -462,6 +510,15 @@ def envelope_from_wire(data: dict[str, Any]) -> Envelope:
 def skill_for_receipt(data: dict[str, Any]) -> Skill | None:
     """Pick the dogfood skill whose public key should verify this receipt."""
     name = str(data.get("skill") or "")
+    tool = str(data.get("tool") or "")
+    if name == "gaze":
+        return get_gaze_skill()
+    if name == "resolve":
+        return get_resolve_skill()
+    if name == "launch-gate":
+        if tool == "explain_policy":
+            return get_discovery_launch_gate_skill()
+        return get_launch_gate_skill()
     if name == "html-to-pdf":
         return get_html_to_pdf_skill()
     if name == "world-time":
@@ -492,9 +549,9 @@ def verify_receipt(
 def build_discovery_skills() -> tuple[Skill, ...]:
     """Slim default ``/mcp`` — gaze, resolve, and constellation explain only."""
     return (
-        build_gaze_skill(),
-        build_resolve_skill(),
-        build_launch_gate_skill(discovery_only=True),
+        get_gaze_skill(),
+        get_resolve_skill(),
+        get_discovery_launch_gate_skill(),
     )
 
 
@@ -504,7 +561,7 @@ def build_dogfood_call_skills() -> tuple[Skill, ...]:
         get_html_to_pdf_skill(),
         get_world_time_skill(),
         get_source_watch_skill(),
-        build_launch_gate_skill(),
+        get_launch_gate_skill(),
         build_satisfaction_skill(verify_receipt=verify_receipt),
     )
 
@@ -512,12 +569,12 @@ def build_dogfood_call_skills() -> tuple[Skill, ...]:
 def build_dogfood_skills() -> tuple[Skill, ...]:
     """Return the N dogfood skills in mount order (console + publish-oracle registry)."""
     skills = (
-        build_gaze_skill(),
-        build_resolve_skill(),
+        get_gaze_skill(),
+        get_resolve_skill(),
         get_html_to_pdf_skill(),
         get_world_time_skill(),
         get_source_watch_skill(),
-        build_launch_gate_skill(),
+        get_launch_gate_skill(),
         build_satisfaction_skill(verify_receipt=verify_receipt),
     )
     assert len(skills) == N_DOGFOOD_SKILLS
@@ -542,7 +599,11 @@ def _skills_tool_registry(app: Any, skills: tuple[Skill, ...]) -> ToolRegistry:
                 ToolDef(
                     name=pending.name,
                     description=pending.description,
-                    handler=pending.handler,
+                    handler=wrap_structured_mcp_handler(
+                        pending.handler,
+                        skill=skill.name,
+                        tool=pending.name,
+                    ),
                     schema=function_to_schema(pending.handler),
                     approval_required=pending.approval_required,
                 )
@@ -584,7 +645,7 @@ def mount_orrery_skills(
 ) -> ToolRegistry:
     """Wire slim ``/mcp``, labeled ``/mcp/dogfood``, discovery, and live invocation log."""
     for skill in discovery_skills:
-        use_skill(app, skill)
+        use_skill_structured_mcp(app, skill)
     _register_call_skill_tool(app)
     _register_skill_discovery(app, registry, discovery_path)
     if invocation_log_path is not None:
