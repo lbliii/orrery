@@ -27,7 +27,8 @@ def _csp_script_nonce(headers) -> str:
 def _assert_inline_script_matches_csp(response) -> None:
     nonce = _csp_script_nonce(response.headers)
     assert f'<script nonce="{nonce}">' in response.text
-    assert "Alpine.safeData" in response.text
+    assert "Alpine.data(" in response.text
+    assert "queueMicrotask(start)" not in response.text
 
 
 def _embedded_error_map(html: str, element_id: str) -> dict:
@@ -939,7 +940,8 @@ class TestGazeConsole:
             assert r.status == 200
             assert 'id="gaze-cfg"' in r.text
             assert 'x-data="gazePage"' in r.text
-            assert "Alpine.safeData" in r.text
+            assert 'Alpine.data("gazePage"' in r.text
+            assert 'Alpine.safeData("gazePage"' not in r.text
             assert 'getElementById("gaze-cfg")' in r.text
 
             # Server config is a JSON script body (Chirp alpine_json_config).
@@ -955,7 +957,7 @@ class TestGazeConsole:
             attr_end = r.text.index('"', attr_start)
             attr = r.text[attr_start:attr_end]
             assert attr == "gazePage"
-            assert "(() =>" not in r.text
+            assert "(() =>" not in attr
             assert "renderHit" not in r.text
             assert "innerHTML" not in r.text
             _assert_inline_script_matches_csp(r)
@@ -1765,7 +1767,8 @@ class TestCatalogAlpineFilters:
             r = await client.get("/stars")
             assert r.status == 200
             assert 'x-data="starsCatalog"' in r.text
-            assert "Alpine.safeData" in r.text
+            assert 'Alpine.data("starsCatalog"' in r.text
+            assert 'Alpine.safeData("starsCatalog"' not in r.text
             assert "DOMContentLoaded" not in r.text
             assert "data-star-search" in r.text
             assert "data-star-facet" in r.text
@@ -1778,7 +1781,8 @@ class TestCatalogAlpineFilters:
             r = await client.get("/constellations")
             assert r.status == 200
             assert 'x-data="constellationsCatalog"' in r.text
-            assert "Alpine.safeData" in r.text
+            assert 'Alpine.data("constellationsCatalog"' in r.text
+            assert 'Alpine.safeData("constellationsCatalog"' not in r.text
             assert "DOMContentLoaded" not in r.text
             assert "data-constellation-search" in r.text
             _assert_inline_script_matches_csp(r)
