@@ -215,7 +215,7 @@ Reusable across routes:
 | --- | --- | --- |
 | `/` | `.hero` + `.section` | `.orb-stage`, `.resolve-demo`, `.feed` |
 | `/gaze` | `.console-head` + `.gaze-bench` | `.gaze-nodes`, `.gaze-hits` |
-| `/resolve` | `.console-head` | `.lookup`, `.record-table` (in `.table-scroll`) |
+| `/resolve` | `.console-head` + `.stack` | `.lookup`, zone table; no explainer footer |
 | `/stars` | `.catalog-hero` + `.catalog-layout` | `.star-row` |
 | `/star/*` | `.star-page` | `.receipt`, `.meta-list`, `.price` |
 | `/constellations` | `.catalog-hero` + `.catalog-layout` | `.star-row` |
