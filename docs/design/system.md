@@ -180,7 +180,7 @@ Reusable across routes:
 | `.receipt` + `[data-receipt]` seal states | Envelope proof | `/stars` |
 | `.verify-ok` / `.verify-fail` | Seal result | `/stars` |
 | `.constellation` + SVG motion | Drawn policy graph | `/constellations` |
-| `.gaze-nodes` / `.gaze-node` / `.gaze-hits` | Discovery console | `/gaze` |
+| `.gaze-nodes` / `.gaze-node` / `.gaze-hits` | Discovery workbench | `/gaze` |
 | `.feed` / `.activity*` | Live invocations | `/` |
 | `[data-digest].value-settled` | Resolve settle flash | `/resolve` |
 | `.resolve-demo` | Home resolve affordance | `/` |
@@ -194,6 +194,7 @@ Reusable across routes:
 | `.ns-hero`, `.detail-hero`, `.console-head` | Page intros |
 | `.section` | Content section |
 | `.detail-grid`, `.ns-grid` | Multi-column bodies |
+| `.gaze-bench` | Gaze workbench (nodes, query, results) |
 | `.featured` | Emphasized ns-grid cell |
 | `.catalog-*`, `.star-*` | Public sky / star field guide |
 
@@ -212,7 +213,7 @@ Reusable across routes:
 | Route | Layout | Widgets |
 | --- | --- | --- |
 | `/` | `.hero` + `.section` | `.orb-stage`, `.resolve-demo`, `.feed` |
-| `/gaze` | `.console-head` + `.detail-grid` | `.gaze-nodes`, `.gaze-hits` |
+| `/gaze` | `.console-head` + `.gaze-bench` | `.gaze-nodes`, `.gaze-hits` |
 | `/resolve` | `.console-head` | `.lookup`, `.record-table` (in `.table-scroll`) |
 | `/stars` | `.detail-hero` + `.detail-grid` | `.receipt`, `.meta-list`, `.price` |
 | `/constellations` | `.console-head` + `.detail-grid` | `.constellation`, `.legend` |

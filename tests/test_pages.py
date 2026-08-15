@@ -925,6 +925,10 @@ class TestGazeConsole:
             assert "acme/launch-gate" in r.text
             assert "look_at" not in r.text
             assert "gaze_match" in r.text
+            assert "gaze-bench" in r.text
+            assert "Agent shape" not in r.text
+            assert "Progressive disclosure" not in r.text
+            assert "Many nodes, one protocol" not in r.text
 
     async def test_gaze_intent_query_filters_hits(self, example_app) -> None:
         async with TestClient(example_app) as client:
