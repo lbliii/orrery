@@ -11,7 +11,7 @@ hands you an endpoint, a digest, and a receipt so the agent can keep moving.
 | Verb | Product meaning | Visual cue |
 | --- | --- | --- |
 | **Gaze** | Discover / match intent against a sky | Node picker, ranked hits |
-| **Resolve** | Lock identity (endpoint, digest, key, price) | Zone table, brass settle flash |
+| **Resolve** | Lock identity (endpoint, digest, key, price) | Stacked zone plates, brass settle flash |
 | **Call** | Invoke at the publisher (Orrery is not the proxy) | Live feed of tool events |
 | **Seal** | Prove the result (Envelope) | Receipt panel, phosphor verify |
 
