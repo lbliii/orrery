@@ -28,7 +28,11 @@ def test_dockerfile_tracks_chirp_main_and_copies_full_source() -> None:
     )
     assert '"itsdangerous>=2.2.0"' in dockerfile
     assert '"boto3>=1.42,<2"' in dockerfile
+    assert '"kida-templates>=0.12.0"' in dockerfile
+    assert '"patitas[syntax]>=0.4.0"' in dockerfile
     assert '"psycopg[binary]>=3.3,<4"' in dockerfile
+    assert '"redis>=5.2,<7"' in dockerfile
+    assert '"rosettes>=0.2.0"' in dockerfile
     assert "uv sync --frozen" not in dockerfile
     assert "uv.lock" not in dockerfile
     assert "COPY . /app/" in dockerfile
