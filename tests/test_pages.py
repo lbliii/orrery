@@ -1017,6 +1017,10 @@ class TestConstellationCatalogIndex:
             assert "orrery/stale-proof" in r.text
             assert 'href="/constellations?name=' in r.text
             assert "<svg" not in r.text
+            assert "data-constellation-search" in r.text
+            assert "catalog-rail" in r.text
+            assert "A constellation is chalk lines" not in r.text
+            assert "Constellations compose stars into a frozen policy graph" not in r.text
 
     async def test_detail_renders_from_index_link(self, example_app) -> None:
         async with TestClient(example_app) as client:
