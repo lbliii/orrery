@@ -1798,6 +1798,26 @@ class TestStarDetailSeal:
             assert "function initStarReceipt" in motion.text
 
 
+@pytest.mark.issue(502)
+class TestSampleHelpers:
+    async def test_connect_and_star_detail_use_sample_class(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            connect = await client.get("/connect")
+            assert connect.status == 200
+            assert 'class="sample"' in connect.text
+
+            star = await client.get("/star/orrery/world-time")
+            assert star.status == 200
+            assert 'class="sample"' in star.text
+            assert "syntax-" in star.text
+
+            receipt_start = star.text.index('data-receipt')
+            receipt_pre = star.text.index("<pre", receipt_start)
+            receipt_end = star.text.index("</pre>", receipt_pre)
+            receipt = star.text[receipt_pre:receipt_end]
+            assert "syntax-" not in receipt
+
+
 @pytest.mark.issue(482)
 class TestMotionLoop:
     def test_feed_row_has_one_shot_arrive_class(self) -> None:
