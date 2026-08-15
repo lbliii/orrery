@@ -7,66 +7,141 @@
   right: max(-1.5rem, -4%);
   /* Anchor to the copy cluster (bottom), not the viewport top. */
   bottom: clamp(8.5rem, 28%, 15rem);
-  width: min(28rem, 46vw);
+  width: min(32rem, 52vw);
   aspect-ratio: 1;
   display: grid;
   place-items: center;
   pointer-events: none;
   overflow: visible;
-  /* Opaque through the disk (~65% of closest-side); only the halo fades out. */
-  -webkit-mask-image: radial-gradient(closest-side, #000 72%, transparent 100%);
-  mask-image: radial-gradient(closest-side, #000 72%, transparent 100%);
+  -webkit-mask-image: radial-gradient(closest-side, #000 84%, transparent 100%);
+  mask-image: radial-gradient(closest-side, #000 84%, transparent 100%);
 }
 
-.orb {
-  position: relative;
-  width: 65%;
-  aspect-ratio: 1;
-  border-radius: var(--radius-orb);
-  border: var(--stroke) solid color-mix(in oklab, var(--brass) 35%, transparent);
-  background:
-    radial-gradient(circle at 35% 30%, color-mix(in oklab, var(--signal) 18%, transparent), transparent 42%),
-    radial-gradient(circle at 62% 68%, color-mix(in oklab, var(--brass) 28%, transparent), transparent 48%),
-    color-mix(in oklab, #1a3048 70%, transparent);
-  box-shadow:
-    var(--glow-brass),
-    0 0 96px color-mix(in oklab, #1a3048 55%, transparent),
-    inset 0 0 60px color-mix(in oklab, var(--void) 40%, transparent);
-  animation: spin 70s linear infinite;
+.orb-svg {
+  width: 88%;
+  height: 88%;
+  overflow: visible;
+  filter: drop-shadow(0 0 36px color-mix(in oklab, var(--brass) 28%, transparent));
 }
 
-.orb::before,
-.orb::after {
-  content: "";
-  position: absolute;
-  inset: 12%;
-  border-radius: var(--radius-orb);
-  border: 1px dashed color-mix(in oklab, var(--brass) 40%, transparent);
+.orb-glow {
+  fill: var(--brass);
+  fill-opacity: 0.12;
 }
 
-.orb::after {
-  inset: 26%;
-  border-style: solid;
-  border-color: color-mix(in oklab, var(--phosphor) 35%, transparent);
+.orb-limb {
+  fill: none;
+  stroke: var(--brass);
+  stroke-opacity: 0.32;
+  stroke-width: 1.1;
 }
 
-.orb i {
-  position: absolute;
-  width: 9px;
-  height: 9px;
-  border-radius: var(--radius-orb);
-  background: var(--brass);
-  top: 8%;
-  left: 48%;
-  box-shadow:
-    120px 90px 0 -2px var(--phosphor),
-    -80px 140px 0 -3px var(--signal);
+.orb-sight {
+  stroke: var(--brass);
+  stroke-width: 1.15;
+  stroke-linecap: butt;
+  stroke-opacity: 0.5;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+.orb-svg.is-committed .orb-sight {
+  stroke-opacity: 0.82;
+}
+
+.orbit-outer .orb-arc-far,
+.orbit-outer .orb-arc-near,
+.orbit-mid .orb-arc-far,
+.orbit-mid .orb-arc-near,
+.orbit-inner .orb-arc-far,
+.orbit-inner .orb-arc-near {
+  fill: none;
+}
+
+.orbit-outer .orb-arc-far,
+.orbit-outer .orb-arc-near {
+  stroke: var(--brass);
+  stroke-width: 1.35;
+  stroke-dasharray: 7 6;
+}
+
+.orbit-outer .orb-arc-far {
+  stroke-opacity: 0.28;
+}
+
+.orbit-outer .orb-arc-near {
+  stroke-opacity: 0.62;
+}
+
+.orbit-mid .orb-arc-far,
+.orbit-mid .orb-arc-near {
+  stroke: var(--brass);
+  stroke-width: 1.45;
+}
+
+.orbit-mid .orb-arc-far {
+  stroke-opacity: 0.26;
+}
+
+.orbit-mid .orb-arc-near {
+  stroke-opacity: 0.58;
+}
+
+.orbit-inner .orb-arc-far,
+.orbit-inner .orb-arc-near {
+  stroke: var(--phosphor);
+  stroke-width: 1.2;
+}
+
+.orbit-inner .orb-arc-far {
+  stroke-opacity: 0.22;
+}
+
+.orbit-inner .orb-arc-near {
+  stroke-opacity: 0.48;
+}
+
+.orb-body-pointed {
+  fill: var(--brass);
+  stroke: color-mix(in oklab, var(--brass) 55%, white);
+  stroke-width: 1;
+  stroke-opacity: 0.95;
+}
+
+.orb-body-pointed.is-flash {
+  fill: color-mix(in oklab, var(--brass) 55%, white);
+}
+
+.orb-body-phosphor {
+  fill: var(--phosphor);
+}
+
+.orb-body-signal {
+  fill: var(--signal);
+}
+
+.orb-body-dim {
+  fill: var(--brass-dim);
+}
+
+.orb-sun-ring {
+  fill: none;
+  stroke: var(--phosphor);
+  stroke-opacity: 0.45;
+  stroke-width: 1.1;
+}
+
+.orb-sun-core {
+  stroke: var(--brass-dim);
+  stroke-width: 0.8;
+}
+
+.orb-sun-highlight {
+  fill: color-mix(in oklab, var(--brass) 55%, white);
+  fill-opacity: 0.75;
+}
+
+.orb-stage.is-rest .orb-body-motion,
+.orb-stage.is-motion .orb-body-rest {
+  visibility: hidden;
 }
 
 .resolve-demo {

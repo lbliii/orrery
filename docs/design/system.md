@@ -176,7 +176,7 @@ Reusable across routes:
 
 | Widget | Role | Primary route |
 | --- | --- | --- |
-| `.orb-stage` / `.orb` | Brand visual anchor | `/` |
+| `.orb-stage` / `.orb-svg` | Brand visual anchor | `/` |
 | `.receipt` + `[data-receipt]` seal states | Envelope proof | `/stars` |
 | `.verify-ok` / `.verify-fail` | Seal result | `/stars` |
 | `.constellation` + SVG motion | Drawn policy graph | `/constellations` |

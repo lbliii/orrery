@@ -1,8 +1,77 @@
 {% block content %}
 <section class="hero">
   <div class="hero-sky" aria-hidden="true"></div>
-  <div class="orb-stage" aria-hidden="true">
-    <div class="orb"><i></i></div>
+  <div class="orb-stage is-motion" aria-hidden="true">
+    <svg class="orb-svg" viewBox="0 0 400 400">
+      <defs>
+        <radialGradient id="orb-sun-core" cx="38%" cy="32%" r="65%">
+          <stop offset="0%" stop-color="#e8d3a4" />
+          <stop offset="70%" stop-color="#c4a06a" />
+          <stop offset="100%" stop-color="#8a6d42" />
+        </radialGradient>
+        <radialGradient id="orb-wash" cx="36%" cy="30%" r="72%">
+          <stop offset="0%" stop-color="#d4e4f0" stop-opacity="0.14" />
+          <stop offset="38%" stop-color="#1a3048" stop-opacity="0.42" />
+          <stop offset="70%" stop-color="#c4a06a" stop-opacity="0.16" />
+          <stop offset="100%" stop-color="#1a3048" stop-opacity="0" />
+        </radialGradient>
+      </defs>
+      <circle class="orb-wash" cx="200" cy="200" r="168" fill="url(#orb-wash)" />
+      <circle class="orb-glow" cx="200" cy="200" r="40" />
+      <circle class="orb-limb" cx="200" cy="200" r="176" />
+      <line class="orb-sight" x1="209.5" y1="194.5" x2="340" y2="118" />
+      <g class="orbit-outer" transform="rotate(-22 200 200)">
+        <path class="orb-arc-far" d="M 28 200 A 172 50 0 0 1 372 200" />
+        <path class="orb-arc-near" d="M 372 200 A 172 50 0 0 1 28 200" />
+        <circle class="orb-body orb-body-pointed orb-body-motion" r="4.4">
+          <animateMotion
+            begin="-41s"
+            dur="110s"
+            repeatCount="indefinite"
+            path="M 372 200 A 172 50 0 1 1 28 200 A 172 50 0 1 1 372 200"
+          />
+        </circle>
+        <circle class="orb-body orb-body-pointed orb-body-rest" r="4.4" cx="354.59" cy="178.08" />
+      </g>
+      <g class="orbit-mid" transform="rotate(14 200 200)">
+        <path class="orb-arc-far" d="M 76 200 A 124 54 0 0 1 324 200" />
+        <path class="orb-arc-near" d="M 324 200 A 124 54 0 0 1 76 200" />
+        <circle class="orb-body orb-body-sky orb-body-phosphor orb-body-motion" r="3.1">
+          <animateMotion
+            begin="-19s"
+            dur="72s"
+            repeatCount="indefinite"
+            path="M 324 200 A 124 54 0 1 1 76 200 A 124 54 0 1 1 324 200"
+          />
+        </circle>
+        <circle class="orb-body orb-body-sky orb-body-signal orb-body-motion" r="2.8">
+          <animateMotion
+            begin="-8s"
+            dur="97s"
+            repeatCount="indefinite"
+            path="M 324 200 A 124 54 0 1 0 76 200 A 124 54 0 1 0 324 200"
+          />
+        </circle>
+        <circle class="orb-body orb-body-sky orb-body-phosphor orb-body-rest" r="3.1" cx="148.58" cy="249.14" />
+        <circle class="orb-body orb-body-sky orb-body-signal orb-body-rest" r="2.8" cx="303.4" cy="229.8" />
+      </g>
+      <g class="orbit-inner" transform="rotate(4 200 200)">
+        <path class="orb-arc-far" d="M 122 200 A 78 46 0 0 1 278 200" />
+        <path class="orb-arc-near" d="M 278 200 A 78 46 0 0 1 122 200" />
+        <circle class="orb-body orb-body-sky orb-body-dim orb-body-motion" r="2.4">
+          <animateMotion
+            begin="-27s"
+            dur="48s"
+            repeatCount="indefinite"
+            path="M 278 200 A 78 46 0 1 1 122 200 A 78 46 0 1 1 278 200"
+          />
+        </circle>
+        <circle class="orb-body orb-body-sky orb-body-dim orb-body-rest" r="2.4" cx="171.29" cy="157.23" />
+      </g>
+      <circle class="orb-sun-ring" cx="200" cy="200" r="15" />
+      <circle class="orb-sun-core" cx="200" cy="200" r="8" fill="url(#orb-sun-core)" />
+      <circle class="orb-sun-highlight" cx="196.5" cy="196.5" r="2.2" />
+    </svg>
   </div>
 
   <div class="hero-copy">
