@@ -74,10 +74,13 @@ Defined once on `:root` in `tokens.css`:
 | `--text-kicker` | `0.78rem` | Uppercase labels |
 | `--text-body` | `1.05rem` | Body size |
 | `--text-mono` | `0.9rem` | Machine size |
+| `--text-mono-dense` | `0.78rem` | Dense machine / code |
+| `--text-prose-h2` | `1.35rem` | Prose section heading |
+| `--text-prose-h3` | `1.15rem` | Prose subsection heading |
 | `--text-lede` | `1.05rem` | Supporting paragraph |
 | `--leading` | `1.55` | Body line-height |
 
-No `xs`–`3xl` type ramp.
+No `xs`–`3xl` type ramp. `.prose` / `.sample` CSS lands in [#501](https://github.com/lbliii/orrery/issues/501).
 
 ### Space
 
