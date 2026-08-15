@@ -178,6 +178,29 @@ class TestBrandChrome:
             assert 'class="nav-dropdown" open' not in star.text
 
 
+@pytest.mark.issue(495)
+class TestBrassOrbMark:
+    def test_layout_head_has_favicon_links(self) -> None:
+        layout = (Path(__file__).resolve().parents[1] / "pages" / "_layout.html").read_text()
+        assert 'rel="icon"' in layout
+        assert 'href="/static/mark.svg"' in layout
+        assert 'type="image/svg+xml"' in layout
+        assert 'rel="apple-touch-icon"' in layout
+        assert 'href="/static/apple-touch-icon.png"' in layout
+
+    async def test_mark_assets_served(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            svg = await client.get("/static/mark.svg")
+            assert svg.status == 200
+            assert "<svg" in svg.text
+            assert "#070b12" in svg.text
+            assert "#c4a06a" in svg.text
+            png = await client.get("/static/apple-touch-icon.png")
+            assert png.status == 200
+            assert png.body_bytes.startswith(b"\x89PNG\r\n\x1a\n")
+            assert len(png.body_bytes) > 100
+
+
 @pytest.mark.issue(494)
 class TestFooterClusters:
     async def test_footer_has_three_clusters_and_brand_line(self, example_app) -> None:
