@@ -170,6 +170,83 @@
   padding: 1.25rem 1.35rem;
 }
 
+.panel .lede {
+  font-size: 0.95rem;
+}
+
+.panel .lede:last-child {
+  margin-bottom: 0;
+}
+
+.panel pre.mono {
+  margin: var(--space-2) 0 0;
+  white-space: pre-wrap;
+}
+
+.panel pre.mono:first-child {
+  margin-top: 0;
+}
+
+.panel .hero-actions {
+  margin-bottom: 0;
+}
+
+.stack .meta-list {
+  margin: 0;
+}
+
+.meta-list li label {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  cursor: pointer;
+  grid-column: 1 / -1;
+}
+
+.record-table td a.mono {
+  font-size: 0.82rem;
+}
+
+.record-table td .muted {
+  font-size: 0.88rem;
+}
+
+.lookup.lookup-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: var(--space-2);
+  align-items: center;
+}
+
+.lookup.lookup-filters label.muted {
+  font-size: 0.88rem;
+}
+
+.section.section-flush {
+  padding-top: 0;
+}
+
+.section.section-flush-tight {
+  padding-top: 0.5rem;
+}
+
+.console-head .lede {
+  margin-bottom: 0;
+}
+
+.feed-head .kicker {
+  margin: 0;
+}
+
+.gaze-hits li > a.mono {
+  font-size: 0.82rem;
+}
+
+.detail-grid-spaced {
+  margin-bottom: 1.25rem;
+}
+
 .resolve-row,
 .lookup {
   display: grid;

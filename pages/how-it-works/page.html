@@ -12,119 +12,129 @@
   each section links to proof you can run today.
 </p>
 
-<section class="panel" id="gaze" style="margin-bottom: 1.5rem">
-  <p class="kicker" style="margin-bottom: 0.75rem">1 · Gaze</p>
-  <h2>Browse the shelf — no tool payloads</h2>
-  <p>
-    Gaze returns a bounded shortlist: names, facets, oracle pills, and prices.
-    The agent is the semantic router — the shelf never ships full tool schemas
-    or execution payloads.
-  </p>
-  <ul class="meta-list">
-    <li><span>Console</span><a class="mono" href="/gaze">/gaze</a></li>
-    <li>
-      <span>Match API</span>
-      <a class="mono" href="/api/gaze/match?intent=pdf&amp;node=orrery"
-        >/api/gaze/match</a
-      >
-    </li>
-    <li>
-      <span>Example hit</span>
-      <a class="mono" href="/stars?name=orrery/html-to-pdf">orrery/html-to-pdf</a>
-    </li>
-  </ul>
-</section>
+<div class="stack stack--3">
+  <section class="panel" id="gaze">
+    <div class="stack">
+      <p class="kicker">1 · Gaze</p>
+      <h2>Browse the shelf — no tool payloads</h2>
+      <p>
+        Gaze returns a bounded shortlist: names, facets, oracle pills, and prices.
+        The agent is the semantic router — the shelf never ships full tool schemas
+        or execution payloads.
+      </p>
+      <ul class="meta-list">
+        <li><span>Console</span><a class="mono" href="/gaze">/gaze</a></li>
+        <li>
+          <span>Match API</span>
+          <a class="mono" href="/api/gaze/match?intent=pdf&amp;node=orrery"
+            >/api/gaze/match</a
+          >
+        </li>
+        <li>
+          <span>Example hit</span>
+          <a class="mono" href="/stars?name=orrery/html-to-pdf">orrery/html-to-pdf</a>
+        </li>
+      </ul>
+    </div>
+  </section>
 
-<section class="panel" id="resolve" style="margin-bottom: 1.5rem">
-  <p class="kicker" style="margin-bottom: 0.75rem">2 · Resolve</p>
-  <h2>Skill DNS — name to endpoint and digest</h2>
-  <p>
-    Resolve turns a skill name into the MCP URL, content digest, and public key
-    id. This is the binding step before call — not a Git checkout.
-  </p>
-  <ul class="meta-list">
-    <li>
-      <span>Lookup</span>
-      <a class="mono" href="/resolve?q=orrery/html-to-pdf"
-        >/resolve?q=orrery/html-to-pdf</a
-      >
-    </li>
-    <li>
-      <span>Resolve API</span>
-      <a class="mono" href="/api/resolve?name=orrery/world-time"
-        >/api/resolve</a
-      >
-    </li>
-    <li><span>Zone table</span><a class="mono" href="/resolve">/resolve</a></li>
-  </ul>
-</section>
+  <section class="panel" id="resolve">
+    <div class="stack">
+      <p class="kicker">2 · Resolve</p>
+      <h2>Skill DNS — name to endpoint and digest</h2>
+      <p>
+        Resolve turns a skill name into the MCP URL, content digest, and public key
+        id. This is the binding step before call — not a Git checkout.
+      </p>
+      <ul class="meta-list">
+        <li>
+          <span>Lookup</span>
+          <a class="mono" href="/resolve?q=orrery/html-to-pdf"
+            >/resolve?q=orrery/html-to-pdf</a
+          >
+        </li>
+        <li>
+          <span>Resolve API</span>
+          <a class="mono" href="/api/resolve?name=orrery/world-time"
+            >/api/resolve</a
+          >
+        </li>
+        <li><span>Zone table</span><a class="mono" href="/resolve">/resolve</a></li>
+      </ul>
+    </div>
+  </section>
 
-<section class="panel" id="call" style="margin-bottom: 1.5rem">
-  <p class="kicker" style="margin-bottom: 0.75rem">3 · Call</p>
-  <h2>Publisher-direct — same contract everywhere</h2>
-  <p>
-    Call the publisher you resolved — Cursor, Claude Code, CI, or a browser
-    console. Direct star MCP endpoints carry the teaching trio; default
-    <code class="mono">/mcp</code> is slim discovery plus one
-    <code class="mono">call_skill</code> forwarder. Publisher mounts stay
-    canonical.
-  </p>
-  <ul class="meta-list">
-    {% for ep in direct_endpoints %}
-    <li>
-      <span>{{ ep.star }}</span>
-      <a class="mono" href="{{ ep.path }}">{{ ep.path }}</a>
-    </li>
-    {% end %}
-    <li>
-      <span>Live console</span>
-      <a class="mono" href="/console/world-time">/console/world-time</a>
-    </li>
-  </ul>
-  <p class="lede" style="margin: 0.75rem 0 0; font-size: 0.95rem">
-    Teaching trio — point, don't clone. Offline copies cannot mint fresh UTC or
-    re-observe upstream.
-  </p>
-  <ul class="meta-list">
-    {% for t in teaching_trio %}
-    <li>
-      <a class="mono" href="{{ t.href }}">{{ t.star }}</a>
-      <span>{{ t.job }}</span>
-    </li>
-    {% end %}
-  </ul>
-</section>
+  <section class="panel" id="call">
+    <div class="stack">
+      <p class="kicker">3 · Call</p>
+      <h2>Publisher-direct — same contract everywhere</h2>
+      <p>
+        Call the publisher you resolved — Cursor, Claude Code, CI, or a browser
+        console. Direct star MCP endpoints carry the teaching trio; default
+        <code class="mono">/mcp</code> is slim discovery plus one
+        <code class="mono">call_skill</code> forwarder. Publisher mounts stay
+        canonical.
+      </p>
+      <ul class="meta-list">
+        {% for ep in direct_endpoints %}
+        <li>
+          <span>{{ ep.star }}</span>
+          <a class="mono" href="{{ ep.path }}">{{ ep.path }}</a>
+        </li>
+        {% end %}
+        <li>
+          <span>Live console</span>
+          <a class="mono" href="/console/world-time">/console/world-time</a>
+        </li>
+      </ul>
+      <p class="lede">
+        Teaching trio — point, don't clone. Offline copies cannot mint fresh UTC or
+        re-observe upstream.
+      </p>
+      <ul class="meta-list">
+        {% for t in teaching_trio %}
+        <li>
+          <a class="mono" href="{{ t.href }}">{{ t.star }}</a>
+          <span>{{ t.job }}</span>
+        </li>
+        {% end %}
+      </ul>
+    </div>
+  </section>
 
-<section class="panel" id="seal" style="margin-bottom: 1.5rem">
-  <p class="kicker" style="margin-bottom: 0.75rem">4 · Seal</p>
-  <h2>Signed Envelope — verify before trust</h2>
-  <p>
-    Every bounded call returns an Ed25519-signed Chirp Envelope. Verify the
-    signature against published keys before you treat the payload as evidence.
-    Constellation runs chain step receipts into a composite envelope.
-  </p>
-  <ul class="meta-list">
-    <li><span>Explainer</span><a class="mono" href="/receipts">/receipts</a></li>
-    <li>
-      <span>Published keys</span>
-      <a class="mono" href="/.well-known/orrery/keys.json"
-        >/.well-known/orrery/keys.json</a
-      >
-    </li>
-    <li>
-      <span>Verify API</span>
-      <a class="mono" href="/api/envelope/verify">POST /api/envelope/verify</a>
-    </li>
-    <li>
-      <span>Composite example</span>
-      <a class="mono" href="/constellations?name=orrery/stale-proof"
-        >orrery/stale-proof</a
-      >
-    </li>
-  </ul>
-</section>
+  <section class="panel" id="seal">
+    <div class="stack">
+      <p class="kicker">4 · Seal</p>
+      <h2>Signed Envelope — verify before trust</h2>
+      <p>
+        Every bounded call returns an Ed25519-signed Chirp Envelope. Verify the
+        signature against published keys before you treat the payload as evidence.
+        Constellation runs chain step receipts into a composite envelope.
+      </p>
+      <ul class="meta-list">
+        <li><span>Explainer</span><a class="mono" href="/receipts">/receipts</a></li>
+        <li>
+          <span>Published keys</span>
+          <a class="mono" href="/.well-known/orrery/keys.json"
+            >/.well-known/orrery/keys.json</a
+          >
+        </li>
+        <li>
+          <span>Verify API</span>
+          <a class="mono" href="/api/envelope/verify">POST /api/envelope/verify</a>
+        </li>
+        <li>
+          <span>Composite example</span>
+          <a class="mono" href="/constellations?name=orrery/stale-proof"
+            >orrery/stale-proof</a
+          >
+        </li>
+      </ul>
+    </div>
+  </section>
+</div>
 
-<section class="section" style="padding-top: 0">
+<section class="section section-flush">
   <div class="hero-actions">
     <a class="btn" href="/connect">Connect MCP</a>
     <a class="btn btn-ghost" href="/gaze">Open gaze</a>
