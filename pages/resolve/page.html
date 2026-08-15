@@ -62,13 +62,21 @@
             >
               <td>
                 <a class="table-row-link mono" href="{{ record.href }}">{{ record.name }}</a>
-                <div class="muted">{{ record.description }}</div>
-              </td>
-              <td class="mono">{{ record.endpoint }}</td>
-              <td>
-                <span class="mono" data-digest data-final="{{ record.content_digest }}">{{ record.content_digest }}</span>
+                <div class="muted" title="{{ record.description }}">{{ record.description }}</div>
               </td>
               <td>
+                <span class="mono resolve-clip" title="{{ record.endpoint }}">{{ record.endpoint }}</span>
+              </td>
+              <td>
+                <span
+                  class="mono resolve-clip"
+                  data-digest
+                  data-final="{{ record.content_digest }}"
+                  title="{{ record.content_digest }}"
+                >{{ record.content_digest }}</span>
+              </td>
+              <td class="resolve-status">
+                <span class="pill {% if record.kind == 'constellation' %}pill-pay{% else %}pill-ok{% end %}">{{ record.kind }}</span>
                 {% if record.visibility == "private" %}
                 <span class="pill pill-priv">private</span>
                 {% end %}
