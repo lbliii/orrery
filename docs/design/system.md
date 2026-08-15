@@ -80,7 +80,7 @@ Defined once on `:root` in `tokens.css`:
 | `--text-lede` | `1.05rem` | Supporting paragraph |
 | `--leading` | `1.55` | Body line-height |
 
-No `xs`–`3xl` type ramp. `.prose` / `.sample` CSS lands in [#501](https://github.com/lbliii/orrery/issues/501).
+No `xs`–`3xl` type ramp. `.prose` / `.sample` primitives in [#501](https://github.com/lbliii/orrery/issues/501).
 
 ### Space
 
@@ -152,6 +152,8 @@ hard `overflow: hidden` when glows extend past a box.
 | `.stack` | Vertical gap via `--space-2` |
 | `[x-cloak]` | Hide Alpine until ready |
 | `.table-row-link` | Clickable row / row-shaped link |
+| `.prose` | Markdown body (Patitas wrapper; `#499`) |
+| `.sample`, `.sample.dense` | Code / JSON samples (Rosettes wrapper; `#499`) |
 | `a` | Link (inherits; brass on hover) |
 
 ## 4. Components

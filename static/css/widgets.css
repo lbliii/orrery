@@ -111,7 +111,7 @@
   white-space: pre-wrap;
   word-break: break-all;
   font-family: var(--font-mono);
-  font-size: 0.78rem;
+  font-size: var(--text-mono-dense);
   line-height: 1.45;
   color: var(--fog);
 }

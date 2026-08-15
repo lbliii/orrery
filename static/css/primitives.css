@@ -206,3 +206,140 @@ a.table-row-link:hover,
   background: color-mix(in oklab, var(--brass) 8%, transparent);
   color: var(--signal);
 }
+
+/* Prose — Patitas markdown wrapper (#499) */
+.prose {
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  line-height: var(--leading);
+  color: var(--signal);
+}
+
+.prose h1,
+.prose h2 {
+  font-family: var(--font-display);
+  font-size: var(--text-prose-h2);
+  font-weight: 600;
+  margin: var(--space-3) 0 var(--space-2);
+  color: var(--signal);
+}
+
+.prose h3 {
+  font-family: var(--font-display);
+  font-size: var(--text-prose-h3);
+  font-weight: 600;
+  margin: var(--space-2) 0 var(--space-1);
+  color: var(--signal);
+}
+
+.prose p {
+  margin: 0 0 var(--space-2);
+}
+
+.prose code {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+}
+
+.prose pre {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+  margin: var(--space-2) 0;
+  padding: 1rem 1.1rem;
+  border: var(--stroke) solid var(--line);
+  background: color-mix(in oklab, var(--night-2) 55%, transparent);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--fog);
+  border-radius: var(--radius);
+}
+
+/* Sample — Rosettes highlight wrapper (#499) */
+.sample,
+.rosettes {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+  line-height: 1.45;
+  color: var(--fog);
+}
+
+.sample,
+.rosettes {
+  margin: 0;
+  padding: 1rem 1.1rem;
+  border: var(--stroke) solid var(--line);
+  background: color-mix(in oklab, var(--night-2) 55%, transparent);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  border-radius: var(--radius);
+}
+
+.sample.dense {
+  font-size: var(--text-mono-dense);
+}
+
+.sample .syntax-control,
+.sample .syntax-declaration,
+.sample .syntax-import,
+.sample .syntax-keyword,
+.prose pre .syntax-control,
+.prose pre .syntax-declaration,
+.prose pre .syntax-import,
+.prose pre .syntax-keyword {
+  color: var(--brass);
+}
+
+.sample .syntax-function,
+.sample .syntax-type,
+.sample .syntax-added,
+.sample .syntax-warning,
+.prose pre .syntax-function,
+.prose pre .syntax-type,
+.prose pre .syntax-added,
+.prose pre .syntax-warning {
+  color: var(--phosphor);
+}
+
+.sample .syntax-string,
+.sample .syntax-docstring,
+.sample .syntax-regex,
+.sample .syntax-variable,
+.sample .syntax-attribute,
+.sample .syntax-namespace,
+.sample .syntax-tag,
+.sample .syntax-operator,
+.prose pre .syntax-string,
+.prose pre .syntax-docstring,
+.prose pre .syntax-regex,
+.prose pre .syntax-variable,
+.prose pre .syntax-attribute,
+.prose pre .syntax-namespace,
+.prose pre .syntax-tag,
+.prose pre .syntax-operator {
+  color: var(--signal);
+}
+
+.sample .syntax-number,
+.sample .syntax-boolean,
+.sample .syntax-constant,
+.prose pre .syntax-number,
+.prose pre .syntax-boolean,
+.prose pre .syntax-constant {
+  color: var(--fog);
+}
+
+.sample .syntax-comment,
+.sample .syntax-muted,
+.sample .syntax-punctuation,
+.prose pre .syntax-comment,
+.prose pre .syntax-muted,
+.prose pre .syntax-punctuation {
+  color: var(--mist);
+}
+
+.sample .syntax-error,
+.sample .syntax-removed,
+.prose pre .syntax-error,
+.prose pre .syntax-removed {
+  color: var(--danger);
+}

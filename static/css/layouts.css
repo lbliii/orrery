@@ -499,13 +499,13 @@ a.vitals-value:hover {
   background: color-mix(in oklab, var(--night-2) 55%, transparent);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  font-size: 0.84rem;
+  font-size: var(--text-mono);
 }
 
 .star-tool-schema {
   margin-top: var(--space-1);
   margin-bottom: 0.85rem;
-  font-size: 0.78rem;
+  font-size: var(--text-mono-dense);
 }
 
 .tool-line {
