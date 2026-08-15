@@ -319,36 +319,80 @@
 
 .gaze-hits {
   list-style: none;
-  margin: 0.75rem 0 0;
+  margin: 0;
   padding: 0;
   display: grid;
-  gap: 0.55rem;
 }
 
-.gaze-hits li a {
+.gaze-hit-row {
   display: grid;
-  gap: 0.2rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  border-bottom: var(--stroke) solid var(--line);
+}
+
+.gaze-hit-row.is-arriving {
+  animation: fade-in var(--arrive, var(--settle)) var(--ease);
+}
+
+.gaze-hit {
+  display: grid;
+  grid-template-columns: auto minmax(12rem, 1.8fr) auto auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.85rem 0.55rem;
   text-decoration: none;
-  padding: 0.65rem 0.55rem;
   border: var(--stroke) solid transparent;
   border-radius: var(--radius);
-  transition: background var(--flash) var(--ease), border-color var(--flash) var(--ease);
+  transition:
+    background var(--flash) var(--ease),
+    border-color var(--flash) var(--ease);
 }
 
-.gaze-hits li a:hover {
+.gaze-hit:hover {
   background: color-mix(in oklab, var(--brass) 10%, transparent);
   border-color: var(--line);
   color: var(--signal);
 }
 
-.gaze-hits .pill {
+.gaze-hit-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  justify-content: flex-end;
+}
+
+.gaze-hit-pills .pill {
   width: fit-content;
-  margin-bottom: 0.15rem;
+  margin: 0;
+}
+
+.gaze-hit-console {
+  font-size: 0.82rem;
+  padding-right: 0.55rem;
 }
 
 @media (max-width: 860px) {
   .gaze-nodes {
     grid-template-columns: 1fr;
+  }
+
+  .gaze-hit {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .gaze-hit-pills {
+    grid-column: 2;
+    justify-content: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gaze-hit-row.is-arriving {
+    animation: none;
+    opacity: 1;
+    transform: none;
   }
 }
 
