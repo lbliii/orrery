@@ -217,7 +217,8 @@ Reusable across routes:
 | `/resolve` | `.console-head` | `.lookup`, `.record-table` (in `.table-scroll`) |
 | `/stars` | `.catalog-hero` + `.catalog-layout` | `.star-row` |
 | `/star/*` | `.star-page` | `.receipt`, `.meta-list`, `.price` |
-| `/constellations` | `.console-head` + `.detail-grid` | `.constellation`, `.legend` |
+| `/constellations` | `.catalog-hero` + `.catalog-layout` | `.star-row` |
+| `/constellations?name=` | `.console-head` + `.detail-grid` | `.constellation`, `.legend` |
 | `/namespaces` | `.ns-hero` + `.ns-grid` | (compositional only) |
 | `/console` | Chirp-owned ops reliability console | Footer **Ops · console** only; not primary nav |
 

@@ -7,7 +7,6 @@
 <section class="catalog-hero">
   <p class="kicker">Frozen planner subgraphs · {{ constellations|length }} Constellations</p>
   <h1>Compose stars into policy you can run anywhere.</h1>
-  <p class="lede">A constellation is chalk lines across stars: gates, repair loops, and fan-in to a composite Envelope. Browse the catalog, then open the graph you need.</p>
   <label class="catalog-search">
     <span class="sr-only">Search Constellations</span>
     <input type="search" data-constellation-search placeholder="Search by name, tool, or purpose" autocomplete="off" x-model="q" />
@@ -19,7 +18,6 @@
     <p class="kicker">Explore</p>
     <a href="/stars">Stars</a>
     <a class="rail-current" href="/constellations">Constellations <span>{{ constellations|length }}</span></a>
-    <p class="rail-note">Constellations compose stars into a frozen policy graph. Stars are individual capabilities.</p>
   </aside>
   <div class="star-list" data-constellation-list aria-live="polite">
     <p class="result-count" data-result-count>{{ constellations|length }} Constellations</p>
