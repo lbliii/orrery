@@ -157,7 +157,7 @@ Reusable across routes:
 
 | Class | Role |
 | --- | --- |
-| `.topbar`, `.nav`, `.footer`, `.skip-link` | Chrome |
+| `.topbar`, `.nav`, `.footer`, `.footer-cluster`, `.skip-link` | Chrome |
 | `.panel` | Glass content block |
 | `.lookup`, `.resolve-row` | Lookup form row |
 | `.meta-list` | Label → value rows |
@@ -245,9 +245,23 @@ Primary nav: **Product ▾** (native `<details class="nav-dropdown">`) + **Conne
   (`.nav a { color: var(--mist) }` must not win).
 - **Skip link:** `.skip-link` → `#main`, visually hidden until `:focus`.
 
+## Footer
+
+Brand line once: **Orrery · skills you point at, not install.** Three named
+clusters (`.footer-cluster`), not a middot soup:
+
+| Cluster | Links |
+| --- | --- |
+| Loop | Gaze · Resolve · Stars · Constellations · Receipts |
+| Legal | Security · Privacy · Terms · Contact |
+| Agents | Connect · `llms.txt` · Ops · console |
+
+Page-level `footer_note` / `footer_meta` overrides are ignored — the shell owns
+the footer copy.
+
 ## `/console` note
 
 `/console` is Chirp host **ops** (`mount_console`), not a product surface.
-Product routes sit under the Product dropdown; the footer links **Ops · console**.
-Product trust is the Resolve/Star oracle pill. Orrery does not restyle Chirp
-console chrome unless a theming hook lands upstream.
+Product routes sit under the Product dropdown; the **Agents** footer cluster
+links **Ops · console**. Product trust is the Resolve/Star oracle pill. Orrery
+does not restyle Chirp console chrome unless a theming hook lands upstream.

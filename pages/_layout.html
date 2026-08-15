@@ -66,17 +66,28 @@
       </main>
 
       <footer class="footer">
-        <span>{{ footer_note ?? "Orrery · skills you point at, not install" }}</span>
-        <span class="mono">
-          <a href="/connect">Connect</a>
-          · <a href="/security">Security</a>
+        <p>Orrery · skills you point at, not install.</p>
+        <nav class="footer-cluster" aria-label="Loop">
+          <span>Loop</span>
+          <a href="/gaze">Gaze</a>
+          · <a href="/resolve">Resolve</a>
+          · <a href="/stars">Stars</a>
+          · <a href="/constellations">Constellations</a>
+          · <a href="/receipts">Receipts</a>
+        </nav>
+        <nav class="footer-cluster" aria-label="Legal">
+          <span>Legal</span>
+          <a href="/security">Security</a>
           · <a href="/privacy">Privacy</a>
           · <a href="/terms">Terms</a>
           · <a href="/contact">Contact</a>
+        </nav>
+        <nav class="footer-cluster" aria-label="Agents">
+          <span>Agents</span>
+          <a href="/connect">Connect</a>
           · <a href="/llms.txt">llms.txt</a>
           · <a href="/console">Ops · console</a>
-          · {{ footer_meta ?? "gaze → resolve → call" }}
-        </span>
+        </nav>
       </footer>
     </div>
     <script src="/static/motion.js"></script>
