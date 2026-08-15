@@ -208,6 +208,9 @@
 }
 
 .record-table td .muted {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 0.88rem;
 }
 
@@ -281,6 +284,7 @@
 
 .record-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   font-size: 0.95rem;
 }
@@ -298,9 +302,43 @@
 }
 
 .record-table td {
-  padding: 1rem 0.4rem;
+  padding: 0.85rem 0.4rem;
   border-bottom: var(--stroke) solid var(--line);
   vertical-align: middle;
+}
+
+.record-table th:nth-child(1),
+.record-table td:nth-child(1) {
+  width: 40%;
+}
+
+.record-table th:nth-child(2),
+.record-table td:nth-child(2) {
+  width: 26%;
+}
+
+.record-table th:nth-child(3),
+.record-table td:nth-child(3) {
+  width: 18%;
+}
+
+.record-table th:nth-child(4),
+.record-table td:nth-child(4) {
+  width: 16%;
+}
+
+.record-table .resolve-clip {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.record-table .resolve-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
 }
 
 .record-table tbody tr:hover {
@@ -314,7 +352,7 @@
 }
 
 .table-scroll .record-table {
-  min-width: 40rem;
+  min-width: 0;
 }
 
 .steps {

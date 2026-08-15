@@ -303,6 +303,8 @@ class TestResolveConsole:
             assert "Skill DNS" in r.text
             assert "Not a list of repos" not in r.text
             assert "Resolver console" not in r.text
+            assert "resolve-clip" in r.text
+            assert "resolve-status" in r.text
 
     async def test_lookup_highlights_resolved_row(self, example_app) -> None:
         async with TestClient(example_app) as client:
