@@ -51,6 +51,12 @@ def test_world_time_page_card_is_registry_sourced() -> None:
     answer = next(tool for tool in page.tools if tool.name == "answer")
     assert "Envelope" in answer.description
     assert answer.schema_fragment == "#tool-answer-schema"
+    assert "syntax-" in page.example_call_html
+    assert "sample" in page.example_call_html
+    assert json.loads(page.example_call_json) == page.example_call
+    assert "syntax-" in answer.schema_html
+    assert "sample" in answer.schema_html
+    assert "tool-answer-schema" in answer.schema_html
 
 
 def test_html_to_pdf_example_includes_required_html() -> None:
@@ -80,6 +86,12 @@ def test_all_public_star_cards_project_io_and_tools() -> None:
         payload = json.loads(page.example_call_json)
         assert payload["method"] == "tools/call"
         assert payload["params"]["name"] == page.example_tool
+        assert "syntax-" in page.example_call_html
+        assert "sample" in page.example_call_html
+        for tool in page.tools:
+            assert "syntax-" in tool.schema_html
+            assert "sample" in tool.schema_html
+            json.loads(tool.schema_json)
 
 
 def test_choose_example_tool_prefers_run_contract_entry() -> None:

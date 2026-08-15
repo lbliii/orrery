@@ -19,6 +19,7 @@ from chirp.pages.types import LayoutChain, LayoutInfo
 from catalog import CATALOG
 from catalog.agent_card import AgentCard, AgentCardIO, card_for
 from catalog.console_links import PUBLISHER_DIRECT_NOTE, console_href_for
+from catalog.sample import highlight_json
 from trust.oracle import oracle_for
 from trust.satisfaction import SatisfactionPillView, satisfaction_pill_for
 
@@ -76,6 +77,7 @@ class StarToolLine:
     name: str
     description: str
     schema_json: str
+    schema_html: str
     schema_fragment: str
 
 
@@ -92,6 +94,7 @@ class StarPageCard:
     example_tool: str
     example_call: dict[str, object]
     example_call_json: str
+    example_call_html: str
     resolve_href: str
     agent_card_version: str
 
@@ -174,12 +177,14 @@ def build_star_page_card(
                 name=tool,
                 description="Published tool on this Star's direct MCP endpoint.",
                 schema_json=_pretty({"type": "object", "properties": {}}),
+                schema_html=_schema_html({"type": "object", "properties": {}}, tool),
                 schema_fragment=f"#tool-{tool}-schema",
             )
             for tool in tool_names
         )
         example_tool = tool_names[0] if tool_names else "call"
         example_call = _mcp_tools_call(example_tool, {})
+        example_call_json = _pretty(example_call)
         return StarPageCard(
             summary="",
             use_when=(),
@@ -189,7 +194,8 @@ def build_star_page_card(
             tools=tool_lines,
             example_tool=example_tool,
             example_call=example_call,
-            example_call_json=_pretty(example_call),
+            example_call_json=example_call_json,
+            example_call_html=_example_html(example_call_json),
             resolve_href=resolve_href,
             agent_card_version="",
         )
@@ -200,6 +206,7 @@ def build_star_page_card(
     example_tool = choose_example_tool(card, tool_names)
     arguments = example_arguments_for(example_tool, contracts.get(example_tool), card)
     example_call = _mcp_tools_call(example_tool, arguments)
+    example_call_json = _pretty(example_call)
     return StarPageCard(
         summary=card.summary,
         use_when=card.use_when,
@@ -209,7 +216,8 @@ def build_star_page_card(
         tools=tool_lines,
         example_tool=example_tool,
         example_call=example_call,
-        example_call_json=_pretty(example_call),
+        example_call_json=example_call_json,
+        example_call_html=_example_html(example_call_json),
         resolve_href=resolve_href,
         agent_card_version=card.agent_card_version,
     )
@@ -388,10 +396,12 @@ def _tool_line(name: str, contract: dict[str, Any] | None) -> StarToolLine:
             description = raw_description.strip().rstrip(".")
             description = description[0].upper() + description[1:] if description else description
         schema = _input_schema(contract) or schema
+    schema_json = _pretty(schema)
     return StarToolLine(
         name=name,
         description=description,
-        schema_json=_pretty(schema),
+        schema_json=schema_json,
+        schema_html=_schema_html(schema_json, name),
         schema_fragment=f"#tool-{name}-schema",
     )
 
@@ -528,3 +538,14 @@ def _mcp_tools_call(tool: str, arguments: dict[str, object]) -> dict[str, object
 
 def _pretty(payload: object) -> str:
     return json.dumps(payload, indent=2, sort_keys=False)
+
+
+def _example_html(example_call_json: str) -> str:
+    return highlight_json(example_call_json)
+
+
+def _schema_html(schema: object, name: str) -> str:
+    html = highlight_json(schema).replace(
+        'class="sample"', 'class="sample dense"', 1
+    )
+    return html.replace("<div ", f'<div id="tool-{name}-schema" ', 1)
