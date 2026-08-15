@@ -215,7 +215,8 @@ Reusable across routes:
 | `/` | `.hero` + `.section` | `.orb-stage`, `.resolve-demo`, `.feed` |
 | `/gaze` | `.console-head` + `.gaze-bench` | `.gaze-nodes`, `.gaze-hits` |
 | `/resolve` | `.console-head` | `.lookup`, `.record-table` (in `.table-scroll`) |
-| `/stars` | `.detail-hero` + `.detail-grid` | `.receipt`, `.meta-list`, `.price` |
+| `/stars` | `.catalog-hero` + `.catalog-layout` | `.star-row` |
+| `/star/*` | `.star-page` | `.receipt`, `.meta-list`, `.price` |
 | `/constellations` | `.console-head` + `.detail-grid` | `.constellation`, `.legend` |
 | `/namespaces` | `.ns-hero` + `.ns-grid` | (compositional only) |
 | `/console` | Chirp-owned ops reliability console | Footer **Ops · console** only; not primary nav |
