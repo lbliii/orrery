@@ -273,8 +273,16 @@ class TestCssTokenLayers:
         async with TestClient(example_app) as client:
             primitives = await client.get("/static/css/primitives.css")
             assert primitives.status == 200
-            for name in (".field", ".alert", ".stack", "[x-cloak]", ".table-row-link"):
+            for name in (
+                ".field",
+                ".alert",
+                ".stack",
+                "[x-cloak]",
+                "[hidden]",
+                ".table-row-link",
+            ):
                 assert name in primitives.text
+            assert "display: none !important" in primitives.text
             motion = await client.get("/static/css/motion.css")
             assert motion.status == 200
             assert ":active" in motion.text
