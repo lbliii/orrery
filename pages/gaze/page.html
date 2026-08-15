@@ -1,32 +1,7 @@
 {% block content %}
 {{ gaze_cfg }}
 <div
-  x-data="(() => {
-    const cfg = JSON.parse(document.getElementById('gaze-cfg').textContent);
-    return {
-      node: cfg.node,
-      q: cfg.q,
-      filterKind: '',
-      filterReactive: false,
-      filterOracleOk: false,
-      hitVisible(el) {
-        if (this.filterKind && el.dataset.kind !== this.filterKind) return false;
-        if (this.filterReactive && el.dataset.reactive !== 'true') return false;
-        if (this.filterOracleOk && el.dataset.oracleOk !== 'true') return false;
-        return true;
-      },
-      syncUi() {
-        document.querySelectorAll('[data-gaze-hits]').forEach((list) => {
-          const showNode = list.dataset.gazeHits === this.node;
-          list.style.display = showNode ? '' : 'none';
-          if (!showNode) return;
-          list.querySelectorAll('li[data-kind]').forEach((el) => {
-            el.style.display = this.hitVisible(el) ? '' : 'none';
-          });
-        });
-      }
-    };
-  })()"
+  x-data="gazePage"
   x-init="syncUi()"
   @change="syncUi()"
   @htmx:after-swap="syncUi()"
@@ -51,7 +26,7 @@
       role="tab"
       :aria-selected="node === '{{ n.id }}'"
       :data-active="node === '{{ n.id }}'"
-      @click="node = '{{ n.id }}'; syncUi()"
+      @click="selectNode('{{ n.id }}')"
       {% if n.active %}data-active="true" aria-selected="true"{% end %}
     >
       <span class="gaze-node-label">{{ n.label }}</span>
@@ -236,4 +211,40 @@ tools/call resolve_name
     </div>
   </section>
 </div>
+<script>
+document.addEventListener("alpine:init", () => {
+  const start = () => Alpine.safeData("gazePage", () => {
+    const cfg = JSON.parse(document.getElementById("gaze-cfg").textContent);
+    return {
+      node: cfg.node,
+      q: cfg.q,
+      filterKind: "",
+      filterReactive: false,
+      filterOracleOk: false,
+      selectNode(id) {
+        this.node = id;
+        this.syncUi();
+      },
+      hitVisible(el) {
+        if (this.filterKind && el.dataset.kind !== this.filterKind) return false;
+        if (this.filterReactive && el.dataset.reactive !== "true") return false;
+        if (this.filterOracleOk && el.dataset.oracleOk !== "true") return false;
+        return true;
+      },
+      syncUi() {
+        this.$root.querySelectorAll("[data-gaze-hits]").forEach((list) => {
+          const showNode = list.dataset.gazeHits === this.node;
+          list.style.display = showNode ? "" : "none";
+          if (!showNode) return;
+          list.querySelectorAll("li[data-kind]").forEach((el) => {
+            el.style.display = this.hitVisible(el) ? "" : "none";
+          });
+        });
+      },
+    };
+  });
+  if (typeof Alpine.safeData === "function") start();
+  else queueMicrotask(start);
+});
+</script>
 {% end %}

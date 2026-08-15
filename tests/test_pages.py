@@ -925,7 +925,9 @@ class TestGazeConsole:
             )
             assert r.status == 200
             assert 'id="gaze-cfg"' in r.text
-            assert "getElementById('gaze-cfg')" in r.text
+            assert 'x-data="gazePage"' in r.text
+            assert "Alpine.safeData" in r.text
+            assert 'getElementById("gaze-cfg")' in r.text
 
             # Server config is a JSON script body (Chirp alpine_json_config).
             start = r.text.index('id="gaze-cfg"')
@@ -935,14 +937,14 @@ class TestGazeConsole:
             assert cfg["node"] == "public"
             assert cfg["q"] == 'say "hi" <script>alert(1)</script>'
 
-            # x-data attribute stays intact (old Markup(json.dumps) closed it early).
+            # Named component only — Alpine CSP rejects IIFEs in x-data.
             attr_start = r.text.index('x-data="') + len('x-data="')
             attr_end = r.text.index('"', attr_start)
             attr = r.text[attr_start:attr_end]
-            assert "syncUi" in attr
-            assert "filterKind" in attr
-            assert "renderHit" not in attr
-            assert "innerHTML" not in attr
+            assert attr == "gazePage"
+            assert "(() =>" not in r.text
+            assert "renderHit" not in r.text
+            assert "innerHTML" not in r.text
 
     async def test_api_gaze_match(self, example_app) -> None:
         async with TestClient(example_app) as client:
