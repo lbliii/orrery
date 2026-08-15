@@ -310,9 +310,20 @@ class TestStarDetail:
             assert r.status == 200
             assert "Find something your agent can point at" in r.text
             assert "data-star-search" in r.text
+            assert "catalog-rail" in r.text
             assert "orrery/html-to-pdf" in r.text
             assert "Document processing" in r.text
             assert 'href="/star/orrery/html-to-pdf"' in r.text
+            assert "Every Star is a live capability" not in r.text
+            assert "Stars are individual capabilities" not in r.text
+
+    def test_motion_keeps_catalog_rail_and_row_signals(self) -> None:
+        motion = (
+            Path(__file__).resolve().parents[1] / "static" / "css" / "motion.css"
+        ).read_text()
+        assert ".catalog-rail {\n    display: none;" not in motion
+        assert ".star-tools {\n    display: none;" not in motion
+        assert ".star-row .pill {\n    display: none;" not in motion
 
     async def test_catalog_exposes_accessible_native_facet_controls(self, example_app) -> None:
         async with TestClient(example_app) as client:

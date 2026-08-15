@@ -224,13 +224,13 @@ a.vitals-value:hover {
 }
 
 .catalog-hero {
-  padding: clamp(2.5rem, 7vw, 5rem) 0 var(--space-4);
+  padding: var(--space-4) 0 1.25rem;
   max-width: 50rem;
 }
 
 .catalog-hero h1 {
-  font: 700 clamp(2.4rem, 5vw, 4.7rem) / 0.98 var(--font-display);
-  letter-spacing: -0.055em;
+  font: 700 clamp(2rem, 4vw, 2.8rem) / 0.98 var(--font-display);
+  letter-spacing: -0.03em;
   margin: 0 0 1rem;
 }
 

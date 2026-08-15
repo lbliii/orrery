@@ -83,7 +83,20 @@
   }
 
   .catalog-rail {
-    display: none;
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .catalog-rail .facet-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 var(--space-3);
+  }
+
+  .catalog-rail .facet-form fieldset {
+    flex: 1 1 12rem;
+    border-top: 0;
+    padding-top: 0;
   }
 
   .entity-rail {
@@ -113,15 +126,18 @@
   }
 
   .star-row {
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    row-gap: 0.35rem;
   }
 
   .star-tools {
-    display: none;
+    grid-column: 2;
+    grid-row: 2;
   }
 
   .star-row .pill {
-    display: none;
+    grid-column: 3;
+    grid-row: 2;
   }
 
   .relation-list a {

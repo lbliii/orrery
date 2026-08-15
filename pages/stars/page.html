@@ -8,7 +8,6 @@
 <section class="catalog-hero">
   <p class="kicker">Public sky · {{ stars|length }} Stars</p>
   <h1>Find something your agent can point at.</h1>
-  <p class="lede">Every Star is a live capability with a stable MCP address and a trail of evidence. Browse the field guide, then open the one you need.</p>
   <label class="catalog-search">
     <span class="sr-only">Search Stars</span>
     <input type="search" data-star-search placeholder="Search Stars by name, tool, or purpose" autocomplete="off" x-model="q" />
@@ -35,7 +34,6 @@
         <label><input type="checkbox" data-star-facet data-facet="constellation" x-model="constellation" /> Used in constellations</label>
       </fieldset>
     </form>
-    <p class="rail-note">Stars are individual capabilities. Constellations compose them into a policy.</p>
   </aside>
   <div class="star-list" data-star-list aria-live="polite">
     <p class="result-count" data-result-count>{{ stars|length }} Stars</p>
