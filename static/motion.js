@@ -130,6 +130,116 @@
     });
   }
 
+  /** Landing orb: sightline in user space; rest pose when motion is reduced. */
+  function initOrb() {
+    const stage = document.querySelector(".orb-stage");
+    const svg = stage?.querySelector(".orb-svg");
+    const sight = svg?.querySelector(".orb-sight");
+    if (!stage || !svg || !sight) return;
+
+    const sun = { x: 200, y: 200 };
+    const limb = 15;
+    const past = 12;
+    const tau = settleMs() / 3000;
+    let motionOn = !prefersReduce();
+    let current = null;
+    let last = performance.now();
+
+    function pointed() {
+      return svg.querySelector(
+        motionOn ? ".orb-body-pointed.orb-body-motion" : ".orb-body-pointed.orb-body-rest",
+      );
+    }
+
+    function userPoint(el) {
+      const p = svg.createSVGPoint();
+      p.x = Number(el.getAttribute("cx") || 0);
+      p.y = Number(el.getAttribute("cy") || 0);
+      const screen = p.matrixTransform(el.getScreenCTM());
+      return screen.matrixTransform(svg.getScreenCTM().inverse());
+    }
+
+    function localPoint(el) {
+      const group = el.parentNode;
+      const p = svg.createSVGPoint();
+      p.x = Number(el.getAttribute("cx") || 0);
+      p.y = Number(el.getAttribute("cy") || 0);
+      const screen = p.matrixTransform(el.getScreenCTM());
+      return screen.matrixTransform(group.getScreenCTM().inverse());
+    }
+
+    function sightTarget(el) {
+      const body = userPoint(el);
+      const dx = body.x - sun.x;
+      const dy = body.y - sun.y;
+      const len = Math.hypot(dx, dy) || 1;
+      const nx = dx / len;
+      const ny = dy / len;
+      return {
+        x1: sun.x + nx * limb,
+        y1: sun.y + ny * limb,
+        x2: body.x + nx * past,
+        y2: body.y + ny * past,
+      };
+    }
+
+    function applySight(s) {
+      sight.setAttribute("x1", s.x1.toFixed(2));
+      sight.setAttribute("y1", s.y1.toFixed(2));
+      sight.setAttribute("x2", s.x2.toFixed(2));
+      sight.setAttribute("y2", s.y2.toFixed(2));
+    }
+
+    function dimSky() {
+      svg.querySelectorAll(".orb-body-sky").forEach((el) => {
+        if (el.classList.contains("orb-body-motion") !== motionOn) return;
+        if (!el.dataset.r) el.dataset.r = el.getAttribute("r");
+        const far = localPoint(el).y < 200;
+        const base = Number(el.dataset.r);
+        el.setAttribute("opacity", far ? "0.7" : "1");
+        el.setAttribute("r", String(far ? base * 0.85 : base));
+      });
+    }
+
+    function setMotion(on) {
+      motionOn = on;
+      stage.classList.toggle("is-motion", on);
+      stage.classList.toggle("is-rest", !on);
+      if (on) svg.unpauseAnimations();
+      else svg.pauseAnimations();
+      current = null;
+    }
+
+    function tick(now) {
+      const dt = Math.min(0.05, (now - last) / 1000);
+      last = now;
+      const el = pointed();
+      if (!el) return;
+      const target = sightTarget(el);
+      if (!current || !motionOn) {
+        current = target;
+      } else {
+        const a = 1 - Math.exp(-dt / tau);
+        current = {
+          x1: current.x1 + (target.x1 - current.x1) * a,
+          y1: current.y1 + (target.y1 - current.y1) * a,
+          x2: current.x2 + (target.x2 - current.x2) * a,
+          y2: current.y2 + (target.y2 - current.y2) * a,
+        };
+      }
+      applySight(current);
+      dimSky();
+      requestAnimationFrame(tick);
+    }
+
+    setMotion(motionOn);
+    requestAnimationFrame((t) => {
+      last = t;
+      tick(t);
+    });
+    reduce.addEventListener("change", () => setMotion(!reduce.matches));
+  }
+
   /** Arrive: new feed rows get a one-shot class; do not re-animate the list. */
   function initFeedArrive() {
     const activity = document.querySelector(".activity");
@@ -172,6 +282,7 @@
     initConstellation();
     initStarReceipt();
     initCopyMcp();
+    initOrb();
     initFeedArrive();
   });
 })();

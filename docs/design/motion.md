@@ -41,6 +41,6 @@ plates do not.
 
 ## Reduced motion
 
-`prefers-reduced-motion: reduce` stops continuous sky/orb/live-dot animation
+`prefers-reduced-motion: reduce` stops continuous sky/orb-svg/live-dot animation
 and jumps Press / Arrive / Settle / Seal to the end state. Brass focus rings
 and `--danger` / `--phosphor` color and border changes remain.

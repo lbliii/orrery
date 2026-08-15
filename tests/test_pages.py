@@ -1558,6 +1558,8 @@ class TestHomeSkyVitalsStrip:
             r = await client.get("/")
             assert r.status == 200
             assert 'class="hero"' in r.text
+            assert "orb-svg" in r.text
+            assert "orb-body-pointed" in r.text
             assert "Skills you" in r.text
             assert "How agents win" in r.text
             assert 'class="feed"' in r.text
@@ -1855,6 +1857,7 @@ class TestMotionLoop:
         assert "function initMatchedDigest" in js
         assert "function initConstellation" in js
         assert "function initStarReceipt" in js
+        assert "function initOrb" in js
         assert "--flash" in js
         assert "flashMs" in js
         assert "is-copied" in js
