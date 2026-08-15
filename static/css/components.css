@@ -203,15 +203,53 @@
   grid-column: 1 / -1;
 }
 
-.record-table td a.mono {
-  font-size: 0.82rem;
+.resolve-hits {
+  display: grid;
+  gap: 1rem;
 }
 
-.record-table td .muted {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 0.88rem;
+.resolve-hit {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.resolve-hit-main {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.resolve-hit-name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.resolve-hit-kind {
+  color: var(--brass);
+  font-family: var(--font-display);
+  font-size: var(--text-kicker);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.resolve-hit-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.resolve-hit .meta-list {
+  margin: 0;
+}
+
+.resolve-hit .meta-list code {
+  overflow-wrap: anywhere;
+}
+
+.resolve-hit.hit-resolved {
+  background: color-mix(in oklab, var(--brass) 14%, transparent);
+  box-shadow: inset 3px 0 0 var(--brass);
 }
 
 .lookup.lookup-filters {
@@ -305,40 +343,6 @@
   padding: 0.85rem 0.4rem;
   border-bottom: var(--stroke) solid var(--line);
   vertical-align: middle;
-}
-
-.record-table th:nth-child(1),
-.record-table td:nth-child(1) {
-  width: 40%;
-}
-
-.record-table th:nth-child(2),
-.record-table td:nth-child(2) {
-  width: 26%;
-}
-
-.record-table th:nth-child(3),
-.record-table td:nth-child(3) {
-  width: 18%;
-}
-
-.record-table th:nth-child(4),
-.record-table td:nth-child(4) {
-  width: 16%;
-}
-
-.record-table .resolve-clip {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.record-table .resolve-status {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  align-items: center;
 }
 
 .record-table tbody tr:hover {

@@ -167,7 +167,8 @@ Reusable across routes:
 | `.panel` | Glass content block |
 | `.lookup`, `.resolve-row` | Lookup form row |
 | `.meta-list` | Label → value rows |
-| `.record-table` | Skill DNS zone table |
+| `.record-table` | Tabular records (not the `/resolve` hit list) |
+| `.resolve-hits`, `.resolve-hit` | Resolve live-zone stacked plates (#528) |
 | `.table-scroll` | Horizontal overflow wrapper for wide tables |
 | `.steps` | Numbered how-it-works list |
 | `.live-dot` | Live indicator |
@@ -215,7 +216,7 @@ Reusable across routes:
 | --- | --- | --- |
 | `/` | `.hero` + `.section` | `.orb-stage`, `.resolve-demo`, `.feed` |
 | `/gaze` | `.console-head` + `.gaze-bench` | `.gaze-nodes`, `.gaze-hits` |
-| `/resolve` | `.console-head` + `.stack` | `.lookup`, zone table; no explainer footer |
+| `/resolve` | `.console-head` + `.stack` | `.lookup`, stacked `.resolve-hit` plates; no explainer footer |
 | `/stars` | `.catalog-hero` + `.catalog-layout` | `.star-row` |
 | `/star/*` | `.star-page` | `.receipt`, `.meta-list`, `.price` |
 | `/constellations` | `.catalog-hero` + `.catalog-layout` | `.star-row` |

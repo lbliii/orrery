@@ -296,20 +296,21 @@ class TestResolveConsole:
         async with TestClient(example_app) as client:
             r = await client.get("/resolve")
             assert r.status == 200
-            assert "data-resolve-table" in r.text
+            assert "data-resolve-hits" in r.text
+            assert "data-resolve-hit" in r.text
+            assert "data-resolve-table" not in r.text
+            assert "resolve-clip" not in r.text
             assert "orrery/html-to-pdf" in r.text
             assert "/console/html-to-pdf" in r.text
             assert "orrery/world-time" in r.text
             assert "Skill DNS" in r.text
             assert "Not a list of repos" not in r.text
             assert "Resolver console" not in r.text
-            assert "resolve-clip" in r.text
-            assert "resolve-status" in r.text
 
     async def test_lookup_highlights_resolved_row(self, example_app) -> None:
         async with TestClient(example_app) as client:
             r = await client.get("/resolve?q=world-time")
-            assert "row-resolved" in r.text
+            assert "hit-resolved" in r.text
             assert "Resolved · world-time" in r.text
 
 
@@ -681,7 +682,7 @@ class TestResolveHttpAndMcp:
         async with TestClient(example_app) as client:
             r = await client.get("/resolve")
             assert r.status == 200
-            assert "data-resolve-table" in r.text
+            assert "data-resolve-hits" in r.text
             assert "orrery/html-to-pdf" in r.text
             assert "orrery/world-time" in r.text
 
@@ -1763,7 +1764,7 @@ class TestResolveSettle:
             assert 'action="/resolve"' in r.text
             assert 'method="get"' in r.text
             assert "onclick=" not in r.text
-            assert 'class="table-row-link' in r.text
+            assert "data-resolve-hit" in r.text
             assert 'href="/star/orrery/html-to-pdf"' in r.text
             js = await client.get("/static/motion.js")
             assert js.status == 200
@@ -1777,7 +1778,7 @@ class TestResolveSettle:
             r = await client.get("/resolve?q=world-time")
             assert r.status == 200
             assert "data-resolve-matched" in r.text
-            assert "row-resolved" in r.text
+            assert "hit-resolved" in r.text
             assert "Resolved · world-time" in r.text
             assert "data-digest" in r.text
             assert "data-final=" in r.text
