@@ -53,8 +53,8 @@
 </section>
 </div>
 <script nonce="{{ csp_nonce() }}">
-document.addEventListener("alpine:init", () => {
-  const start = () => Alpine.safeData("starsCatalog", () => ({
+(() => {
+  const factory = () => ({
     q: "",
     families: [],
     live: false,
@@ -83,9 +83,10 @@ document.addEventListener("alpine:init", () => {
       const count = this.$root.querySelector("[data-result-count]");
       if (count) count.textContent = `${shown} ${shown === 1 ? "Star" : "Stars"}`;
     },
-  }));
-  if (typeof Alpine.safeData === "function") start();
-  else queueMicrotask(start);
-});
+  });
+  const register = () => Alpine.data("starsCatalog", factory);
+  if (window.Alpine && Alpine.version) register();
+  else document.addEventListener("alpine:init", register);
+})();
 </script>
 {% end %}

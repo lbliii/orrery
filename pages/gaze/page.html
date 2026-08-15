@@ -212,8 +212,8 @@ tools/call resolve_name
   </section>
 </div>
 <script nonce="{{ csp_nonce() }}">
-document.addEventListener("alpine:init", () => {
-  const start = () => Alpine.safeData("gazePage", () => {
+(() => {
+  const factory = () => {
     const cfg = JSON.parse(document.getElementById("gaze-cfg").textContent);
     return {
       node: cfg.node,
@@ -242,9 +242,10 @@ document.addEventListener("alpine:init", () => {
         });
       },
     };
-  });
-  if (typeof Alpine.safeData === "function") start();
-  else queueMicrotask(start);
-});
+  };
+  const register = () => Alpine.data("gazePage", factory);
+  if (window.Alpine && Alpine.version) register();
+  else document.addEventListener("alpine:init", register);
+})();
 </script>
 {% end %}
