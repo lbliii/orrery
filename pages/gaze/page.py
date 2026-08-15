@@ -66,8 +66,8 @@ def get(request: Request) -> Page:
         active_node=node,
         intent=display_intent,
         gaze_default_limit=GAZE_DEFAULT_LIMIT,
-        # Chirp helper: JSON lives in a <script type="application/json"> tag,
-        # not inside the quoted x-data attribute (avoids attribute breakout).
+        # Chirp helper: JSON lives in a <script type="application/json"> tag.
+        # Alpine CSP cannot parse IIFEs in x-data; gazePage reads this tag.
         gaze_cfg=alpine_json_config(
             "gaze-cfg",
             {"node": node, "q": display_intent},
