@@ -151,6 +151,7 @@ hard `overflow: hidden` when glows extend past a box.
 | `.alert` | Fail / status line (`--danger`) |
 | `.stack` | Vertical gap via `--space-2` |
 | `[x-cloak]` | Hide Alpine until ready |
+| `[hidden]` | `display: none !important` — wins over `.star-row` grid |
 | `.table-row-link` | Clickable row / row-shaped link |
 | `.prose` | Markdown body (Patitas wrapper; `#499`) |
 | `.sample`, `.sample.dense` | Code / JSON samples (Rosettes wrapper; `#499`) |

@@ -195,6 +195,11 @@ a:hover {
   display: none !important;
 }
 
+/* Author `display: grid` on `.star-row` otherwise beats UA [hidden]. */
+[hidden] {
+  display: none !important;
+}
+
 .table-row-link {
   color: inherit;
   text-decoration: none;
