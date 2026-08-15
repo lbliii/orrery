@@ -29,12 +29,17 @@ RUN uv venv --python 3.14 /opt/venv
 # invalidates this layer on every image build.
 ARG GIT_REF=main
 ADD "https://api.github.com/repos/lbliii/chirp/commits/${GIT_REF}" /tmp/chirp-commit.json
+# Host extras must stay in sync with pyproject.toml (except Chirp, which
+# tracks GIT_REF). Missing packages crash app.py before /health answers.
 RUN uv pip install --python /opt/venv/bin/python \
     "bengal-chirp[skill,sessions] @ git+https://github.com/lbliii/chirp.git@${GIT_REF}" \
     "itsdangerous>=2.2.0" \
     "boto3>=1.42,<2" \
+    "kida-templates>=0.12.0" \
+    "patitas[syntax]>=0.4.0" \
     "psycopg[binary]>=3.3,<4" \
-    "redis>=5.2,<7"
+    "redis>=5.2,<7" \
+    "rosettes>=0.2.0"
 
 # The .dockerignore excludes local/editor artifacts while this copies every
 # runtime module, page, template, and static asset added to the repository.
