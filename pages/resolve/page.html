@@ -14,6 +14,10 @@
     />
     <button class="btn" type="submit">Lookup</button>
   </form>
+  <p class="muted">
+    Same call: <code class="mono">GET /resolve?q=</code>
+    or MCP <code class="mono">resolve_name</code>.
+  </p>
 </header>
 
 <div class="stack stack--3">
@@ -93,17 +97,4 @@
     </div>
   </div>
 </div>
-
-<section class="section section-flush">
-  <h2>Not a list of repos.</h2>
-  <p class="lede">
-    Each row is a live capability: endpoint, content digest, oracle status,
-    price. Agents resolve names the way browsers resolve hosts.
-  </p>
-  <div class="panel mono">
-    GET /resolve?name=orrery/html-to-pdf<br />
-    MCP tools/call resolve_name · name=orrery/html-to-pdf<br />
-    → endpoint, key_id, content_digest, price_per_call, alg
-  </div>
-</section>
 {% end %}
