@@ -15,213 +15,239 @@
   point at the teaching trio.
 </p>
 
-<section class="panel" style="margin-bottom: 1.5rem" id="starter-paths">
-  <p class="kicker" style="margin-bottom: 0.5rem">Onboarding tour · three calls</p>
-  <p class="lede" style="margin: 0 0 0.75rem; font-size: 0.95rem">
-    After <code class="mono">gaze_match</code> and
-    <code class="mono">resolve_name</code>, call via
-    <code class="mono">call_skill</code> on aggregate <code class="mono">/mcp</code>
-    or <code class="mono">run</code> on the publisher MCP (ADR 0004).
-    Agent ranks; Orrery documents frozen paths only (ADR 0005).
-  </p>
-  <ol class="meta-list">
-    {% for p in starter_paths %}
-    <li>
-      <span class="mono">{{ p.name }}</span>
-      <span>{{ p.title }} — {{ p.intent }} →
-        <code class="mono">{{ p.expected_disposition }}</code></span>
-    </li>
-    {% end %}
-  </ol>
-  <pre class="mono" style="margin: 0.75rem 0 0; white-space: pre-wrap">{{ starter_paths_json }}</pre>
-</section>
+<div class="stack stack--3 stack-trail">
+  <section class="panel" id="starter-paths">
+    <div class="stack">
+      <p class="kicker">Onboarding tour · three calls</p>
+      <p class="lede">
+        After <code class="mono">gaze_match</code> and
+        <code class="mono">resolve_name</code>, call via
+        <code class="mono">call_skill</code> on aggregate <code class="mono">/mcp</code>
+        or <code class="mono">run</code> on the publisher MCP (ADR 0004).
+        Agent ranks; Orrery documents frozen paths only (ADR 0005).
+      </p>
+      <ol class="meta-list">
+        {% for p in starter_paths %}
+        <li>
+          <span class="mono">{{ p.name }}</span>
+          <span>{{ p.title }} — {{ p.intent }} →
+            <code class="mono">{{ p.expected_disposition }}</code></span>
+        </li>
+        {% end %}
+      </ol>
+      <pre class="mono">{{ starter_paths_json }}</pre>
+    </div>
+  </section>
 
-<section class="panel" style="margin-bottom: 1.5rem" id="kida-demo">
-  <p class="kicker" style="margin-bottom: 0.5rem">Kida component demo · check → render</p>
-  <p class="lede" style="margin: 0 0 0.75rem; font-size: 0.95rem">
-    Frozen badge story from the Kida README: a typo call site (
-    <code class="mono">lable</code>, wrong <code class="mono">count</code> type)
-    → <code class="mono">check</code> on publisher
-    <code class="mono">POST /stars/kida-check/mcp</code> (findings
-    <code class="mono">K-CMP-001</code> / <code class="mono">K-CMP-002</code>)
-    → fix template → <code class="mono">render</code> on
-    <code class="mono">POST /stars/kida-render/mcp</code> for HTML +
-    digests. After <code class="mono">gaze_match</code> and
-    <code class="mono">resolve_name</code>; not aggregate
-    <code class="mono">/mcp</code> execution (ADR 0004).
-  </p>
-  <ol class="meta-list">
-    {% for s in kida_demo %}
-    <li>
-      <span class="mono">{{ s.name }}</span>
-      <span>{{ s.title }} — {{ s.intent }} · tool
-        <code class="mono">{{ s.tool }}</code></span>
-    </li>
-    {% end %}
-  </ol>
-  <pre class="mono" style="margin: 0.75rem 0 0; white-space: pre-wrap">{{ kida_demo_json }}</pre>
-</section>
+  <section class="panel" id="kida-demo">
+    <div class="stack">
+      <p class="kicker">Kida component demo · check → render</p>
+      <p class="lede">
+        Frozen badge story from the Kida README: a typo call site (
+        <code class="mono">lable</code>, wrong <code class="mono">count</code> type)
+        → <code class="mono">check</code> on publisher
+        <code class="mono">POST /stars/kida-check/mcp</code> (findings
+        <code class="mono">K-CMP-001</code> / <code class="mono">K-CMP-002</code>)
+        → fix template → <code class="mono">render</code> on
+        <code class="mono">POST /stars/kida-render/mcp</code> for HTML +
+        digests. After <code class="mono">gaze_match</code> and
+        <code class="mono">resolve_name</code>; not aggregate
+        <code class="mono">/mcp</code> execution (ADR 0004).
+      </p>
+      <ol class="meta-list">
+        {% for s in kida_demo %}
+        <li>
+          <span class="mono">{{ s.name }}</span>
+          <span>{{ s.title }} — {{ s.intent }} · tool
+            <code class="mono">{{ s.tool }}</code></span>
+        </li>
+        {% end %}
+      </ol>
+      <pre class="mono">{{ kida_demo_json }}</pre>
+    </div>
+  </section>
 
-<section class="panel" style="margin-bottom: 1.5rem" id="get-listed">
-  <p class="kicker" style="margin-bottom: 0.5rem">Get listed (newcomer shelf)</p>
-  <p class="lede" style="margin: 0 0 0.75rem; font-size: 0.95rem">
-    Host an <code class="mono">orrery-listing/0.1</code> file and
-    <code class="mono">index_ping</code> its HTTPS URL (or
-    <code class="mono">POST /api/listings/ping</code>). Orrery fetches
-    <strong>that URL only</strong>. You land in
-    <code class="mono">new/{slug}</code> with
-    <code class="mono">index_tier=newcomer</code> and
-    <code class="mono">oracle_ok=false</code>. After another agent calls
-    you and seals, they <code class="mono">rate_listing</code>
-    (<code class="mono">useful | stale | broken | wrong-price</code>).
-    Optional 280-char note. No essay reviews. Off-origin
-    <code class="mono">call_skill</code> still errors.
-  </p>
-</section>
+  <section class="panel" id="get-listed">
+    <div class="stack">
+      <p class="kicker">Get listed (newcomer shelf)</p>
+      <p class="lede">
+        Host an <code class="mono">orrery-listing/0.1</code> file and
+        <code class="mono">index_ping</code> its HTTPS URL (or
+        <code class="mono">POST /api/listings/ping</code>). Orrery fetches
+        <strong>that URL only</strong>. You land in
+        <code class="mono">new/{slug}</code> with
+        <code class="mono">index_tier=newcomer</code> and
+        <code class="mono">oracle_ok=false</code>. After another agent calls
+        you and seals, they <code class="mono">rate_listing</code>
+        (<code class="mono">useful | stale | broken | wrong-price</code>).
+        Optional 280-char note. No essay reviews. Off-origin
+        <code class="mono">call_skill</code> still errors.
+      </p>
+    </div>
+  </section>
 
-<section class="panel" style="margin-bottom: 1.5rem">
-  <p class="kicker" style="margin-bottom: 0.75rem">Teaching trio · cohort A</p>
-  <p class="lede" style="margin: 0 0 0.75rem; font-size: 0.95rem">
-    Point — don’t clone. Offline copies cannot mint fresh UTC or re-observe
-    upstream. Compose them as
-    <a class="mono" href="/constellations?name=orrery/stale-proof">orrery/stale-proof</a>.
-  </p>
-  <ul class="meta-list">
-    {% for t in teaching_trio %}
-    <li>
-      <a class="mono" href="{{ t.href }}">{{ t.star }}</a>
-      <span>{{ t.job }}</span>
-    </li>
-    {% end %}
-  </ul>
-</section>
+  <section class="panel">
+    <div class="stack">
+      <p class="kicker">Teaching trio · cohort A</p>
+      <p class="lede">
+        Point — don’t clone. Offline copies cannot mint fresh UTC or re-observe
+        upstream. Compose them as
+        <a class="mono" href="/constellations?name=orrery/stale-proof">orrery/stale-proof</a>.
+      </p>
+      <ul class="meta-list">
+        {% for t in teaching_trio %}
+        <li>
+          <a class="mono" href="{{ t.href }}">{{ t.star }}</a>
+          <span>{{ t.job }}</span>
+        </li>
+        {% end %}
+      </ul>
+    </div>
+  </section>
 
-<section class="panel" style="margin-bottom: 1.5rem">
-  <p class="kicker" style="margin-bottom: 0.5rem">Constellations for agents</p>
-  <p class="lede" style="margin: 0 0 0.75rem; font-size: 0.95rem">
-    Constellations are multi-step policy graphs. Use
-    <code class="mono">gaze_describe</code> for the run contract (what to pass /
-    what you get), and <code class="mono">explain_policy</code> for
-    <code class="mono">graph_summary</code>, input schema, and disposition enum.
-    Call <code class="mono">run</code> with the constellation-specific input
-    bundle; the composite receipt is a signed Envelope chain.
-  </p>
-  <ul class="meta-list">
-    <li>
-      <a class="mono" href="/constellations?name=orrery/stale-proof"
-        >orrery/stale-proof</a
-      >
-      <span>Live UTC + source digest seal</span>
-    </li>
-    <li>
-      <a class="mono" href="/constellations?name=orrery/ship-check"
-        >orrery/ship-check</a
-      >
-      <span>Release + freshness + UTC evidence</span>
-    </li>
-    <li>
-      <a class="mono" href="/constellations?name=orrery/table-fresh"
-        >orrery/table-fresh</a
-      >
-      <span>Fresh sample vs baseline verdict</span>
-    </li>
-    <li>
-      <a class="mono" href="/constellations?name=orrery/board-memo"
-        >orrery/board-memo</a
-      >
-      <span>Resumable run → continue_run → PDF seal</span>
-    </li>
-  </ul>
-</section>
+  <section class="panel">
+    <div class="stack">
+      <p class="kicker">Constellations for agents</p>
+      <p class="lede">
+        Constellations are multi-step policy graphs. Use
+        <code class="mono">gaze_describe</code> for the run contract (what to pass /
+        what you get), and <code class="mono">explain_policy</code> for
+        <code class="mono">graph_summary</code>, input schema, and disposition enum.
+        Call <code class="mono">run</code> with the constellation-specific input
+        bundle; the composite receipt is a signed Envelope chain.
+      </p>
+      <ul class="meta-list">
+        <li>
+          <a class="mono" href="/constellations?name=orrery/stale-proof"
+            >orrery/stale-proof</a
+          >
+          <span>Live UTC + source digest seal</span>
+        </li>
+        <li>
+          <a class="mono" href="/constellations?name=orrery/ship-check"
+            >orrery/ship-check</a
+          >
+          <span>Release + freshness + UTC evidence</span>
+        </li>
+        <li>
+          <a class="mono" href="/constellations?name=orrery/table-fresh"
+            >orrery/table-fresh</a
+          >
+          <span>Fresh sample vs baseline verdict</span>
+        </li>
+        <li>
+          <a class="mono" href="/constellations?name=orrery/board-memo"
+            >orrery/board-memo</a
+          >
+          <span>Resumable run → continue_run → PDF seal</span>
+        </li>
+      </ul>
+    </div>
+  </section>
 
-<section class="panel" style="margin-bottom: 1.5rem">
-  <p class="kicker" style="margin-bottom: 0.5rem">Worked example · board-memo</p>
-  <p class="lede" style="margin: 0 0 0.75rem; font-size: 0.95rem">
-    Multi-step constellations pause with one typed
-    <code class="mono">action_request</code>. Call
-    <code class="mono">explain_policy</code> with
-    <code class="mono">{"name":"orrery/board-memo"}</code> for
-    <code class="mono">mcp_sequence</code> and stage
-    <code class="mono">continue_shapes</code> at
-    <code class="mono">audience-choice</code>. Direct MCP:
-    <code class="mono">POST /constellations/board-memo/mcp</code>.
-  </p>
-  <pre class="mono" style="margin: 0; white-space: pre-wrap"># 1. run → awaiting_input at audience-choice
+  <section class="panel">
+    <div class="stack">
+      <p class="kicker">Worked example · board-memo</p>
+      <p class="lede">
+        Multi-step constellations pause with one typed
+        <code class="mono">action_request</code>. Call
+        <code class="mono">explain_policy</code> with
+        <code class="mono">{"name":"orrery/board-memo"}</code> for
+        <code class="mono">mcp_sequence</code> and stage
+        <code class="mono">continue_shapes</code> at
+        <code class="mono">audience-choice</code>. Direct MCP:
+        <code class="mono">POST /constellations/board-memo/mcp</code>.
+      </p>
+      <pre class="mono"># 1. run → awaiting_input at audience-choice
 {"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"run","arguments":{"title":"Q3 Platform Update","summary":"Revenue grew 12%.","caller_id":"demo-client"}}}
 
 # 2. continue_run → completed (PDF artifact_digest)
 {"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"continue_run","arguments":{"run_id":"&lt;run_id&gt;","request_id":"&lt;request_id&gt;","response":{"audience":"board","recommendation":"approve"},"caller_id":"demo-client"}}}</pre>
-</section>
+    </div>
+  </section>
 
-<section class="panel" style="margin-bottom: 1.5rem">
-  <p class="kicker" style="margin-bottom: 0.5rem">1. MCP endpoint</p>
-  <pre class="mono" style="margin: 0; white-space: pre-wrap">{{ mcp_url }}</pre>
-  <p class="lede" style="margin: 0.75rem 0 0; font-size: 0.95rem">
-    Streamable HTTP on MCP protocol <code class="mono">2025-06-18</code> (matches
-    the server card). Cursor and other clients negotiate that version on connect;
-    you do not need to speak Chirp's internal <code class="mono">2026-07-28</code>
-    dialect. No Authorization header on the public host.
-  </p>
-</section>
+  <section class="panel">
+    <div class="stack">
+      <p class="kicker">1. MCP endpoint</p>
+      <pre class="mono">{{ mcp_url }}</pre>
+      <p class="lede">
+        Streamable HTTP on MCP protocol <code class="mono">2025-06-18</code> (matches
+        the server card). Cursor and other clients negotiate that version on connect;
+        you do not need to speak Chirp's internal <code class="mono">2026-07-28</code>
+        dialect. No Authorization header on the public host.
+      </p>
+    </div>
+  </section>
 
-<section class="panel" style="margin-bottom: 1.5rem">
-  <p class="kicker" style="margin-bottom: 0.5rem">2. Cursor snippet</p>
-  <pre class="mono" style="margin: 0; white-space: pre-wrap">{
+  <section class="panel">
+    <div class="stack">
+      <p class="kicker">2. Cursor snippet</p>
+      <pre class="mono">{
   "mcpServers": {
     "orrery": {
       "url": "{{ mcp_url }}"
     }
   }
 }</pre>
-</section>
+    </div>
+  </section>
 
-<section class="panel" style="margin-bottom: 1.5rem">
-  <p class="kicker" style="margin-bottom: 0.5rem">3. Smoke test</p>
-  <pre class="mono" style="margin: 0; white-space: pre-wrap">curl -sS "{{ mcp_url }}" \
+  <section class="panel">
+    <div class="stack">
+      <p class="kicker">3. Smoke test</p>
+      <pre class="mono">curl -sS "{{ mcp_url }}" \
   -H 'Content-Type: application/json' \
   -H 'mcp-protocol-version: 2025-06-18' \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'</pre>
-  <p class="lede" style="margin: 0.75rem 0 0; font-size: 0.95rem">
-    Then try <code class="mono">gaze_match</code> with intent
-    <code class="mono">html pdf convert</code> — watch invocations on
-    <a href="/">/</a>.
-  </p>
-</section>
+      <p class="lede">
+        Then try <code class="mono">gaze_match</code> with intent
+        <code class="mono">html pdf convert</code> — watch invocations on
+        <a href="/">/</a>.
+      </p>
+    </div>
+  </section>
 
-<section class="panel" style="margin-bottom: 1.5rem">
-  <p class="kicker" style="margin-bottom: 0.75rem">Machine-readable</p>
-  <ul class="meta-list">
-    <li><span>Brief</span><a class="mono" href="/llms.txt">/llms.txt</a></li>
-    <li><span>Full</span><a class="mono" href="/llms-full.txt">/llms-full.txt</a></li>
-    <li>
-      <span>Server card</span>
-      <a class="mono" href="/.well-known/mcp/server-card.json"
-        >/.well-known/mcp/server-card.json</a
-      >
-    </li>
-    <li><span>Manifest</span><a class="mono" href="/.well-known/mcp">/.well-known/mcp</a></li>
-    <li><span>Skills</span><a class="mono" href="/skills">/skills</a></li>
-  </ul>
-</section>
+  <section class="panel">
+    <div class="stack">
+      <p class="kicker">Machine-readable</p>
+      <ul class="meta-list">
+        <li><span>Brief</span><a class="mono" href="/llms.txt">/llms.txt</a></li>
+        <li><span>Full</span><a class="mono" href="/llms-full.txt">/llms-full.txt</a></li>
+        <li>
+          <span>Server card</span>
+          <a class="mono" href="/.well-known/mcp/server-card.json"
+            >/.well-known/mcp/server-card.json</a
+          >
+        </li>
+        <li><span>Manifest</span><a class="mono" href="/.well-known/mcp">/.well-known/mcp</a></li>
+        <li><span>Skills</span><a class="mono" href="/skills">/skills</a></li>
+      </ul>
+    </div>
+  </section>
 
-<section class="panel" style="margin-bottom: 1.5rem">
-  <p class="kicker" style="margin-bottom: 0.75rem">Product consoles</p>
-  <ul class="meta-list">
-    <li><span>Gaze</span><a class="mono" href="/gaze">/gaze</a></li>
-    <li><span>Resolve</span><a class="mono" href="/resolve">/resolve</a></li>
-    <li><span>Stars</span><a class="mono" href="/stars">/stars</a></li>
-  </ul>
-</section>
+  <section class="panel">
+    <div class="stack">
+      <p class="kicker">Product consoles</p>
+      <ul class="meta-list">
+        <li><span>Gaze</span><a class="mono" href="/gaze">/gaze</a></li>
+        <li><span>Resolve</span><a class="mono" href="/resolve">/resolve</a></li>
+        <li><span>Stars</span><a class="mono" href="/stars">/stars</a></li>
+      </ul>
+    </div>
+  </section>
 
-<section class="panel" style="margin-bottom: 3rem">
-  <p class="kicker" style="margin-bottom: 0.75rem">Default /mcp · slim discovery + call_skill</p>
-  <ul class="meta-list">
-    {% for t in tools %}
-    <li>
-      <span class="mono">{{ t.name }}</span>
-      <span>{{ t.description }}</span>
-    </li>
-    {% end %}
-  </ul>
-</section>
+  <section class="panel">
+    <div class="stack">
+      <p class="kicker">Default /mcp · slim discovery + call_skill</p>
+      <ul class="meta-list">
+        {% for t in tools %}
+        <li>
+          <span class="mono">{{ t.name }}</span>
+          <span>{{ t.description }}</span>
+        </li>
+        {% end %}
+      </ul>
+    </div>
+  </section>
+</div>
 {% end %}

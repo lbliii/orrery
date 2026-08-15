@@ -1,9 +1,9 @@
 {% block content %}
 <header class="console-head">
   <div>
-    <p class="kicker"><a href="/constellations" style="color: inherit; text-decoration: none">Constellations</a> · drawn policy</p>
+    <p class="kicker"><a href="/constellations">Constellations</a> · drawn policy</p>
     <h1>{{ rec.name }}{% if rec.version %}@{{ rec.version }}{% end %}</h1>
-    <p class="lede" style="margin-bottom: 0">
+    <p class="lede">
       {% if rec.description %}
       {{ rec.description }}
       {% else %}
@@ -16,45 +16,49 @@
 </header>
 
 {% if pass_inputs or get_outputs %}
-<div class="detail-grid" style="margin-bottom: 1.25rem">
+<div class="detail-grid detail-grid-spaced">
   <div class="panel">
-    <p class="kicker">What to pass</p>
-    {% if graph_summary %}
-    <p class="muted" style="margin: 0.35rem 0 0.75rem">{{ graph_summary }}</p>
-    {% end %}
-    {% if pass_inputs %}
-    <ul class="meta-list" style="margin: 0">
-      {% for item in pass_inputs %}
-      <li>
-        <span class="mono">{{ item.name }}{% if item.required %}*{% end %}</span>
-        <span>{{ item.type }}{% if item.note %} · {{ item.note }}{% end %}</span>
-      </li>
+    <div class="stack">
+      <p class="kicker">What to pass</p>
+      {% if graph_summary %}
+      <p class="muted">{{ graph_summary }}</p>
       {% end %}
-    </ul>
-    {% else %}
-    <p class="muted" style="margin: 0.4rem 0 0">No required inputs — call <span class="mono">run</span>.</p>
-    {% end %}
+      {% if pass_inputs %}
+      <ul class="meta-list">
+        {% for item in pass_inputs %}
+        <li>
+          <span class="mono">{{ item.name }}{% if item.required %}*{% end %}</span>
+          <span>{{ item.type }}{% if item.note %} · {{ item.note }}{% end %}</span>
+        </li>
+        {% end %}
+      </ul>
+      {% else %}
+      <p class="muted">No required inputs — call <span class="mono">run</span>.</p>
+      {% end %}
+    </div>
   </div>
   <div class="panel">
-    <p class="kicker">What you get</p>
-    {% if get_outputs %}
-    <ul class="meta-list" style="margin: 0">
-      {% for item in get_outputs %}
-      <li>
-        <span class="mono">{{ item.name }}</span>
-        <span>{{ item.type }}{% if item.note %} · {{ item.note }}{% end %}</span>
-      </li>
+    <div class="stack">
+      <p class="kicker">What you get</p>
+      {% if get_outputs %}
+      <ul class="meta-list">
+        {% for item in get_outputs %}
+        <li>
+          <span class="mono">{{ item.name }}</span>
+          <span>{{ item.type }}{% if item.note %} · {{ item.note }}{% end %}</span>
+        </li>
+        {% end %}
+      </ul>
+      {% else %}
+      <p class="muted">Signed composite Envelope chain.</p>
       {% end %}
-    </ul>
-    {% else %}
-    <p class="muted" style="margin: 0.4rem 0 0">Signed composite Envelope chain.</p>
-    {% end %}
-    {% if dispositions %}
-    <p class="muted" style="margin: 0.75rem 0 0">
-      Dispositions:
-      <span class="mono">{{ ", ".join(dispositions) }}</span>
-    </p>
-    {% end %}
+      {% if dispositions %}
+      <p class="muted">
+        Dispositions:
+        <span class="mono">{{ ", ".join(dispositions) }}</span>
+      </p>
+      {% end %}
+    </div>
   </div>
 </div>
 {% end %}
@@ -141,7 +145,7 @@
 <div class="detail-grid">
   <div class="panel">
     <p class="kicker">Composite receipt</p>
-    <pre class="mono muted" style="margin: 0; white-space: pre-wrap">constellation: {{ rec.name }}{% if rec.version %}@{{ rec.version }}{% end %}
+    <pre class="mono muted">constellation: {{ rec.name }}{% if rec.version %}@{{ rec.version }}{% end %}
 policy_digest: {{ rec.content_digest }}
 chain:
 {% for step in policy.composite_chain %}  {{ step.order }}. {{ step.label }}     {{ step.status }}  {{ step.note }}
@@ -149,27 +153,31 @@ chain:
   </div>
   <div class="panel">
     {% if rec.name == "orrery/stale-proof" %}
-    <p class="kicker">Why cloning fails</p>
-    <p class="muted" style="margin: 0.4rem 0 1rem">
-      Offline copies cannot mint a fresh UTC instant or re-observe an official
-      source after they were copied. Point at
-      <span class="mono">world-time</span> +
-      <span class="mono">source-watch</span>, and seal one composite Envelope.
-      PDF rendering is a separate managed-artifact call, not part of this proof.
-    </p>
-    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem">
-      <a class="btn" href="/connect">Teaching trio</a>
-      <a class="btn btn-ghost" href="/stars?name=orrery/world-time">world-time</a>
+    <div class="stack">
+      <p class="kicker">Why cloning fails</p>
+      <p class="muted">
+        Offline copies cannot mint a fresh UTC instant or re-observe an official
+        source after they were copied. Point at
+        <span class="mono">world-time</span> +
+        <span class="mono">source-watch</span>, and seal one composite Envelope.
+        PDF rendering is a separate managed-artifact call, not part of this proof.
+      </p>
+      <div class="hero-actions">
+        <a class="btn" href="/connect">Teaching trio</a>
+        <a class="btn btn-ghost" href="/stars?name=orrery/world-time">world-time</a>
+      </div>
     </div>
     {% else %}
-    <p class="kicker">Why this isn't CI YAML</p>
-    <p class="muted" style="margin: 0.4rem 0 1rem">
-      Same graph from any harness. Stars can live in different namespaces.
-      Edges require verified Envelopes — not green checkmarks in one repo.
-    </p>
-    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem">
-      <a class="btn" href="/namespaces">Run under acme/*</a>
-      <a class="btn btn-ghost" href="/console">Reliability console</a>
+    <div class="stack">
+      <p class="kicker">Why this isn't CI YAML</p>
+      <p class="muted">
+        Same graph from any harness. Stars can live in different namespaces.
+        Edges require verified Envelopes — not green checkmarks in one repo.
+      </p>
+      <div class="hero-actions">
+        <a class="btn" href="/namespaces">Run under acme/*</a>
+        <a class="btn btn-ghost" href="/console">Reliability console</a>
+      </div>
     </div>
     {% end %}
   </div>

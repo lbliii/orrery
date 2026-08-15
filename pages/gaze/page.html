@@ -35,7 +35,7 @@
     <div>
       <p class="kicker">browse · point · don’t install</p>
       <h1>Gaze</h1>
-      <p class="lede" style="margin-bottom: 0">
+      <p class="lede">
         Agents discover stars through gaze nodes — progressive disclosure for
         live skills. Gaze returns a bounded shortlist (names, facets, oracle);
         the agent is the semantic router. Call returns Envelopes.
@@ -62,60 +62,63 @@
 
   <div class="detail-grid">
     <section>
-      <div class="panel">
-        <p class="kicker">Active node</p>
-        {% for n in node_panels %}
-        <div x-show="node === '{{ n.id }}'" {% if not n.active %}style="display:none"{% end %}>
-          <p class="mono" style="margin: 0.35rem 0 0.75rem">{{ n.url }}</p>
-          <ul class="meta-list">
-            <li>
-              <span>Scope</span>
-              <code class="mono">{{ n.scope }}</code>
-            </li>
-            <li>
-              <span>Tools</span>
-              <code class="mono">{{ n.tools_display }}</code>
-            </li>
-          </ul>
+      <div class="stack">
+        <div class="panel">
+          <div class="stack">
+            <p class="kicker">Active node</p>
+            {% for n in node_panels %}
+            <div x-show="node === '{{ n.id }}'" {% if not n.active %}style="display:none"{% end %}>
+              <p class="mono">{{ n.url }}</p>
+              <ul class="meta-list">
+                <li>
+                  <span>Scope</span>
+                  <code class="mono">{{ n.scope }}</code>
+                </li>
+                <li>
+                  <span>Tools</span>
+                  <code class="mono">{{ n.tools_display }}</code>
+                </li>
+              </ul>
+            </div>
+            {% end %}
+
+            <p class="kicker">gaze_match(intent)</p>
+            <form
+              class="lookup"
+              action="/gaze"
+              method="get"
+              hx-get="/gaze"
+              hx-target="#gaze-hits"
+              hx-swap="outerHTML"
+              hx-push-url="true"
+              hx-disabled-elt="find button"
+            >
+              <input type="hidden" name="node" :value="node" value="{{ active_node }}" />
+              <input
+                type="search"
+                name="intent"
+                x-model="q"
+                value="{{ intent }}"
+                aria-label="Gaze match query"
+              />
+              <button type="submit" class="btn btn-brass">Gaze</button>
+            </form>
+            <p class="muted">
+              Same call from Cursor, Claude Code, or CI — no catalog install.
+              Default ≤{{ gaze_default_limit }} hits; agent re-ranks.
+            </p>
+          </div>
         </div>
-        {% end %}
 
-        <p class="kicker" style="margin-top: 1rem">gaze_match(intent)</p>
-        <form
-          class="lookup"
-          style="margin-top: 0.5rem"
-          action="/gaze"
-          method="get"
-          hx-get="/gaze"
-          hx-target="#gaze-hits"
-          hx-swap="outerHTML"
-          hx-push-url="true"
-          hx-disabled-elt="find button"
-        >
-          <input type="hidden" name="node" :value="node" value="{{ active_node }}" />
-          <input
-            type="search"
-            name="intent"
-            x-model="q"
-            value="{{ intent }}"
-            aria-label="Gaze match query"
-          />
-          <button type="submit" class="btn btn-brass">Gaze</button>
-        </form>
-        <p class="muted" style="margin: 0.75rem 0 0; font-size: 0.92rem">
-          Same call from Cursor, Claude Code, or CI — no catalog install.
-          Default ≤{{ gaze_default_limit }} hits; agent re-ranks.
-        </p>
-      </div>
-
-      <div class="panel" style="margin-top: 1rem">
-        <p class="kicker">Agent shape</p>
-        {% for n in node_panels %}
-        <pre
-          class="mono muted"
-          style="margin: 0.5rem 0 0; white-space: pre-wrap{% if not n.active %}; display:none{% end %}"
-          x-show="node === '{{ n.id }}'"
-        >{% if n.is_constellation %}tools/call run
+        <div class="panel">
+          <div class="stack">
+            <p class="kicker">Agent shape</p>
+            {% for n in node_panels %}
+            <pre
+              class="mono muted"
+              {% if not n.active %}style="display:none"{% end %}
+              x-show="node === '{{ n.id }}'"
+            >{% if n.is_constellation %}tools/call run
   bundle: { pages, links, examples }
 → composite Envelope{% else %}tools/call gaze_match
   intent: "{{ intent }}"
@@ -124,85 +127,93 @@
 tools/call resolve_name
   name: "acme/launch-gate"
 → endpoint, digest, pubkey{% end %}</pre>
-        {% end %}
+            {% end %}
+          </div>
+        </div>
       </div>
     </section>
 
     <aside>
-      <div class="panel" x-ref="results">
-        <p class="kicker">
-          <span class="live-dot" aria-hidden="true"></span>
-          Gaze results
-        </p>
-        <p class="muted" style="margin: 0.35rem 0 0.75rem; font-size: 0.88rem">
-          Facet filter (client-side — agent does the same on MCP JSON)
-        </p>
-        <div class="lookup" style="margin-bottom: 0.75rem; gap: 0.5rem; flex-wrap: wrap">
-          <label class="muted" style="font-size: 0.88rem">
-            Kind
-            <select x-model="filterKind" aria-label="Filter by kind">
-              <option value="">any</option>
-              <option value="star">star</option>
-              <option value="constellation">constellation</option>
-              <option value="tool">tool</option>
-            </select>
-          </label>
-          <label class="muted" style="font-size: 0.88rem">
-            <input type="checkbox" x-model="filterReactive" />
-            reactive
-          </label>
-          <label class="muted" style="font-size: 0.88rem">
-            <input type="checkbox" x-model="filterOracleOk" />
-            oracle_ok
-          </label>
-        </div>
-        {% block hits %}
-        <div
-          id="gaze-hits"
-          style="animation: fade-in var(--settle) var(--ease)"
-        >
-          {% for n in node_panels %}
-          <ul
-            class="gaze-hits"
-            data-gaze-hits="{{ n.id }}"
-            {% if not n.active %}style="display:none"{% end %}
-          >
-            {% for hit in n.hits %}
-            {% include "gaze/hit.html" %}
+      <div class="stack">
+        <div class="panel" x-ref="results">
+          <div class="stack">
+            <p class="kicker">
+              <span class="live-dot" aria-hidden="true"></span>
+              Gaze results
+            </p>
+            <p class="muted">
+              Facet filter (client-side — agent does the same on MCP JSON)
+            </p>
+            <div class="lookup lookup-filters">
+              <label class="muted">
+                Kind
+                <select x-model="filterKind" aria-label="Filter by kind">
+                  <option value="">any</option>
+                  <option value="star">star</option>
+                  <option value="constellation">constellation</option>
+                  <option value="tool">tool</option>
+                </select>
+              </label>
+              <label class="muted">
+                <input type="checkbox" x-model="filterReactive" />
+                reactive
+              </label>
+              <label class="muted">
+                <input type="checkbox" x-model="filterOracleOk" />
+                oracle_ok
+              </label>
+            </div>
+            {% block hits %}
+            <div
+              id="gaze-hits"
+              style="animation: fade-in var(--settle) var(--ease)"
+            >
+              {% for n in node_panels %}
+              <ul
+                class="gaze-hits"
+                data-gaze-hits="{{ n.id }}"
+                {% if not n.active %}style="display:none"{% end %}
+              >
+                {% for hit in n.hits %}
+                {% include "gaze/hit.html" %}
+                {% end %}
+              </ul>
+              {% end %}
+            </div>
             {% end %}
-          </ul>
-          {% end %}
+          </div>
         </div>
-        {% end %}
-      </div>
 
-      <div class="panel" style="margin-top: 1rem">
-        <p class="kicker">Progressive disclosure</p>
-        <ol class="steps" style="margin-top: 0.75rem">
-          <li>
-            <div>
-              <strong>Gaze</strong>
-              Descriptions + prices + facets only (~trigger layer).
-            </div>
-          </li>
-          <li>
-            <div>
-              <strong>Resolve</strong>
-              Endpoint, digest, key — still no payload.
-            </div>
-          </li>
-          <li>
-            <div>
-              <strong>Call</strong>
-              Tool runs; Envelope is the receipt.
-            </div>
-          </li>
-        </ol>
+        <div class="panel">
+          <div class="stack">
+            <p class="kicker">Progressive disclosure</p>
+            <ol class="steps">
+              <li>
+                <div>
+                  <strong>Gaze</strong>
+                  Descriptions + prices + facets only (~trigger layer).
+                </div>
+              </li>
+              <li>
+                <div>
+                  <strong>Resolve</strong>
+                  Endpoint, digest, key — still no payload.
+                </div>
+              </li>
+              <li>
+                <div>
+                  <strong>Call</strong>
+                  Tool runs; Envelope is the receipt.
+                </div>
+              </li>
+            </ol>
+          </div>
+        </div>
       </div>
     </aside>
   </div>
 
-  <section class="section" style="padding-top: 0.5rem">
+  <section class="section section-flush-tight">
     <h2>Many nodes, one protocol.</h2>
     <p class="lede">
       Public gaze for gravity. Namespace gaze for <code class="mono">acme/*</code>.

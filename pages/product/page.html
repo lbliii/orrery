@@ -12,77 +12,87 @@
   resolve the record, call the publisher, seal the Envelope.
 </p>
 
-<section class="panel" style="margin-bottom: 1.5rem">
-  <p class="kicker" style="margin-bottom: 0.75rem">The loop</p>
-  <ol class="steps">
-    <li>
-      <div>
-        <strong>Gaze</strong>
-        Bounded shortlist — names, facets, prices. No tool payloads on the shelf.
-      </div>
-    </li>
-    <li>
-      <div>
-        <strong>Resolve</strong>
-        Name → MCP URL, content digest, public key. Skill DNS, not a repo checkout.
-      </div>
-    </li>
-    <li>
-      <div>
-        <strong>Call</strong>
-        Same contract from Cursor, Claude Code, CI, or a phone session.
-      </div>
-    </li>
-    <li>
-      <div>
-        <strong>Seal</strong>
-        Signed Envelope — verify or don't treat it as done.
-      </div>
-    </li>
-  </ol>
-</section>
+<div class="stack stack--3">
+  <section class="panel">
+    <div class="stack">
+      <p class="kicker">The loop</p>
+      <ol class="steps">
+        <li>
+          <div>
+            <strong>Gaze</strong>
+            Bounded shortlist — names, facets, prices. No tool payloads on the shelf.
+          </div>
+        </li>
+        <li>
+          <div>
+            <strong>Resolve</strong>
+            Name → MCP URL, content digest, public key. Skill DNS, not a repo checkout.
+          </div>
+        </li>
+        <li>
+          <div>
+            <strong>Call</strong>
+            Same contract from Cursor, Claude Code, CI, or a phone session.
+          </div>
+        </li>
+        <li>
+          <div>
+            <strong>Seal</strong>
+            Signed Envelope — verify or don't treat it as done.
+          </div>
+        </li>
+      </ol>
+    </div>
+  </section>
 
-<section class="panel" style="margin-bottom: 1.5rem">
-  <p class="kicker" style="margin-bottom: 0.75rem">Teaching trio · cohort A</p>
-  <p class="lede" style="margin: 0 0 0.75rem; font-size: 0.95rem">
-    Point — don't clone. Offline copies cannot mint fresh UTC or re-observe
-    upstream. Compose them as
-    <a class="mono" href="/constellations?name=orrery/stale-proof">orrery/stale-proof</a>.
-  </p>
-  <ul class="meta-list">
-    {% for t in teaching_trio %}
-    <li>
-      <a class="mono" href="{{ t.href }}">{{ t.star }}</a>
-      <span>{{ t.job }}</span>
-    </li>
-    {% end %}
-  </ul>
-</section>
+  <section class="panel">
+    <div class="stack">
+      <p class="kicker">Teaching trio · cohort A</p>
+      <p class="lede">
+        Point — don't clone. Offline copies cannot mint fresh UTC or re-observe
+        upstream. Compose them as
+        <a class="mono" href="/constellations?name=orrery/stale-proof">orrery/stale-proof</a>.
+      </p>
+      <ul class="meta-list">
+        {% for t in teaching_trio %}
+        <li>
+          <a class="mono" href="{{ t.href }}">{{ t.star }}</a>
+          <span>{{ t.job }}</span>
+        </li>
+        {% end %}
+      </ul>
+    </div>
+  </section>
 
-<section class="panel" style="margin-bottom: 1.5rem">
-  <p class="kicker" style="margin-bottom: 0.75rem">Not this</p>
-  <ul class="meta-list">
-    <li><span>·</span><span>Not an MCP directory</span></li>
-    <li><span>·</span><span>Not a skill router</span></li>
-    <li><span>·</span><span>Not a swarm VCS</span></li>
-  </ul>
-  <p class="lede" style="margin: 0.75rem 0 0; font-size: 0.95rem">
-    Discovery is public; execution stays on the publisher you resolved.
-    Agents choose among gaze hits — Orrery does not proxy every tool on one host.
-  </p>
-</section>
+  <section class="panel">
+    <div class="stack">
+      <p class="kicker">Not this</p>
+      <ul class="meta-list">
+        <li><span>·</span><span>Not an MCP directory</span></li>
+        <li><span>·</span><span>Not a skill router</span></li>
+        <li><span>·</span><span>Not a swarm VCS</span></li>
+      </ul>
+      <p class="lede">
+        Discovery is public; execution stays on the publisher you resolved.
+        Agents choose among gaze hits — Orrery does not proxy every tool on one host.
+      </p>
+    </div>
+  </section>
 
-<section class="panel" style="margin-bottom: 1.5rem">
-  <p class="kicker" style="margin-bottom: 0.75rem">Product consoles</p>
-  <ul class="meta-list">
-    <li><span>Gaze</span><a class="mono" href="/gaze">/gaze</a></li>
-    <li><span>Resolve</span><a class="mono" href="/resolve">/resolve</a></li>
-    <li><span>Stars</span><a class="mono" href="/stars">/stars</a></li>
-    <li><span>Constellations</span><a class="mono" href="/constellations">/constellations</a></li>
-  </ul>
-</section>
+  <section class="panel">
+    <div class="stack">
+      <p class="kicker">Product consoles</p>
+      <ul class="meta-list">
+        <li><span>Gaze</span><a class="mono" href="/gaze">/gaze</a></li>
+        <li><span>Resolve</span><a class="mono" href="/resolve">/resolve</a></li>
+        <li><span>Stars</span><a class="mono" href="/stars">/stars</a></li>
+        <li><span>Constellations</span><a class="mono" href="/constellations">/constellations</a></li>
+      </ul>
+    </div>
+  </section>
+</div>
 
-<section class="section" style="padding-top: 0">
+<section class="section section-flush">
   <div class="hero-actions">
     <a class="btn" href="/connect">Connect MCP</a>
     <a class="btn btn-ghost" href="/gaze">Open gaze</a>
