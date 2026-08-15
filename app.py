@@ -28,6 +28,7 @@ import dataclasses
 import os
 import secrets
 from pathlib import Path
+from typing import Any, ClassVar
 
 from chirp import (
     App,
@@ -40,7 +41,7 @@ from chirp import (
     secure_stack,
 )
 from chirp.http.response import FileResponse, Response, StreamingResponse
-from chirp.middleware.csp_nonce import _reset_csp_nonce, _set_csp_nonce
+from chirp.middleware.csp_nonce import _reset_csp_nonce, _set_csp_nonce, csp_nonce
 from chirp.middleware.csrf import CSRFConfig
 from chirp.middleware.security_headers import SecurityHeadersConfig
 from chirp.skill import (
@@ -133,10 +134,13 @@ _ORRERY_SCRIPT_ORIGINS = "https://unpkg.com https://cdn.jsdelivr.net"
 class _OrreryCSPNonce:
     """Per-request nonce CSP without rewriting HTML bodies.
 
-    Chirp's CSPNonceMiddleware inserts nonce= into every ``<script>`` opener,
-    including JSON inside ``alpine_json_config``. Injected tags already carry
-    the live nonce via snippet factories.
+    Chirp's ``nonce_inline_scripts`` rewrites every ``<script>`` opener, including
+    a ``<script>`` substring inside ``alpine_json_config`` JSON (user intent).
+    Injected tags already carry the live nonce via snippet factories; page
+    bootstraps use ``{{ csp_nonce() }}``.
     """
+
+    template_globals: ClassVar[dict[str, Any]] = {"csp_nonce": csp_nonce}
 
     async def __call__(self, request: Request, next):
         nonce = secrets.token_urlsafe(22)

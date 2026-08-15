@@ -17,6 +17,19 @@ from test_app import _modern_mcp_headers, _modern_mcp_params
 from catalog import CATALOG, Catalog, ResolveRecord
 
 
+def _csp_script_nonce(headers) -> str:
+    csp = dict(headers).get("content-security-policy", "")
+    marker = "'nonce-"
+    start = csp.index(marker) + len(marker)
+    return csp[start : csp.index("'", start)]
+
+
+def _assert_inline_script_matches_csp(response) -> None:
+    nonce = _csp_script_nonce(response.headers)
+    assert f'<script nonce="{nonce}">' in response.text
+    assert "Alpine.safeData" in response.text
+
+
 def _embedded_error_map(html: str, element_id: str) -> dict:
     marker = f'id="{element_id}"'
     start = html.index(marker)
@@ -945,6 +958,7 @@ class TestGazeConsole:
             assert "(() =>" not in r.text
             assert "renderHit" not in r.text
             assert "innerHTML" not in r.text
+            _assert_inline_script_matches_csp(r)
 
     async def test_api_gaze_match(self, example_app) -> None:
         async with TestClient(example_app) as client:
@@ -1753,6 +1767,7 @@ class TestCatalogAlpineFilters:
             assert "DOMContentLoaded" not in r.text
             assert "data-star-search" in r.text
             assert "data-star-facet" in r.text
+            _assert_inline_script_matches_csp(r)
 
     async def test_constellations_catalog_uses_alpine_not_domcontentloaded(
         self, example_app
@@ -1764,6 +1779,7 @@ class TestCatalogAlpineFilters:
             assert "Alpine.safeData" in r.text
             assert "DOMContentLoaded" not in r.text
             assert "data-constellation-search" in r.text
+            _assert_inline_script_matches_csp(r)
 
 
 @pytest.mark.issue(481)
