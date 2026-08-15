@@ -178,6 +178,58 @@ class TestBrandChrome:
             assert 'class="nav-dropdown" open' not in star.text
 
 
+@pytest.mark.issue(494)
+class TestFooterClusters:
+    async def test_footer_has_three_clusters_and_brand_line(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/")
+            assert r.status == 200
+            footer_start = r.text.index('class="footer"')
+            footer_end = r.text.index("</footer>", footer_start)
+            footer = r.text[footer_start:footer_end]
+            assert "Orrery · skills you point at, not install." in footer
+            assert 'class="footer-cluster"' in footer
+            assert 'aria-label="Loop"' in footer
+            assert 'aria-label="Legal"' in footer
+            assert 'aria-label="Agents"' in footer
+            assert ">Loop<" in footer
+            assert ">Legal<" in footer
+            assert ">Agents<" in footer
+            assert 'href="/gaze"' in footer
+            assert 'href="/resolve"' in footer
+            assert 'href="/stars"' in footer
+            assert 'href="/constellations"' in footer
+            assert 'href="/receipts"' in footer
+            assert 'href="/security"' in footer
+            assert 'href="/privacy"' in footer
+            assert 'href="/terms"' in footer
+            assert 'href="/contact"' in footer
+            assert 'href="/connect"' in footer
+            assert 'href="/llms.txt"' in footer
+            assert ">Ops · console<" in footer
+            assert "footer_note" not in footer
+            assert "footer_meta" not in footer
+            assert "gaze → resolve → call" not in footer
+
+    async def test_page_footer_overrides_ignored(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            home = await client.get("/")
+            assert home.status == 200
+            assert "Orrery · live host" not in home.text
+
+            connect = await client.get("/connect")
+            assert connect.status == 200
+            footer_start = connect.text.index('class="footer"')
+            footer_end = connect.text.index("</footer>", footer_start)
+            footer = connect.text[footer_start:footer_end]
+            assert "Orrery · connect" not in footer
+            assert "point → call → seal" not in footer
+
+            resolve = await client.get("/resolve")
+            assert resolve.status == 200
+            assert "Resolver console" not in resolve.text
+
+
 @pytest.mark.issue(473)
 class TestCssTokenLayers:
     async def test_primitives_and_motion_beats_exist(self, example_app) -> None:

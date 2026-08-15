@@ -132,12 +132,35 @@
   border-top: var(--stroke) solid var(--line);
   padding: var(--space-3) 0 2.5rem;
   display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: var(--space-3);
   font-family: var(--font-display);
   font-size: 0.85rem;
   color: var(--mist);
+}
+
+.footer-cluster {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+}
+
+.footer-cluster > span:first-child {
+  font-family: var(--font-display);
+  font-weight: 500;
+  margin-right: 0.15rem;
+}
+
+.footer-cluster a {
+  color: var(--mist);
+  text-decoration: none;
+}
+
+.footer-cluster a:hover {
+  color: var(--signal);
 }
 
 .panel {
