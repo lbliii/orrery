@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import json
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -48,11 +49,28 @@ def test_valid_signed_world_time_receipt_is_verified() -> None:
         "Envelope(payload={'x': 1})",
         "Envelope(**{'payload': {}})",
         "not_an_envelope()",
+        '{"status": "ok", "payload": {}}',
+        '{"status": "error", "error": {"code": "boom", "message": "nope"}}',
     ],
 )
 def test_parser_rejects_incomplete_or_executable_text(text: str) -> None:
     with pytest.raises(ValueError):
         parse_envelope(text)
+
+
+def test_parser_reads_adr0010_json_envelope_wire() -> None:
+    envelope, _ = signed_envelope()
+    text = json.dumps(
+        {
+            "status": "ok",
+            "skill": "world-time",
+            "tool": "fetch",
+            "payload": envelope["payload"],
+            "envelope_wire": envelope,
+        }
+    )
+    assert parse_envelope(text) == envelope
+    assert parse_envelope(json.dumps(envelope)) == envelope
 
 
 def test_verify_rejects_tampered_receipt_and_wrong_star_key() -> None:

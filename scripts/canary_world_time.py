@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import ast
 import base64
 import json
 import sys
@@ -19,20 +18,21 @@ REQUIRED = frozenset(
 
 
 def parse_envelope(text: str) -> dict[str, object]:
-    """Parse the Chirp text representation without executing its contents."""
-    node = ast.parse(text, mode="eval").body
-    if (
-        not isinstance(node, ast.Call)
-        or not isinstance(node.func, ast.Name)
-        or node.func.id != "Envelope"
-        or node.args
-        or any(keyword.arg is None for keyword in node.keywords)
-    ):
-        raise ValueError("expected Envelope keyword literal")
-    result = {keyword.arg: ast.literal_eval(keyword.value) for keyword in node.keywords}
-    if set(result) != REQUIRED:
+    """Parse ADR 0010 MCP JSON into Envelope.to_wire() fields (no eval)."""
+    try:
+        body = json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise ValueError("expected JSON Envelope wire") from exc
+    if not isinstance(body, dict):
+        raise ValueError("expected JSON object")
+    if body.get("status") == "error":
+        raise ValueError(f"MCP error: {body.get('error')}")
+    wire = body.get("envelope_wire") if "envelope_wire" in body else body
+    if not isinstance(wire, dict):
+        raise ValueError("expected envelope_wire")
+    if set(wire) != REQUIRED:
         raise ValueError("unexpected Envelope fields")
-    return result
+    return wire
 
 
 def request(url: str, body: bytes | None = None) -> bytes:
