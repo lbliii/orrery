@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import base64
+import json
 from datetime import UTC, datetime
+from pathlib import Path
 
 import pytest
 from chirp.skill import Skill
@@ -47,11 +49,28 @@ def test_valid_signed_world_time_receipt_is_verified() -> None:
         "Envelope(payload={'x': 1})",
         "Envelope(**{'payload': {}})",
         "not_an_envelope()",
+        '{"status": "ok", "payload": {}}',
+        '{"status": "error", "error": {"code": "boom", "message": "nope"}}',
     ],
 )
 def test_parser_rejects_incomplete_or_executable_text(text: str) -> None:
     with pytest.raises(ValueError):
         parse_envelope(text)
+
+
+def test_parser_reads_adr0010_json_envelope_wire() -> None:
+    envelope, _ = signed_envelope()
+    text = json.dumps(
+        {
+            "status": "ok",
+            "skill": "world-time",
+            "tool": "fetch",
+            "payload": envelope["payload"],
+            "envelope_wire": envelope,
+        }
+    )
+    assert parse_envelope(text) == envelope
+    assert parse_envelope(json.dumps(envelope)) == envelope
 
 
 def test_verify_rejects_tampered_receipt_and_wrong_star_key() -> None:
@@ -72,3 +91,11 @@ def test_validate_payload_interprets_naive_provider_time_as_utc() -> None:
     stale = {**envelope, "payload": {**envelope["payload"], "datetime": "2026-08-09T11:00:00"}}
     with pytest.raises(ValueError, match="outside"):
         validate_payload(stale, now=datetime(2026, 8, 9, 12, 1, tzinfo=UTC))
+
+
+def test_workflow_installs_project_deps_via_uv() -> None:
+    """The Action must load chirp from the repo lockfile, not pip cryptography."""
+    text = Path(".github/workflows/world-time-canary.yml").read_text(encoding="utf-8")
+    assert "uv run python scripts/canary_world_time.py" in text
+    assert "pip install cryptography" not in text
+    assert 'python-version: "3.14"' in text
