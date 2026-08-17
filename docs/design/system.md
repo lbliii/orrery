@@ -218,7 +218,7 @@ Reusable across routes:
 | `/gaze` | `.console-head` + `.gaze-bench` | `.gaze-nodes`, `.gaze-hits` |
 | `/resolve` | `.console-head` + `.stack` | `.lookup`, stacked `.resolve-hit` plates; no explainer footer |
 | `/stars` | `.catalog-hero` + `.catalog-layout` | `.star-row` |
-| `/star/*` | `.star-page` | `.receipt`, `.meta-list`, `.price` |
+| `/star/*` | `.star-page` 2-col (body + action rail) | `.receipt`, Copy MCP; no section TOC |
 | `/constellations` | `.catalog-hero` + `.catalog-layout` | `.star-row` |
 | `/constellations?name=` | `.console-head` + `.detail-grid` | `.constellation`, `.legend` |
 | `/namespaces` | `.ns-hero` + `.ns-grid` | (compositional only) |

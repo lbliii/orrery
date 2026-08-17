@@ -366,6 +366,10 @@ class TestStarDetail:
             assert "In constellations" in r.text
             assert "Copy MCP URL" in r.text
             assert "Trust signal" in r.text
+            assert "entity-rail" not in r.text
+            assert "Nearby Stars" not in r.text
+            assert "Machine-readable record" not in r.text
+            assert "A constellation is a policy graph" not in r.text
 
     async def test_legacy_star_url_remains_usable_and_unknown_is_404(self, example_app) -> None:
         async with TestClient(example_app) as client:
@@ -380,6 +384,39 @@ class TestStarDetail:
             r = await client.get("/stars?name=acme/launch-gate")
             assert r.status == 404
 
+
+
+@pytest.mark.issue(540)
+class TestStarDetailWorkbench:
+    def test_star_page_has_no_section_toc(self) -> None:
+        source = (
+            Path(__file__).resolve().parents[1] / "pages" / "star_detail.html"
+        ).read_text()
+        assert "entity-rail" not in source
+        assert "Nearby Stars" not in source
+        assert "Machine-readable record" not in source
+        assert "A constellation is a policy graph" not in source
+        assert 'class="action-rail"' in source
+        assert "data-copy-mcp" in source
+        assert "data-receipt" in source
+
+    async def test_star_page_is_two_column_instrument(self, example_app) -> None:
+        async with TestClient(example_app) as client:
+            r = await client.get("/star/orrery/world-time")
+            assert r.status == 200
+            assert "entity-rail" not in r.text
+            assert "Nearby Stars" not in r.text
+            assert "Machine-readable record" not in r.text
+            assert "A constellation is a policy graph" not in r.text
+            assert "Use this when" in r.text
+            assert "Not for" in r.text
+            assert "Example" in r.text
+            assert "Copy MCP URL" in r.text
+            assert "data-receipt" in r.text
+            assert "/resolve?name=orrery/world-time" in r.text
+            css = await client.get("/static/css/layouts.css")
+            assert css.status == 200
+            assert "grid-template-columns: minmax(0, 1fr) 17rem" in css.text
 
 
 @pytest.mark.issue(37)

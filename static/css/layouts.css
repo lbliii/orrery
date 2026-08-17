@@ -251,16 +251,14 @@ a.vitals-value:hover {
   padding-bottom: 4rem;
 }
 
-.catalog-rail,
-.entity-rail {
+.catalog-rail {
   border-top: var(--stroke) solid var(--line);
   padding-top: 1rem;
   font-family: var(--font-display);
   font-size: 0.92rem;
 }
 
-.catalog-rail a,
-.entity-rail nav a {
+.catalog-rail a {
   display: flex;
   justify-content: space-between;
   padding: 0.55rem 0;
@@ -269,8 +267,7 @@ a.vitals-value:hover {
   border-bottom: var(--stroke) solid color-mix(in oklab, var(--signal) 8%, transparent);
 }
 
-.catalog-rail .rail-current,
-.entity-rail nav a[aria-current="page"] {
+.catalog-rail .rail-current {
   color: var(--brass);
 }
 
@@ -395,44 +392,32 @@ a.vitals-value:hover {
 
 .star-page {
   display: grid;
-  grid-template-columns: 12rem minmax(0, 1fr) 17rem;
+  grid-template-columns: minmax(0, 1fr) 17rem;
   gap: clamp(1.5rem, 4vw, 4rem);
   padding: var(--space-4) 0 4.5rem;
 }
 
-.entity-rail {
-  position: sticky;
-  top: 1.2rem;
-  align-self: start;
+.star-body {
+  min-width: 0;
 }
 
 .back-link {
   display: inline-block;
-  margin-bottom: 2.2rem;
+  margin-bottom: 1.25rem;
   color: var(--fog);
   font-size: 0.9rem;
 }
 
-.entity-name {
-  overflow-wrap: anywhere;
-  color: var(--signal);
-  margin: 0.2rem 0 1.2rem;
-}
-
-.star-reading {
-  min-width: 0;
-}
-
-.star-reading .detail-hero {
-  padding: 0 0 2.25rem;
+.star-body .detail-hero {
+  padding: 0 0 1.5rem;
 }
 
 .star-intro {
   max-width: 38rem;
   margin: 0;
   color: var(--fog);
-  font-size: clamp(1.25rem, 2vw, 1.5rem);
-  line-height: 1.4;
+  font-size: 1.05rem;
+  line-height: 1.45;
 }
 
 .star-resolve-link {
