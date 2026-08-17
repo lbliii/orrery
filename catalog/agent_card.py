@@ -46,6 +46,11 @@ class AgentCardIO:
 #: Sealed composite outcomes agents should expect from constellation runs.
 DEFAULT_DISPOSITIONS: tuple[str, ...] = ("ready", "not-ready", "stale", "blocked")
 CONTENT_READINESS_DISPOSITIONS: tuple[str, ...] = ("ready", "needs-work", "inconclusive")
+PLUGIN_READINESS_DISPOSITIONS: tuple[str, ...] = (
+    "conformant",
+    "needs-work",
+    "inconclusive",
+)
 KIDA_READY_DISPOSITIONS: tuple[str, ...] = ("ready", "needs-work", "inconclusive")
 AUTHORIZED_CONTENT_PATCH_DISPOSITIONS: tuple[str, ...] = (
     "authorized",
@@ -1554,6 +1559,38 @@ _STAR_CARDS: dict[str, AgentCard] = {
         tree_role="review",
         worker_cost="low",
     ),
+    "orrery/plugin-preflight": _card(
+        summary="Preflight a caller plugin bundle against Agent Plugins 1.0.0.",
+        use_when=(
+            "You have a plugin.json bundle and need a sealed conformance receipt",
+            "You want fatal vs skip codes without installing the plugin",
+        ),
+        not_for=(
+            "Installing or launching plugins",
+            "Listing stdio servers on the sky",
+            "Hosting the caller's repository",
+        ),
+        example_intents=(
+            "preflight agent plugin package",
+            "check plugin.json conformance",
+            "seal agent-plugins 1.0.0 receipt",
+        ),
+        tools=("check",),
+        coverage_slug="plugin-preflight",
+        inputs=(
+            _io("files", "array", required=True, note="[{path, content}]"),
+            _io("profile", "string", note="agent-plugins/1.0.0"),
+            _io("manifest_digest", "string", note="optional digest claim"),
+        ),
+        outputs=(
+            _io("passed", "boolean"),
+            _io("violation_codes", "array"),
+            _io("mcp_disabled", "boolean"),
+            *_ENVELOPE,
+        ),
+        tree_role="worker",
+        worker_cost="low",
+    ),
     "orrery/row-validate": _card(
         summary="Pure validation of one row against a named static source-aligned profile.",
         use_when=(
@@ -1730,6 +1767,55 @@ _STAR_CARDS: dict[str, AgentCard] = {
         subtree_contract=subtree_contract_from_policy(
             "orrery/content-readiness",
             dispositions=CONTENT_READINESS_DISPOSITIONS,
+            pause_allowed=False,
+        ),
+        tree_role="review",
+        worker_cost="mid",
+    ),
+    "orrery/plugin-readiness": _card(
+        summary=(
+            "Frozen Agent Plugins 1.0.0 subgraph: bind → plugin-preflight → "
+            "optional SKILL.md structure → sealed disposition."
+        ),
+        use_when=(
+            "You need a conformant | needs-work | inconclusive seal on a plugin bundle",
+            "You want a citeable planner subgraph, not a plugin installer",
+        ),
+        not_for=(
+            "Installing or launching plugins",
+            "Listing stdio servers on the sky",
+            "Durable pause / continuation (sync only)",
+        ),
+        example_intents=(
+            "plugin readiness disposition",
+            "assess agent plugin package",
+            "seal agent-plugins 1.0.0 composite",
+        ),
+        tools=("run",),
+        coverage_slug="plugin-readiness",
+        inputs=(_io("files", "array", required=True, note="[{path, content}]"),),
+        outputs=(_io("disposition", "string"), _io("stages", "object"), *_ENVELOPE),
+        run_contract={
+            "entry_tool": "run",
+            "required_inputs": ["files"],
+            "optional_inputs": [],
+            "composite_output": "signed-envelope-chain",
+            "input_bundle": {
+                "files": {
+                    "type": "array",
+                    "required": True,
+                    "note": "caller plugin bundle [{path, content}]",
+                },
+            },
+        },
+        graph_summary=(
+            "manifest-bind → plugin-preflight → structure-audit → artifact-seal"
+        ),
+        dispositions=PLUGIN_READINESS_DISPOSITIONS,
+        member_stars=member_stars_from_policy("orrery/plugin-readiness"),
+        subtree_contract=subtree_contract_from_policy(
+            "orrery/plugin-readiness",
+            dispositions=PLUGIN_READINESS_DISPOSITIONS,
             pause_allowed=False,
         ),
         tree_role="review",

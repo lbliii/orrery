@@ -54,6 +54,8 @@ BUILTIN_STAR_PACKAGES = (
     "stars.migration_git_handoff",
     "stars.link_check_bounded",
     "stars.structure_audit",
+    "stars.plugin_preflight",
+    "stars.plugin_readiness",
     "stars.kida_check",
     "stars.kida_render",
     "stars.kida_ready",

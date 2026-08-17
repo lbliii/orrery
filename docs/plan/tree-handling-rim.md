@@ -158,3 +158,5 @@ Not exit blockers for #237:
 3. **AcceptanceReceipt** sealed sprint / done contracts (Anthropic signal) —
    design frozen in [ADR 0009](../adr/0009-acceptance-receipt.md) / [#311](https://github.com/lbliii/orrery/issues/311);
    implement via `orrery/acceptance-bind` + `acceptance_cites` dogfood under #310.
+4. **Agent Plugins rim** — pointer package + sealed 1.0.0 conformance
+   (do not reopen #237): [agent-plugins-rim.md](./agent-plugins-rim.md).

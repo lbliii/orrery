@@ -14,6 +14,7 @@ _RIM_STAR_FACETS: dict[str, tuple[str, str | None]] = {
     "orrery/manifest-preflight": ("review", "low"),
     "orrery/patch-capture": ("worker", "low"),
     "orrery/structure-audit": ("review", "low"),
+    "orrery/plugin-preflight": ("worker", "low"),
     "orrery/link-check-bounded": ("review", "low"),
     "orrery/write-authority-check": ("review", "low"),
 }
@@ -21,6 +22,7 @@ _RIM_STAR_FACETS: dict[str, tuple[str, str | None]] = {
 # Key rim constellations already publishing cards (composite cost = mid).
 _RIM_CONSTELLATION_FACETS: dict[str, tuple[str, str]] = {
     "orrery/content-readiness": ("review", "mid"),
+    "orrery/plugin-readiness": ("review", "mid"),
     "orrery/authorized-content-patch": ("worker", "mid"),
     "orrery/publish-gate": ("review", "mid"),
     "orrery/ship-check": ("review", "mid"),

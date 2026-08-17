@@ -639,6 +639,92 @@ CONTENT_READINESS_POLICY = PolicyGraph(
     release_key_id="orrery-content-readiness-1",
 )
 
+#: ADR 0007 — sync plugin-readiness (#536); Agent Plugins 1.0.0.
+PLUGIN_READINESS_POLICY = PolicyGraph(
+    nodes=(
+        PolicyNode(
+            "manifest-bind",
+            "manifest-bind",
+            "gate",
+            100,
+            180,
+            0,
+            "orrery/manifest-bind",
+            "bind",
+        ),
+        PolicyNode(
+            "plugin-preflight",
+            "plugin-preflight",
+            "gate",
+            340,
+            180,
+            1,
+            "orrery/plugin-preflight",
+            "preflight",
+        ),
+        PolicyNode(
+            "structure-audit",
+            "structure-audit",
+            "gate",
+            580,
+            180,
+            2,
+            "orrery/structure-audit",
+            "audit",
+        ),
+        PolicyNode(
+            "artifact-seal",
+            "artifact-seal",
+            "composite",
+            820,
+            320,
+            3,
+            status_label="composite",
+            r=18,
+        ),
+    ),
+    edges=(
+        PolicyEdge(
+            "pr1",
+            "manifest-bind",
+            "plugin-preflight",
+            "gate",
+            "M140 180 C200 180, 280 180, 300 180",
+            1,
+        ),
+        PolicyEdge(
+            "pr2",
+            "plugin-preflight",
+            "structure-audit",
+            "gate",
+            "M380 180 C440 180, 520 180, 540 180",
+            2,
+        ),
+        PolicyEdge(
+            "pr3",
+            "structure-audit",
+            "artifact-seal",
+            "gate",
+            "M620 200 C700 260, 760 300, 800 310",
+            3,
+        ),
+    ),
+    repair_loop_max=None,
+    footnote=(
+        "Sync only (pause_policy.allowed=false) · "
+        "dispositions conformant|needs-work|inconclusive · "
+        "structure-audit only on skills/*/SKILL.md · "
+        "composite seal in-package (no artifact-seal star)."
+    ),
+    composite_chain=(
+        CompositeStep(1, "manifest-bind", "Envelope ✓", "digest inventory"),
+        CompositeStep(2, "plugin-preflight", "Envelope ✓", "Agent Plugins 1.0.0"),
+        CompositeStep(3, "structure-audit", "Envelope ✓", "SKILL.md structure"),
+    ),
+    release_digest="sha256:plugin-readiness…",
+    release_key_id="orrery-plugin-readiness-1",
+)
+
 #: ADR 0007 — sync authorized-content-patch (#215); readiness → grant → capture.
 AUTHORIZED_CONTENT_PATCH_POLICY = PolicyGraph(
     nodes=(
@@ -1282,6 +1368,7 @@ POLICIES: dict[str, PolicyGraph] = {
     "orrery/table-fresh": TABLE_FRESH_POLICY,
     "orrery/ship-check": SHIP_CHECK_POLICY,
     "orrery/content-readiness": CONTENT_READINESS_POLICY,
+    "orrery/plugin-readiness": PLUGIN_READINESS_POLICY,
     "orrery/authorized-content-patch": AUTHORIZED_CONTENT_PATCH_POLICY,
     "orrery/publish-gate": PUBLISH_GATE_POLICY,
     "orrery/board-memo": BOARD_MEMO_POLICY,

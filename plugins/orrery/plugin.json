@@ -1,0 +1,10 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "orrery",
+  "version": "0.1.0",
+  "description": "Point at Orrery's slim discovery MCP. Skills you point at, not install.",
+  "homepage": "https://orrery.lol/connect",
+  "repository": "https://github.com/lbliii/orrery",
+  "license": "MIT",
+  "keywords": ["orrery", "mcp", "gaze", "resolve"]
+}
