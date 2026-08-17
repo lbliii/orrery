@@ -105,3 +105,4 @@ if __name__=="__main__":
     except Exception as error:
         print(f"world-time canary failed: {error}", file=sys.stderr)
         raise
+    print("world-time canary passed")

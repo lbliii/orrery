@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 from datetime import UTC, datetime
+from pathlib import Path
 
 import pytest
 from chirp.skill import Skill
@@ -72,3 +73,11 @@ def test_validate_payload_interprets_naive_provider_time_as_utc() -> None:
     stale = {**envelope, "payload": {**envelope["payload"], "datetime": "2026-08-09T11:00:00"}}
     with pytest.raises(ValueError, match="outside"):
         validate_payload(stale, now=datetime(2026, 8, 9, 12, 1, tzinfo=UTC))
+
+
+def test_workflow_installs_project_deps_via_uv() -> None:
+    """The Action must load chirp from the repo lockfile, not pip cryptography."""
+    text = Path(".github/workflows/world-time-canary.yml").read_text(encoding="utf-8")
+    assert "uv run python scripts/canary_world_time.py" in text
+    assert "pip install cryptography" not in text
+    assert 'python-version: "3.14"' in text
