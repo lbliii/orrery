@@ -29,7 +29,7 @@ curl -s http://localhost:8000/mcp \
   -d '{"jsonrpc":"2.0","method":"tools/list","id":1}'
 ```
 
-For machine-readable entry points, see [`/connect`](https://orrery.lol/connect), [`/llms.txt`](https://orrery.lol/llms.txt), and the [MCP server card](https://orrery.lol/.well-known/mcp/server-card.json).
+For machine-readable entry points, see [`/connect`](https://orrery.lol/connect), [`/llms.txt`](https://orrery.lol/llms.txt), and the [MCP server card](https://orrery.lol/.well-known/mcp/server-card.json). Agent Plugins clients can point at the same slim `/mcp` via the directory at [`plugins/orrery/`](./plugins/orrery/) ([ops](./docs/operations/agent-plugins.md)).
 
 ## The loop: gaze → resolve → call → seal
 

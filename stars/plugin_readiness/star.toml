@@ -1,0 +1,27 @@
+[star]
+name = "orrery/plugin-readiness"
+kind = "constellation"
+version = "0.1.0"
+description = "Assess a caller plugin bundle: bind, Agent Plugins 1.0.0, optional skill structure → sealed disposition"
+publisher = "orrery"
+publisher_key_id_env = "ORRERY_PLUGIN_READINESS_KEY_ID"
+direct_mcp_path = "/constellations/plugin-readiness/mcp"
+tools = ["run"]
+capability_families = ["security"]
+[pricing]
+unit = "call"
+price_per_call = "0.00"
+currency = "USD"
+[runtime]
+python_package = "stars.plugin_readiness"
+skill_factory = "stars.plugin_readiness.skill:build_skill"
+[policy]
+allowed_egress = []
+freshness = "caller_provided"
+redirects = "deny"
+max_response_bytes = 262144
+[receipt]
+schema_version = "1"
+algorithm = "Ed25519"
+[publish]
+corpus = "stars.plugin_readiness.corpus:CORPUS"

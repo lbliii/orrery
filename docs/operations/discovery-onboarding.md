@@ -7,7 +7,9 @@ ADR 0005: **agent ranks** intents; Orrery **documents** paths — no auto-routin
 
 Point a streamable-HTTP MCP client at ``/mcp`` (see [slim discovery MCP](slim-discovery-mcp.md)).
 Default install is gaze/resolve only; call tools live on the **publisher** endpoint
-returned by ``resolve_name`` (ADR 0004).
+returned by ``resolve_name`` (ADR 0004). Agent Plugins clients can load the
+pointer package at [`plugins/orrery/`](../../plugins/orrery/) instead of
+pasting the URL — see [agent-plugins.md](agent-plugins.md).
 
 ## Tour contract
 
