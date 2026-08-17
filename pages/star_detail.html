@@ -1,27 +1,12 @@
 {% block content %}
 <div class="star-page">
-  <aside class="entity-rail">
+  <div class="star-body">
     <a class="back-link" href="/stars">← All Stars</a>
-    <p class="kicker">Star</p>
-    <p class="entity-name mono">{{ rec.name }}</p>
-    <nav aria-label="Star sections">
-      <a href="#overview" aria-current="page">Overview</a>
-      <a href="#use-when">Use this when</a>
-      <a href="#inputs">Inputs / Outputs</a>
-      <a href="#example">Example</a>
-      <a href="#tools">Tools</a>
-      <a href="#constellations">In constellations</a>
-      <a href="#trust">Trust &amp; activity</a>
-    </nav>
-  </aside>
-
-  <article class="star-reading">
-    <header id="overview" class="detail-hero">
+    <header class="detail-hero">
       <p class="kicker">{{ rec.visibility }} Star · {{ rec.version or "current" }}</p>
       <h1>{{ rec.name }}</h1>
       <p class="star-intro">{{ intro }}</p>
       <p class="muted star-resolve-link">
-        Machine-readable record:
         <a class="mono" href="{{ card.resolve_href }}">{{ card.resolve_href }}</a>
       </p>
     </header>
@@ -88,7 +73,6 @@
 
     <section id="example" class="reading-section">
       <p class="kicker">Example</p>
-      <p class="muted">Minimal MCP <code class="mono">tools/call</code> against this Star’s direct endpoint.</p>
       {{ card.example_call_html | safe(reason="Rosettes highlight_json host helper") }}
     </section>
 
@@ -105,11 +89,9 @@
 
     <section id="constellations" class="reading-section">
       <p class="kicker">In constellations</p>
-      <p class="muted">A constellation is a policy graph that can coordinate several Stars.</p>
       {% if constellations %}<div class="relation-list">{% for constellation in constellations %}<a href="{{ constellation.href }}"><strong>{{ constellation.name }}</strong><span>{{ constellation.description }}</span><b>↗</b></a>{% end %}</div>{% else %}<p class="muted">No constellation references this Star yet.</p>{% end %}
     </section>
-    {% if related %}<section class="reading-section"><p class="kicker">Nearby Stars</p><div class="relation-list">{% for star in related %}<a href="/star/{{ star.namespace }}/{{ star.short_name }}"><strong>{{ star.name }}</strong><span>{{ star.description }}</span><b>↗</b></a>{% end %}</div></section>{% end %}
-  </article>
+  </div>
 
   <aside class="action-rail" id="trust">
     <div class="panel action-panel">
@@ -117,7 +99,6 @@
       <code class="endpoint mono">{{ rec.endpoint }}</code>
       <button type="button" class="btn" data-copy-mcp data-mcp-url="{{ rec.endpoint }}">Copy MCP URL</button>
       <a class="text-action" href="{{ card.resolve_href }}">Resolve record →</a>
-      <a class="text-action" href="/connect">Connection guide →</a>
     </div>
     <div class="trust-card">
       <p class="kicker">Trust signal</p>
