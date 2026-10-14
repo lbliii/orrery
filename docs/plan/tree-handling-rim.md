@@ -94,7 +94,7 @@ sealed results any external agent would hang on *its* tree (see the table in
 
 - Agent swarm VCS, merge reconciler, or megafile decomposer
 - Product-level “pick the skill” router (ADR 0005)
-- Replacing DORI-like process skills
+- Process skills beyond pinned instruction stars ([ADR 0013](../adr/0013-point-pin-prove.md))
 - Storing full agent transcripts as a product surface
 
 ## GitHub issue map

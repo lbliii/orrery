@@ -8,7 +8,12 @@
 
 ## Why Orrery
 
-An installed package is a copy: its source, data, and output can all be stale. Orrery is for work that needs a live, bounded answer and evidence of what happened at call time—current UTC, an official-source digest, release metadata, a certificate-expiry check, or a generated artifact.
+**Point, pin, prove.** An installed skill is a copy: it drifts, agents edit it, and nobody can say which version was used. Orrery serves skills by reference instead, in two kinds:
+
+- **Live stars** return a fresh, bounded answer and evidence of what was true at call time—current UTC, an official-source digest, release metadata, a certificate-expiry check, or a generated artifact.
+- **Pinned stars** (planned) return exact instruction bytes by content digest. A repository commits a `skills.lock` of pointers, so `git checkout` restores the skill set that commit used.
+
+Either way, resolve is exact and the result comes back with a signed receipt. Orrery never picks the skill for the agent. See [ADR 0013](./docs/adr/0013-point-pin-prove.md) and the [point-pin-prove plan](./docs/plan/point-pin-prove.md).
 
 The public sky is deliberately narrow. Stars declare their tool surface, egress policy, freshness model, and receipt algorithm in [`stars/`](./stars/). Calls return only within that contract.
 
@@ -72,7 +77,7 @@ Their manifests are the source of truth: [`stars/`](./stars/). The live product 
 
 ## The horizon
 
-The public sky can grow with publishers owning their direct endpoints, while private namespaces organize tenant and capability surfaces. Constellations are frozen planner subgraphs ([ADR 0007](./docs/adr/0007-constellation-subtree-contract.md)); managed execution and commerce can evolve around verified results. See the [vending-machine sky plan](./docs/plan/vending-machine-sky.md), the [tree-handling rim plan](./docs/plan/tree-handling-rim.md) (sealed leaves for agent task trees), and the [publisher direct-call ADR](./docs/adr/0004-publisher-direct-call.md).
+The public sky can grow with publishers owning their direct endpoints, while private namespaces organize tenant and capability surfaces. Constellations are frozen planner subgraphs ([ADR 0007](./docs/adr/0007-constellation-subtree-contract.md)); managed execution and commerce can evolve around verified results. See the [point-pin-prove plan](./docs/plan/point-pin-prove.md), the [vending-machine sky plan](./docs/plan/vending-machine-sky.md), the [tree-handling rim plan](./docs/plan/tree-handling-rim.md) (sealed leaves for agent task trees), and the [publisher direct-call ADR](./docs/adr/0004-publisher-direct-call.md).
 
 ## Direct stars and the aggregate host
 

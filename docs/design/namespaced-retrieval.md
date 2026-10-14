@@ -23,8 +23,8 @@ This is not document RAG, not public-web search, and not a new MCP tool.
 
 ### Rejected options
 
-1. **Global embedding router** — rejected. ADR 0005 Not now (DORI failure
-   mode). No API may return a single forced skill.
+1. **Global embedding router** — rejected. ADR 0005 Not now (local-router
+   failure mode). No API may return a single forced skill.
 2. **Hosted vector DB / embedding vendor in v1** — rejected. Public sky
    already scores every row in the node (`score_record`). A new engine
    would not earn its keep until a tenant corpus fails recall@k.

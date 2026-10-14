@@ -1,6 +1,8 @@
 # ADR 0005: Discovery, dual trust, thin harness
 
-- **Status:** Accepted
+- **Status:** Accepted; §4 (process-host complement) and the matching
+  Not-now line superseded by
+  [ADR 0013](./0013-point-pin-prove.md)
 - **Date:** 2026-08-09
 - **Issues:** [#62](https://github.com/lbliii/orrery/issues/62), strategy saga [#56](https://github.com/lbliii/orrery/issues/56), product saga [#1](https://github.com/lbliii/orrery/issues/1)
 - **Parent epic:** [#57](https://github.com/lbliii/orrery/issues/57) Strategy freeze
@@ -18,8 +20,8 @@ Orrery’s shape is the opposite: a **vending machine for live expertise** on
 Orrery stays Skill DNS + wallet + trust labels. Gaze shelves SKUs; resolve
 locks the row; call goes publisher-direct (ADR 0004); verify seals the receipt.
 
-Evidence from local DORI (~5d): implement-route accept ~36%, catalog
-collisions, empty verification tables — the failure mode of a product-level
+Experience with a local skill router: routes were often rejected, catalogs
+collided, and optional verification went unused — the failure mode of a product-level
 “pick the skill” router. Saga #1 and ADR 0001 already freeze control vs data
 plane; this ADR freezes discovery and demand-side trust so we do not rebuild
 that router or soft-proxy everyone’s tools.
@@ -78,9 +80,9 @@ Harnesses own UX and judgment. Publishers own expertise and live compute.
 Orrery owns name, meter, and trust labels. Services are **not** bundled into
 every agent.
 
-Complement, don’t replace, DORI-like process hosts: those answer *how to
-work*; Orrery answers *what to invoke and prove*. Requiring a process skill
-host to use Orrery is out of scope.
+The process-host complement that stood here is superseded by
+[ADR 0013](./0013-point-pin-prove.md) §2 “Own content, not choice”: instruction
+skills are served as pinned stars.
 
 Vending-machine loop: **Gaze → Resolve → Call → Verify** (+ optional `rate`).
 No workshop ceremony on the hot path.
@@ -88,7 +90,7 @@ No workshop ceremony on the hot path.
 ### 5. Explicit Not now
 
 - **Embedding winner-picker** — Orrery as global embedding router that selects
-  one star (DORI failure mode)
+  one star (the local-router failure mode)
 - **Yelp free-text reviews** — free-text review marketplace / social feed /
   star essays
 - **Proxy-all-calls** — reverse-proxy or host everyone’s tool execution
@@ -96,7 +98,7 @@ No workshop ceremony on the hot path.
   Same-origin `call_skill` forwarder on `/mcp` is a session-bound exception
   ([ADR 0010](./0010-aggregate-mcp-call-skill.md)), not a general proxy.
 - Stripe charges per tool call (ADR 0001 / 0003)
-- Requiring DORI (or any process skill host) to use Orrery
+- ~~Requiring a process skill host to use Orrery~~ (superseded by ADR 0013)
 - Constellation authoring editor (viewer + run first)
 
 ## Consequences

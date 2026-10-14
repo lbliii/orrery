@@ -38,7 +38,7 @@ Consequences:
 | Orrery `stars/*/corpus.py` | Per-star CorpusPrompt wired into publish gate | MITIGATES — formalize as required for every specimen star |
 | Agent Skills `evals/evals.json` | prompt + expectations, often LLM-graded transcript | UNRELATED as publish gate; optional L5 export |
 | Dual trust (#59) | Demand-side ratings keyed to digest | FIXES — L3 |
-| DORI telemetry lesson | Empty verification tables = unused optional governance | FIXES — L0–L2 must be CI/boot gates, not optional |
+| Local-router lesson | Unused verification = unused optional governance | FIXES — L0–L2 must be CI/boot gates, not optional |
 
 ## Invariants
 
