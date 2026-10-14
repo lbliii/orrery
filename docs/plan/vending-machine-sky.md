@@ -6,6 +6,8 @@
 - **Strategy saga:** [#56](https://github.com/lbliii/orrery/issues/56)
 - **Depends on:** [ADR 0001](../adr/0001-control-plane-wallet.md), [ADR 0004](../adr/0004-publisher-direct-call.md)
 - **Accepted ADR:** [0005-discovery-and-dual-trust.md](../adr/0005-discovery-and-dual-trust.md) ([#62](https://github.com/lbliii/orrery/issues/62))
+- **Superseded in part:** principle 6 and Sprint 5 by
+  [ADR 0013](../adr/0013-point-pin-prove.md) / [point-pin-prove](./point-pin-prove.md)
 - **Feeds:** Epics [#7](https://github.com/lbliii/orrery/issues/7) Namespaces, [#9](https://github.com/lbliii/orrery/issues/9) Trust & Commerce
 
 ## GitHub issue map
@@ -24,7 +26,7 @@ Harnesses and skill hosts are under pressure to **bundle everything** — catalo
 
 Consequences if we miss this:
 
-1. We rebuild DORI-style semantic routing (“we pick the skill”) and inherit ~36% accept rates and catalog collisions.
+1. We rebuild a semantic router (“we pick the skill”) and inherit low route acceptance and catalog collisions.
 2. We soft-proxy everyone’s tools and re-centralize the bundle (violates ADR 0004).
 3. At a million stars, gaze dumps libraries into context and agents drown.
 4. Trust stays supply-only (publish oracle) with no demand-side satisfaction keyed to digests.
@@ -36,10 +38,10 @@ Consequences if we miss this:
 
 | Source | Key finding | Proposal impact |
 | --- | --- | --- |
-| Local DORI (~5d) | `implement` route accept ~36%; winner scores mostly 0.5–0.9 | FIXES — no product-level “pick the skill” router |
-| Local DORI | 88 abandoned / 61 completed; ~70 auto-abandon 24h | FIXES — no begin/complete lifecycle on the call path |
-| Local DORI | `verification_events` / compliance tables empty | FIXES — Envelope verify is the receipt, not optional telemetry |
-| Local DORI | Orrery asks misrouted (`astra-gitops`, `nvcf-ngc-cli`, …) | FIXES — exact resolve; gaze returns shortlist only |
+| Local skill router | Routes often rejected; winner confidence low | FIXES — no product-level “pick the skill” router |
+| Local skill router | More interactions abandoned than completed | FIXES — no begin/complete lifecycle on the call path |
+| Local skill router | Optional verification / compliance went unused | FIXES — Envelope verify is the receipt, not optional telemetry |
+| Local skill router | Requests misrouted to unrelated skills | FIXES — exact resolve; gaze returns shortlist only |
 | Saga #1 / ADR 0001 | Control plane ≠ data plane; reactive stars | FIXES — keep distribution; live truth at publisher |
 | ADR 0004 | Agent → publisher MCP; aggregate `/mcp` is dogfood | FIXES — thin harness, no proxy-all |
 | `catalog/gaze.py` | Progressive disclosure: names/blurbs/prices only | MITIGATES — extend with facets + trust pills, keep payload-free |
@@ -53,7 +55,8 @@ Consequences if we miss this:
 3. **Thin harness / distributed load** — Harnesses own UX and judgment. Publishers own expertise and live compute. Orrery owns name, meter, and trust labels. Services are not bundled into every agent.
 4. **DNS is sacred** — Once a name is chosen, resolve is exact (endpoint, digest, key, price). No fuzzy second guess.
 5. **Dual trust** — Supply: publish oracle. Demand: caller satisfaction tied to Envelope/digest. Ratings decay or reset when digest changes.
-6. **Complement, don’t replace, DORI** — DORI-like systems answer *how to work*. Orrery answers *what to invoke and prove*.
+6. ~~**Complement process skill hosts**~~ — superseded by [ADR 0013](../adr/0013-point-pin-prove.md): **Own content, not choice.** Orrery serves skill content (live tools and pinned instructions) by exact reference; it never picks the skill and puts no lifecycle step on the call path.
+7. **The repo holds pointers** — a project's skill set is a committed `skills.lock` of resolve records ([ADR 0013](../adr/0013-point-pin-prove.md) §3).
 
 ## Invariants
 
@@ -78,7 +81,7 @@ These must remain true throughout or we stop and reassess:
 │             │ ──────────────────────────────────────────►  Orrery trust/wallet
 └─────────────┘
 
-Optional local process skills (DORI-like) stay on the harness — out of band.
+Instruction skills are pinned stars resolved from the repo's skills.lock (ADR 0013).
 ```
 
 ### Discovery at million-star scale
@@ -92,7 +95,7 @@ Optional local process skills (DORI-like) stay on the harness — out of band.
 | **Semantic pick** | **Agent** | Ranks shortlist; may ignore Orrery’s rank order |
 | **Resolve** | Orrery | Exact lock |
 
-**Not now:** Orrery as global embedding router that picks one skill (DORI failure mode).
+**Not now:** Orrery as global embedding router that picks one skill (local-router failure mode).
 
 ### Trust surfaces
 
@@ -149,7 +152,7 @@ Landed: [ADR 0005](../adr/0005-discovery-and-dual-trust.md) ([#62](https://githu
 
 ### Task 0.3 — Update saga #1 north-star language
 
-Add one paragraph: vending machine + thin harness / distributed load; DORI complements process, Orrery distributes capability.
+Add one paragraph: vending machine + thin harness / distributed load; Orrery distributes capability and pinned skills by reference.
 
 **Acceptance:** Saga body updated (or comment with pointer to this plan + ADR 0005).
 
@@ -243,6 +246,8 @@ Return candidate IDs only; agent still picks; resolve still exact.
 
 ## Sprint 5: Economics using dual trust (horizon)
 
+> Moved to Later by [ADR 0013](../adr/0013-point-pin-prove.md) §8.
+
 **Goal:** Publisher share / ranking inputs can use oracle × satisfaction × volume — without Orrery executing their stars.
 
 **Acceptance:** Design-only until Wave 2 wallet + Wave 5 payouts; no Stripe-per-call.
@@ -278,7 +283,7 @@ Return candidate IDs only; agent still picks; resolve still exact.
 - **ADR 0005** — Accepted freeze of discovery + dual trust + thin harness ([0005](../adr/0005-discovery-and-dual-trust.md)).
 - **Epic #9** — Sprint 2 lands under Trust & Commerce Phase A adjacent / Phase B design.
 - **Epic #7 / #28 / #29 / #30** — Sprint 3 depends on tenant routing + allowlist decisions.
-- **DORI** — Remains process/guidance; Orrery must not absorb its catalog-router role.
+- **Process skills** — Served as pinned stars ([ADR 0013](../adr/0013-point-pin-prove.md)); Orrery still does not take on a catalog-router role.
 
 ## Not now (restate)
 
@@ -286,7 +291,7 @@ Return candidate IDs only; agent still picks; resolve still exact.
 - Free-text review marketplace / social feed
 - Proxy-all-calls or Orrery-as-FaaS
 - Stripe per tool call
-- Requiring DORI (or any process skill host) to use Orrery
+- Lifecycle tracking on the call path (ADR 0013)
 - Constellation authoring editor
 
 ## Next action
