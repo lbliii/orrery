@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
+
 import pytest
 
 from catalog.gaze import hit_from_record
@@ -19,6 +21,8 @@ from trust.satisfaction import (
 STAR = "orrery/world-time"
 LIVE_DIGEST = "sha256:live-digest"
 OLD_DIGEST = "sha256:old-digest"
+# Inside the default 7d window regardless of when the suite runs.
+RECENT_CREATED_AT = (datetime.now(UTC) - timedelta(hours=1)).isoformat().replace("+00:00", "Z")
 
 
 @pytest.fixture
@@ -38,13 +42,14 @@ def _seed(
     digest: str = LIVE_DIGEST,
     verdict: str = "useful",
     attempt: str = "attempt-1",
+    created_at: str = RECENT_CREATED_AT,
 ) -> None:
     store.put(
         SatisfactionRecord(
             star_name=STAR,
             content_digest=digest,
             verdict=verdict,
-            created_at="2026-08-11T12:00:00Z",
+            created_at=created_at,
             call_attempt_id=attempt,
         )
     )
@@ -59,6 +64,18 @@ def test_quiet_when_no_ratings(store: InMemorySatisfactionStore) -> None:
     )
     assert pill.quiet is True
     assert pill.as_dict() == {"quiet": True}
+
+
+@pytest.mark.issue(69)
+def test_quiet_when_ratings_fall_outside_default_window(store: InMemorySatisfactionStore) -> None:
+    stale = (datetime.now(UTC) - timedelta(days=8)).isoformat().replace("+00:00", "Z")
+    _seed(store, attempt="old", created_at=stale)
+    pill = satisfaction_pill_for(
+        star_name=STAR,
+        content_digest=LIVE_DIGEST,
+        store=store,
+    )
+    assert pill.quiet is True
 
 
 @pytest.mark.issue(69)
