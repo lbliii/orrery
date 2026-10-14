@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from chirp.testing import TestClient
@@ -14,6 +15,8 @@ from listings.store import InMemoryListingStore, configure_listing_store, quiet_
 from trust.satisfaction import InMemorySatisfactionStore, SatisfactionRecord, get_satisfaction_store
 
 STAR = "orrery/world-time"
+# Inside the default 7d window regardless of when the suite runs.
+RECENT_CREATED_AT = (datetime.now(UTC) - timedelta(hours=1)).isoformat().replace("+00:00", "Z")
 
 
 @pytest.fixture(autouse=True)
@@ -56,7 +59,7 @@ def test_gaze_hit_satisfaction_populated_when_store_has_live_ratings() -> None:
             star_name=STAR,
             content_digest=record.content_digest,
             verdict="useful",
-            created_at="2026-08-11T12:00:00Z",
+            created_at=RECENT_CREATED_AT,
             call_attempt_id="gaze-live",
         )
     )
@@ -76,7 +79,7 @@ def test_gaze_hit_satisfaction_quiet_on_digest_mismatch() -> None:
             star_name=STAR,
             content_digest="sha256:stale-other-digest",
             verdict="useful",
-            created_at="2026-08-11T12:00:00Z",
+            created_at=RECENT_CREATED_AT,
             call_attempt_id="gaze-stale",
         )
     )

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from chirp.skill.publish import STAGE_CHECK, STAGE_FREEZE, PublishReceipt, StageResult
@@ -22,6 +23,8 @@ from trust.satisfaction import (
 STAR = "orrery/world-time"
 LIVE_DIGEST = "sha256:live-digest"
 OLD_DIGEST = "sha256:old-digest"
+# Inside the default 7d window regardless of when the suite runs.
+RECENT_CREATED_AT = (datetime.now(UTC) - timedelta(hours=1)).isoformat().replace("+00:00", "Z")
 
 
 @pytest.fixture(autouse=True)
@@ -58,7 +61,7 @@ def _seed_rating(*, digest: str = LIVE_DIGEST, attempt: str = "attempt-1") -> No
             star_name=STAR,
             content_digest=digest,
             verdict="useful",
-            created_at="2026-08-11T12:00:00Z",
+            created_at=RECENT_CREATED_AT,
             call_attempt_id=attempt,
         )
     )
