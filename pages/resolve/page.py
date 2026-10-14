@@ -13,6 +13,7 @@ from chirp import JSONResponse, Page, Request
 
 from catalog import CATALOG
 from catalog.console_links import console_href_for
+from namespaces.allowlist import CALLER_HEADER, authorize_private_record, caller_from_header
 from trust.oracle import oracle_for
 
 
@@ -29,6 +30,7 @@ def _wants_json(request: Request) -> bool:
 
 
 def get(request: Request) -> Page | JSONResponse:
+    caller = caller_from_header(request.headers.get(CALLER_HEADER))
     if _wants_json(request):
         name = (request.query.get("name") or request.query.get("q") or "").strip()
         record = CATALOG.resolve(name) if name else None
@@ -36,10 +38,15 @@ def get(request: Request) -> Page | JSONResponse:
             return JSONResponse.from_value(
                 {"error": "not_found", "name": name}, status=404
             )
+        denied = authorize_private_record(record, caller)
+        if denied is not None:
+            return JSONResponse.from_value(denied, status=403)
         return JSONResponse.from_value(record.as_dict())
 
     q = (request.query.get("q") or "").strip()
     matched = CATALOG.resolve(q) if q else None
+    if matched is not None and authorize_private_record(matched, caller) is not None:
+        matched = None
     records = CATALOG.public_records()
     return Page(
         "resolve/page.html",

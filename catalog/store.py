@@ -2,7 +2,7 @@
 
 ``Catalog`` is a thin, deterministic index over :class:`ResolveRecord` seeds.
 It is the server-side half of the resolver mock's client behavior in
-``design/motion.js`` (match by full name, namespaced name, or bare name).
+``design/motion.js`` (exact namespaced name, or a bare name in ``orrery/``).
 Gaze discovery (``match`` / ``search`` / ``describe`` / ``list_constellations``)
 reads the same index — one seed list, two product surfaces.
 """
@@ -26,6 +26,8 @@ from .gaze import (
 from .models import ResolveRecord
 from .retrieval import active_retriever, retrieval_enabled
 
+PUBLIC_NAMESPACE = "orrery"
+
 
 class Catalog:
     """A resolvable index of skill records keyed by name."""
@@ -33,51 +35,45 @@ class Catalog:
     def __init__(self, records: tuple[ResolveRecord, ...] = CONSTELLATION_SEEDS) -> None:
         self._records = records
         self._by_name = {r.name: r for r in records}
+        self._by_lower = {r.name.lower(): r for r in records}
 
     def reload(self, records: tuple[ResolveRecord, ...]) -> None:
         """Replace index contents in place (keeps importers on the same instance)."""
         self._records = records
         self._by_name = {r.name: r for r in records}
+        self._by_lower = {r.name.lower(): r for r in records}
 
     def all(self) -> tuple[ResolveRecord, ...]:
         return self._records
 
     def public_records(self) -> tuple[ResolveRecord, ...]:
-        """Records visible in the public resolver zone (mirrors resolve.html)."""
-        return tuple(r for r in self._records if r.visibility == "public") + tuple(
-            r for r in self._records if r.visibility == "private" and r.kind == "constellation"
-        )
+        """Records visible in the public resolver zone (public rows only)."""
+        return tuple(r for r in self._records if r.visibility == "public")
 
     def get(self, name: str) -> ResolveRecord | None:
         return self._by_name.get(name)
 
     def resolve(self, query: str) -> ResolveRecord | None:
-        """Resolve a lookup string to one record.
+        """Resolve a lookup string to exactly one record, or ``None``.
 
-        Accepts ``name``, ``namespace/name``, or ``name@version`` and matches
-        the way the mock resolver does: exact name first, then bare short name,
-        then a substring fallback.
+        Accepts ``namespace/name`` or a bare ``name`` (qualified to the public
+        ``orrery/`` namespace), with an optional ``@version`` or
+        ``@sha256:…`` pin. Resolve is exact ("DNS is sacred", ADR 0013): no
+        short-name guessing across namespaces and no substring fallback —
+        fuzzy matching belongs to gaze. A pin that does not match the record's
+        version or content digest is a miss, never silently dropped.
         """
         q = (query or "").strip().lower()
         if not q:
             return None
-        q = q.split("@", 1)[0]  # drop @version pin
-
-        # 1) exact full-name match
-        for record in self._records:
-            if record.name.lower() == q:
-                return record
-
-        # 2) bare short-name match (html-to-pdf → orrery/html-to-pdf)
-        bare = q.split("/", 1)[-1]
-        for record in self._records:
-            if record.short_name.lower() == bare:
-                return record
-
-        # 3) substring fallback (ordered)
-        for record in self._records:
-            if bare in record.name.lower():
-                return record
+        name, _, pin = q.partition("@")
+        if "/" not in name:
+            name = f"{PUBLIC_NAMESPACE}/{name}"
+        record = self._by_lower.get(name)
+        if record is None or not pin:
+            return record
+        if pin in {(record.version or "").lower(), record.content_digest.lower()}:
+            return record
         return None
 
     # ------------------------------------------------------------------

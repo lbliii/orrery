@@ -66,6 +66,28 @@ class TestResolveSchema:
         assert CATALOG.resolve("does-not-exist") is None
         assert CATALOG.resolve("") is None
 
+    def test_resolve_is_exact_not_fuzzy(self, example_app) -> None:
+        # Bare names qualify to orrery/ only — never to another namespace.
+        assert CATALOG.resolve("release-gate") is None
+        assert CATALOG.resolve("acme/release-gate").name == "acme/release-gate"
+        # No substring fallback; fuzzy matching belongs to gaze.
+        assert CATALOG.resolve("html") is None
+        assert CATALOG.resolve("orrery/html-to") is None
+        assert CATALOG.resolve("ORRERY/HTML-TO-PDF").name == "orrery/html-to-pdf"
+
+    def test_resolve_pin_must_match(self, example_app) -> None:
+        rec = CATALOG.get("orrery/html-to-pdf")
+        assert CATALOG.resolve(f"orrery/html-to-pdf@{rec.content_digest}") is rec
+        assert CATALOG.resolve("html-to-pdf@1.2.0") is rec
+        assert CATALOG.resolve("orrery/html-to-pdf@9.9.9") is None
+        assert CATALOG.resolve("orrery/html-to-pdf@sha256:not-the-digest") is None
+
+    def test_public_zone_excludes_private_constellations(self, example_app) -> None:
+        public = CATALOG.public_records()
+        assert public
+        assert all(r.visibility == "public" for r in public)
+        assert "acme/release-gate" not in {r.name for r in public}
+
     def test_record_serialization_contract(self, example_app) -> None:
         payload = CATALOG.get("orrery/html-to-pdf").as_dict()
         assert set(payload) >= {
@@ -1064,7 +1086,7 @@ class TestConstellationCatalogIndex:
             r = await client.get("/constellations")
             assert r.status == 200
             assert "Explore Constellations" in r.text or "Constellations" in r.text
-            assert "acme/launch-gate" in r.text
+            assert "acme/launch-gate" not in r.text  # private rows stay out of the public index
             assert "orrery/stale-proof" in r.text
             assert 'href="/constellations?name=' in r.text
             assert "<svg" not in r.text

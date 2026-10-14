@@ -42,20 +42,28 @@ Run `uv run pytest`; confirm orrery.lol is live; record results in the PR.
 
 ### Task 0.2 — Resolve is exact
 
-Remove the bare-short-name and substring fallbacks from `Catalog.get` /
-resolve in `catalog/store.py`. Fuzzy matching stays in gaze only ("DNS is
-sacred", vending-machine-sky principle 4).
+Remove the cross-namespace short-name and substring fallbacks from resolve in
+`catalog/store.py`. A bare name qualifies only to `orrery/` (exact, like a
+search domain). A pin (`@version` or `@sha256:…`) that does not match the record
+is a miss, never dropped. Fuzzy matching stays in gaze only ("DNS is sacred",
+vending-machine-sky principle 4).
 
-**Acceptance:** resolve of an unknown or partial name returns a not-found error
-with gaze suggestions; tests cover partial names.
+**Acceptance:** resolve of an unknown or partial name returns not-found; tests
+cover partial names, other-namespace short names, and mismatched pins.
+
+**Status:** Done. Follow-up: add gaze suggestions to the not-found response.
 
 ### Task 0.3 — No private names in the public zone
 
-`Catalog.public_records()` must not include `visibility == "private"`
-constellations.
+`Catalog.public_records()` must not include `visibility == "private"` rows, and
+every public resolve surface applies the namespace allowlist: `/api/resolve`,
+the `/resolve` page (JSON and `?q=`), MCP `resolve_name` and `gaze_describe`,
+and constellation detail.
 
-**Acceptance:** test asserts no private record of any kind in the public
-resolver zone or `/resolve` page.
+**Acceptance:** tests assert no private record in the public resolver zone or
+`/constellations` index, and that each surface denies an unlisted caller.
+
+**Status:** Done.
 
 ### Task 0.4 — License decision
 

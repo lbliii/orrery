@@ -38,6 +38,7 @@ from catalog.coverage import check_coverage, describe_coverage
 from catalog.mcp_tool_content import wrap_structured_mcp_handler
 from discovery import MCP_TOOLS_ALLOWLIST
 from listings.mcp import build_listing_skill
+from namespaces.allowlist import authorize_private_record
 from public_keys import key_set_url
 from stars.decision_bind.service import bind as bind_decision
 from stars.html_to_pdf.skill import build_skill as build_html_to_pdf_star
@@ -63,6 +64,7 @@ _resolve_skill: Skill | None = None
 _launch_gate_skill: Skill | None = None
 _discovery_launch_gate_skill: Skill | None = None
 _listing_skill: Skill | None = None
+
 
 def _load_or_generate_key(env_name: str) -> Ed25519PrivateKey:
     raw = os.environ.get(env_name, "").strip()
@@ -193,6 +195,12 @@ def build_gaze_skill(*, private_key: Any | None = None) -> Skill:
         description="Describe a skill by name (manifest + full agent card, no execution)",
     )
     def gaze_describe(name: str) -> dict[str, object]:
+        record = CATALOG.resolve(name)
+        if record is not None:
+            # Same gate as resolve_name: no caller identity on aggregate MCP.
+            denied = authorize_private_record(record, None)
+            if denied is not None:
+                return denied
         return CATALOG.describe(name)
 
     @skill.tool(
@@ -283,6 +291,11 @@ def build_resolve_skill(*, private_key: Any | None = None) -> Skill:
         record = CATALOG.resolve(name)
         if record is None:
             return {"error": "not_found", "name": name, "status": "not_found"}
+        # The aggregate MCP tool has no caller identity: private rows are
+        # visible only when their namespace allowlist is open.
+        denied = authorize_private_record(record, None)
+        if denied is not None:
+            return denied
         payload = record.as_dict()
         payload["example_arguments"] = example_arguments_for_tools(name, record.tools)
         # The aggregate MCP tool has no request object; deployments should set
