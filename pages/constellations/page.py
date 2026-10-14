@@ -11,13 +11,15 @@ from chirp import NotFound, Page, Request
 from catalog import CATALOG
 from catalog.agent_card import card_for
 from catalog.constellation import policy_for
+from namespaces.allowlist import CALLER_HEADER, authorize_private_record, caller_from_header
 
 
 def get(request: Request) -> Page:
     """Render the constellation catalog or a named detail view."""
     legacy_name = (request.query.get("name") or "").strip()
     if legacy_name:
-        return page_for_constellation(legacy_name)
+        caller = caller_from_header(request.headers.get(CALLER_HEADER))
+        return page_for_constellation(legacy_name, caller=caller)
 
     constellations = tuple(
         record for record in CATALOG.public_records() if record.kind == "constellation"
@@ -33,10 +35,12 @@ def get(request: Request) -> Page:
     )
 
 
-def page_for_constellation(name: str) -> Page:
+def page_for_constellation(name: str, *, caller: str | None = None) -> Page:
     """Render one constellation's policy graph and run-contract IO."""
     rec = CATALOG.resolve(name)
     if rec is None or rec.kind != "constellation":
+        raise NotFound(f"No constellation record for {name!r}")
+    if authorize_private_record(rec, caller) is not None:
         raise NotFound(f"No constellation record for {name!r}")
     policy = policy_for(rec.name)
     if policy is None:

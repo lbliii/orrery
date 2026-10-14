@@ -113,3 +113,71 @@ async def test_invalid_retention_or_allowlist_returns_400(allowlist_app) -> None
     assert json.loads(bad_days.text)["error"] == "invalid_retention_days"
     assert bad_allowlist.status == 400
     assert json.loads(bad_allowlist.text)["error"] == "invalid_caller_allowlist"
+
+
+@pytest.mark.issue(30)
+async def test_resolve_page_honors_allowlist(allowlist_app) -> None:
+    async with TestClient(allowlist_app) as client:
+        await _provision(client, caller_allowlist=["agent:deploy"])
+        denied_json = await client.get("/resolve?name=acme/release-gate")
+        allowed_json = await client.get(
+            "/resolve?name=acme/release-gate",
+            headers={CALLER_HEADER: "agent:deploy"},
+        )
+        console = await client.get("/resolve?q=acme/release-gate")
+    assert denied_json.status == 403
+    assert allowed_json.status == 200
+    assert console.status == 200
+    assert "mcp://acme.orrery.lol" not in console.text  # matched private row not rendered
+
+
+@pytest.mark.issue(30)
+async def test_constellation_detail_honors_allowlist(allowlist_app) -> None:
+    async with TestClient(allowlist_app) as client:
+        await _provision(client, caller_allowlist=["agent:deploy"])
+        denied = await client.get("/constellations?name=acme/launch-gate")
+        allowed = await client.get(
+            "/constellations?name=acme/launch-gate",
+            headers={CALLER_HEADER: "agent:deploy"},
+        )
+    assert denied.status == 404
+    assert allowed.status == 200
+
+
+@pytest.mark.issue(30)
+async def test_mcp_resolve_name_honors_allowlist(allowlist_app) -> None:
+    async with TestClient(allowlist_app) as client:
+        await _provision(client, caller_allowlist=["agent:deploy"])
+        called = await client.post(
+            "/mcp",
+            json={
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "id": 30,
+                "params": {"name": "resolve_name", "arguments": {"name": "acme/release-gate"}},
+            },
+            headers={"content-type": "application/json", "mcp-protocol-version": "2025-06-18"},
+        )
+    assert called.status == 200
+    text = called.text
+    assert "caller_not_allowed" in text
+    assert "mcp://acme.orrery.lol" not in text
+
+
+@pytest.mark.issue(30)
+async def test_mcp_gaze_describe_honors_allowlist(allowlist_app) -> None:
+    async with TestClient(allowlist_app) as client:
+        await _provision(client, caller_allowlist=["agent:deploy"])
+        called = await client.post(
+            "/mcp",
+            json={
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "id": 31,
+                "params": {"name": "gaze_describe", "arguments": {"name": "acme/launch-gate"}},
+            },
+            headers={"content-type": "application/json", "mcp-protocol-version": "2025-06-18"},
+        )
+    assert called.status == 200
+    assert "caller_not_allowed" in called.text
+    assert "secret-scan" not in called.text  # no policy nodes leaked
